@@ -7,6 +7,50 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="dashboard.css">
+
+        <style>
+                    /* NUCLEAR OPTION: FORCE FULL WIDTH */
+                    .page {
+                                    width: 100% !important;
+                                    max-width: none !important;
+                                    margin: 0 !important;
+                                    display: flex !important;
+                    }
+                    .main-content {
+                                    flex: 1 !important;
+                                    margin-left: 260px !important;
+                                    width: calc(100% - 260px) !important;
+                                    max-width: none !important;
+                                    padding: 30px !important;
+                                    box-sizing: border-box !important;
+                    }
+                    .dashboard-container {
+                                    width: 100% !important;
+                                    max-width: 1400px !important;
+                                    margin: 0 auto !important;
+                    }
+                    .stats-grid {
+                                    display: grid !important;
+                                    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)) !important;
+                                    gap: 20px !important;
+                                    width: 100% !important;
+                    }
+                    @media (max-width: 768px) {
+                                    .main-content {
+                                                        margin-left: 0 !important;
+                                                        width: 100% !important;
+                                                        padding: 15px !important;
+                                    }
+                                    .sidebar {
+                                                        display: none !important;
+                                    }
+                                    .sidebar.active {
+                                                        display: block !important;
+                                    }
+                    }
+                </style>
+    
+        </style>
 </head>
 <body>
     <!-- Sidebar -->
