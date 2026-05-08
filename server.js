@@ -11,6 +11,8 @@ const mongoose = require('mongoose');
 const axios = require('axios');
 const crypto = require('crypto');
 
+console.log("🚀 Server starting...");
+console.log("Node version:", process.version);
 const app = express();
 
 // ── Firebase Client Config (served to frontend) ──
