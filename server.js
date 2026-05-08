@@ -99,10 +99,12 @@ const APP_SECRET = process.env.APP_SECRET;
 console.log("Connecting to MongoDB Cluster:", process.env.MONGO_URI ? process.env.MONGO_URI.split('@')[1] : "NOT FOUND");
 mongoose.connect(process.env.MONGO_URI)
     .then(() => {
-        console.log("MongoDB connected");
+        console.log("✅ MongoDB connected successfully");
     })
     .catch(err => {
-        console.error("MongoDB error:", err);
+        console.error("❌ MongoDB connection error:", err.message);
+        if (err.reason) console.error("   Reason:", err.reason);
+        if (err.code) console.error("   Code:", err.code);
     });
 
 // --- Mongoose Schemas ---
