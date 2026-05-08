@@ -11,7 +11,10 @@ const mongoose = require('mongoose');
 const axios = require('axios');
 const crypto = require('crypto');
 
-console.log("🚀 Server starting...");
+// Fix for environments where crypto might not be globally available
+global.crypto = crypto;
+
+console.log("🚀 Server starting at:", new Date().toISOString());
 console.log("Node version:", process.version);
 const app = express();
 
