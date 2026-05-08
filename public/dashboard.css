@@ -91,6 +91,51 @@ body {
     flex: 1;
     padding: 12px 10px;
     display: flex;
+
+   /* --- NUCLEAR OPTION: SUPER FLUID LAYOUT --- */
+   .page {
+          width: 100% !important;
+          max-width: none !important;
+          display: flex !important;
+   }
+
+   .main-content {
+          flex: 1 !important;
+          margin-left: 260px !important;
+          width: calc(100% - 260px) !important;
+          max-width: none !important;
+          padding: 2rem !important;
+          box-sizing: border-box !important;
+          display: block !important;
+   }
+
+   .dashboard-container {
+          width: 100% !important;
+          max-width: 1400px !important;
+          margin: 0 auto !important;
+   }
+
+   .stats-grid {
+          display: grid !important;
+          grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)) !important;
+          gap: 1.5rem !important;
+          width: 100% !important;
+   }
+
+   @media (max-width: 768px) {
+          .main-content {
+                     margin-left: 0 !important;
+                     width: 100% !important;
+                     padding: 1rem !important;
+          }
+          .sidebar {
+                     transform: translateX(-100%);
+          }
+          .sidebar.active {
+                     transform: translateX(0);
+          }
+   }
+   
     flex-direction: column;
     gap: 4px;
 }
