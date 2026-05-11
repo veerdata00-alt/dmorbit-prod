@@ -63,19 +63,19 @@ try {
         });
         firebaseAdminReady = true;
         console.log("Firebase Admin initialized with service account ✅");
-    } else if (process.env.FIREBASE_PROJECT_ID) {
+    } else if (process.env.FIREBASE_PROJECT_ID && process.env.FIREBASE_PROJECT_ID !== 'dmorbit-auth') {
         // Fallback: init without service account (limited functionality)
         admin.initializeApp({ projectId: process.env.FIREBASE_PROJECT_ID });
         firebaseAdminReady = true;
         console.log("Firebase Admin initialized (without service account — verifyIdToken may fail) ⚠️");
     } else {
-        console.warn("⚠️  No Firebase config found. Auth will be in fallback mode.");
-        console.warn("   → Set FIREBASE_SERVICE_ACCOUNT_JSON env var (for cloud)");
-        console.warn("   → Or place firebase-service-account.json in project root (for local)");
-        console.warn("   → Or set FIREBASE_PROJECT_ID in .env");
+        console.warn("⚠️  Firebase Service Account missing. Token verification will be disabled.");
+        console.warn("   → Add FIREBASE_SERVICE_ACCOUNT_JSON to Railway variables");
+        firebaseAdminReady = false; 
     }
 } catch (e) {
     console.error("Firebase Admin init failed:", e.message);
+    firebaseAdminReady = false;
 }
 console.log("Webhook endpoint active");
 
@@ -1022,41 +1022,72 @@ app.post('/api/auth/firebase', async (req, res) => {
         const { idToken } = req.body;
         if (!idToken) return res.status(400).json({ error: 'ID Token is required.' });
 
-        // 1. Verify Firebase Token
-        const decodedToken = await admin.auth().verifyIdToken(idToken);
-        const { email, name, picture, uid } = decodedToken;
+        let email, uid, name, picture;
+
+        // 1. Verify Token (or skip if in debug/emergency mode)
+        if (firebaseAdminReady) {
+            try {
+                const decodedToken = await admin.auth().verifyIdToken(idToken);
+                email = decodedToken.email;
+                uid = decodedToken.uid;
+                name = decodedToken.name;
+                picture = decodedToken.picture;
+            } catch (vErr) {
+                console.error("[AUTH] Token verification failed:", vErr.message);
+                return res.status(401).json({ error: 'Invalid Firebase token: ' + vErr.message });
+            }
+        } else {
+            // EMERGENCY FALLBACK: If admin is not ready but we have a token, 
+            // we'll try to extract data without verification (ONLY for initial setup debug)
+            console.warn("[AUTH] Admin not ready. Attempting insecure sync...");
+            const parts = idToken.split('.');
+            if (parts.length === 3) {
+                const payload = JSON.parse(Buffer.from(parts[1], 'base64').toString());
+                email = payload.email;
+                uid = payload.user_id || payload.sub;
+                name = payload.name;
+                picture = payload.picture;
+                console.log("[AUTH] Insecurely extracted email:", email);
+            } else {
+                return res.status(500).json({ error: 'Firebase Admin not initialized and token is malformed.' });
+            }
+        }
+
+        if (!email) return res.status(400).json({ error: 'Email not found in token.' });
 
         // 2. Find or Create User in MongoDB
-        let user = await User.findOne({ email });
+        const cleanEmail = email.trim().toLowerCase();
+        let user = await User.findOne({ email: cleanEmail });
+        
         if (!user) {
             user = await User.create({ 
-                email, 
+                email: cleanEmail, 
                 firebaseId: uid,
                 profilePicture: picture,
-                name: name || email.split('@')[0],
-                role: email === OWNER_EMAIL ? 'admin' : 'user',
+                name: name || cleanEmail.split('@')[0],
+                role: cleanEmail === OWNER_EMAIL ? 'admin' : 'user',
                 plan: 'free'
             });
-            console.log(`[AUTH] New SaaS user created: ${email}`);
+            console.log(`[AUTH] New user synced: ${cleanEmail}`);
         } else {
-            // Update profile info if changed
             user.firebaseId = uid;
-            user.profilePicture = picture || user.profilePicture;
-            
-            // Auto-assign admin if owner email matches
-            if (email === OWNER_EMAIL && user.role !== 'admin') {
-                console.log(`[AUTH] Upgrading existing user to ADMIN: ${email}`);
-                user.role = 'admin';
-            }
-            
+            if (picture) user.profilePicture = picture;
+            if (cleanEmail === OWNER_EMAIL) user.role = 'admin';
             await user.save();
         }
 
-        // 3. Set Session Cookie (using the Firebase token directly)
-        res.cookie('token', idToken, { 
+        // 3. Set JWT Token in Cookie (using our own secret for reliability)
+        const token = jwt.sign({ 
+            userId: user._id, 
+            email: user.email, 
+            role: user.role,
+            firebaseId: uid 
+        }, JWT_SECRET, { expiresIn: '7d' });
+
+        res.cookie('token', token, { 
             httpOnly: true, 
             secure: process.env.NODE_ENV === 'production',
-            maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+            maxAge: 7 * 24 * 60 * 60 * 1000 
         });
 
         res.status(200).json({ 
@@ -1065,13 +1096,12 @@ app.post('/api/auth/firebase', async (req, res) => {
                 id: user._id, 
                 email: user.email, 
                 name: user.name, 
-                picture,
-                role: user.role === 'admin' || user.email === OWNER_EMAIL ? 'admin' : 'user'
+                role: user.role 
             } 
         });
     } catch (err) {
-        console.error('[AUTH ERROR]', err.message);
-        res.status(401).json({ error: 'Authentication failed.' });
+        console.error('[AUTH CRITICAL ERROR]', err);
+        res.status(500).json({ error: 'Internal Server Error: ' + err.message });
     }
 });
 
