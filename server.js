@@ -1309,7 +1309,19 @@ app.get('/auth/callback', async (req, res) => {
         });
 
         const pages = pagesRes.data.data;
-        if (pages.length === 0) return res.status(400).send("No Facebook pages found.");
+        if (pages.length === 0) {
+            let debugInfo = "No Facebook pages found.\\n\\n";
+            try {
+                const permRes = await axios.get(`https://graph.facebook.com/v19.0/me/permissions`, {
+                    params: { access_token: userAccessToken }
+                });
+                debugInfo += "Permissions granted:\\n" + JSON.stringify(permRes.data, null, 2);
+            } catch (err) {
+                debugInfo += "Failed to fetch permissions.\\n";
+            }
+            debugInfo += "\\n\\nPages Response:\\n" + JSON.stringify(pagesRes.data, null, 2);
+            return res.status(400).send(`<pre>${debugInfo}</pre>`);
+        }
 
         const firstPage = pages[0]; // Simplified: take first page
         const pageId = firstPage.id;
