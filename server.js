@@ -1265,7 +1265,9 @@ app.get('/api/me', authenticateToken, (req, res) => {
 
 app.get('/auth/instagram', authenticateToken, (req, res) => {
     const FB_APP_ID = process.env.FB_APP_ID;
-    const REDIRECT_URI = `${req.protocol}://${req.get('host')}/auth/callback`;
+    const host = req.get('host');
+    const protocol = host.includes('localhost') ? 'http' : 'https';
+    const REDIRECT_URI = `${protocol}://${host}/auth/callback`;
     const SCOPE = "instagram_basic,instagram_manage_messages,instagram_manage_comments,pages_show_list,pages_manage_metadata";
     
     // Pass the userId in the state to link the account correctly in the callback
@@ -1284,7 +1286,9 @@ app.get('/auth/callback', async (req, res) => {
     try {
         const FB_APP_ID = process.env.FB_APP_ID;
         const FB_APP_SECRET = process.env.FB_APP_SECRET;
-        const REDIRECT_URI = `${req.protocol}://${req.get('host')}/auth/callback`;
+        const host = req.get('host');
+        const protocol = host.includes('localhost') ? 'http' : 'https';
+        const REDIRECT_URI = `${protocol}://${host}/auth/callback`;
 
         // 1. Exchange code for Short-Lived User Access Token
         const tokenRes = await axios.get(`https://graph.facebook.com/v19.0/oauth/access_token`, {
