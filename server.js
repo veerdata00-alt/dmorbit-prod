@@ -1268,7 +1268,7 @@ app.get('/auth/instagram', authenticateToken, (req, res) => {
     const host = req.get('host');
     const protocol = host.includes('localhost') ? 'http' : 'https';
     const REDIRECT_URI = `${protocol}://${host}/auth/callback`;
-    const SCOPE = "instagram_basic,instagram_manage_messages,instagram_manage_comments,pages_show_list,pages_manage_metadata";
+    const SCOPE = "instagram_basic,instagram_manage_messages,instagram_manage_comments,pages_show_list,pages_manage_metadata,pages_read_engagement,business_management";
     
     // Pass the userId in the state to link the account correctly in the callback
     const state = req.user.userId;
