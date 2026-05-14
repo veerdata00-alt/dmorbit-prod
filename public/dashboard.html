@@ -1,1 +1,37 @@
-<!DOCTYPE html> <html lang="en"> <head> <meta charset="UTF-8"> <meta name="viewport" content="width=device-width, initial-scale=1.0"> <title>Dashboard - DMOrbit</title> <link rel="stylesheet" href="dashboard.css"> <link rel="stylesheet" href="3d-effects.css"> <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"> <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script> </head> <body> <div class="dashboard-container"> <aside class="sidebar"> <div class="logo">DMOrbit</div> <nav> <ul> <li class="active"><a href="#">Dashboard</a></li> <li><a href="#">Automation</a></li> <li><a href="#">Analytics</a></li> <li><a href="#">Settings</a></li> </ul> </nav> <div class="user-profile"> <div id="user-name">Loading...</div> <button id="logout-btn" class="btn-text">Logout</button> </div> </aside> <main class="main-content"> <header> <h1>Command Center</h1> <div class="stats-grid"> <div class="stat-card glass-panel"> <h4>Total Interactions</h4> <div class="stat-value">1,284</div> <div class="stat-change">+12%</div> </div> <div class="stat-card glass-panel"> <h4>Active Workflows</h4> <div class="stat-value">5</div> <div class="stat-change">Stable</div> </div> </div> </header> <section class="automation-panel glass-panel"> <h3>Create New Workflow</h3> <form id="workflow-form"> <div class=""form-group"> <label>Keyword</label> <input type="text" id="keyword" placeholder="e.g. 'Price'"> </div> <div class="form-group"> <label>Reply Message</label> <textarea id="reply" placeholder="Type your automated reply..."></textarea> </div> <button type="submit" class="btn-primary">Activate Workflow</button> </form> </section> <section class="active-workflows"> <h3>Live Monitoring</h3> <div id="workflow-list"></div> </section> </main> </div> <script src="3d-effects.js"></script> <script src="dashboard.js"></script> </body> </html></label>
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DMOrbit - Dashboard</title>
+  <link rel="stylesheet" href="dashboard.css">
+  <link rel="stylesheet" href="3d-effects.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="3d-effects.js" defer></script>
+  </head>
+<body>
+  <div class="dashboard-container">
+    <header>
+      <h2>Dashboard Overview</h2>
+    <button id="logout-btn">Logout</button>button>
+    </header>
+  <section class="stats">
+  <div class="stat-card">
+  <h3>Total Comments</h3>
+  <p>1,234</p>
+  </div>div>
+  <div class="stat-card">
+  <h3>Leads Generated</h3>
+  <p>567</p>
+  </div>div>
+  </section>section>
+  </div>div>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+const firebaseConfig = { apiKey: "AIzaSyAs-demo" };
+const app = initializeApp(firebaseConfig);
+</script>
+</body>
+</htmlheader>
+</body></title>
+  </head>
