@@ -1,35 +1,86 @@
-<!DOCTYPE html>
+<plaintext>
+  <!DOCTYPE html>
 <html lang="en">
   <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DMOrbit - Dashboard</title>
-  <link rel="stylesheet" href="dashboard.css">
-  <link rel="stylesheet" href="3d-effects.css">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-  <script src="3d-effects.js" defer></script>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>DMOrbit - Dashboard</title>
+      <link rel="stylesheet" href="dashboard.css">
+      <link rel="stylesheet" href="3d-effects.css">
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+      <script src="3d-effects.js" defer></script>
   </head>
 <body>
-  <div class="dashboard-container">
-    <header>
-      <h2>Dashboard Overview</h2>
-    <button id="logout-btn">Logout</button>button>
-    </header>
-  <section class="stats">
-  <div class="stat-card">
-  <h3>Total Comments</h3>
-  <p>1,234</p>
-  </div>div>
-  <div class="stat-card">
-  <h3>Leads Generated</h3>
-  <p>567</p>
-  </div>div>
-  </section>section>
-  </div>div>
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-const firebaseConfig = { apiKey: "AIzaSyAs-demo" };
-const app = initializeApp(firebaseConfig);
-</script>
-</body>
-<
+      <div class="app-container">
+                <!-- Sidebar -->
+                <aside class="sidebar" id="sidebar">
+                              <div class="sidebar-logo">
+                                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                                      <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="#4F46E5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                                                      <path d="M2 17L12 22L22 17" stroke="#4F46E5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                                                      <path d="M2 12L12 17L22 12" stroke="#4F46E5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                                </svg>svg>
+                                                DMOrbit
+                              </div>div>
+
+                              <nav class="sidebar-nav">
+                                                <div class="nav-section">Workspace</div>div>
+                                                <a href="#" class="nav-item active" data-page="overview">
+                                                                      <span class="nav-icon">&#128202;</span>span>
+                                                                      <span>Overview</span>
+                                                </a>a>
+                                              <a href="#" class="nav-item" data-page="automations">
+                                                                  <span class="nav-icon">&#9889;</span>
+                                                                  <span>Automations</span>
+                                              </a>a>
+                                              <a href="#" class="nav-item" data-page="templates">
+                                                                  <span class="nav-icon">&#128193;</span>
+                                                                  <span>Templates</span>
+                                              </a>a>
+                                              <a href="#" class="nav-item" data-page="logs">
+                                                                  <span class="nav-icon">&#128229;</span>
+                                                                  <span>Activity Log</span>
+                                              </a>a>
+                              
+                                              <div class="nav-section">Settings</div>div>
+                                              <a href="#" class="nav-item" data-page="account">
+                                                                  <span class="nav-icon">&#128241;</span>
+                                                                  <span>Instagram Account</span>
+                                              </a>a>
+                                              <a href="#" class="nav-item">
+                                                                  <span class="nav-icon">&#128179;</span>
+                                                                  <span>Billing & Plan</span>
+                                              </a>a>
+                              </nav>nav>
+                
+                            <div class="sidebar-footer">
+                                            <div class="user-menu" id="user-menu-btn">
+                                                                <div class="user-avatar" id="user-avatar">U</div>div>
+                                                                <div class="user-info">
+                                                                                        <div class="user-name" id="sidebar-user-name">Loading...</div>div>
+                                                                                        <div class="user-plan" id="sidebar-user-plan">Free Plan</div>div>
+                                                                </div>div>
+                                            </div>div>
+                            </div>div>
+                </aside>aside>
+      
+              <!-- Main Content -->
+              <main class="main-content">
+                          <!-- Topbar -->
+                          <header class="topbar">
+                                          <div class="topbar-left">
+                                                              <button class="menu-toggle" id="menu-toggle">&#9776;</button>button>
+                                                              <div class="workspace-badge">
+                                                                                      <span class="dot" id="topbar-status-dot"></span>
+                                                                                      <span id="topbar-workspace-name">My Workspace</span>
+                                                              </div>div>
+                                          </div>div>
+                                          <div class="topbar-right">
+                                                              <a href="mailto:support@dmorbit.app" class="btn btn-ghost btn-sm">Help</a>a>
+                                                              <button class="btn btn-ghost btn-sm" id="logout-btn">Sign Out</button>button>
+                                          </div>div>
+                          </header>header>
+              </span></span>
+</body></title>
+  </head>
+</plaintext>
