@@ -219,16 +219,14 @@
         // UI Handlers
         document.getElementById('open-auth').addEventListener('click', () => overlay.classList.add('visible'));
         document.getElementById('hero-get-started').addEventListener('click', () => overlay.classList.add('visible'));
-        document.getElementById('close-auth').addEventListener('click', () => overlay.classList.remove('visible'));
-
-        function s        function showAuthError(msg) {
-            if (msg.includes('auth/unauthorized-domain')) {
-                errorEl.innerHTML = `<strong>Setup Required:</strong> Add this domain to Firebase Console.<br><small>Domain: ${window.location.hostname}</small>`;
-} else {
-                errorEl.textContent = msg;
-}
-            errorEl.classList.remove('hidden');
-}
-    </script>
-</body>
-</html>
+        document.getElement        function showAuthError(msg) {
+                      if (msg.includes('auth/unauthorized-domain')) {
+                                        errorEl.innerHTML = `<strong>Setup Required:</strong> Add this domain to Firebase Console.<br><small>Domain: ${window.location.hostname}</small>`;
+                      } else {
+                                        errorEl.textContent = msg;
+                      }
+                      errorEl.classList.remove('hidden');
+        }
+</script>
+  </body>body>
+  </html>html>
