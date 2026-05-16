@@ -1,67 +1,366 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>DMOrbit - Dashboard</title>
-      <link rel="stylesheet" href="dashboard.css">
-  </head>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DMOrbit — Dashboard</title>
+    <link rel="stylesheet" href="dashboard.css">
+</head>
 <body>
-      <div class="app-container">
-                <aside class="sidebar" id="sidebar">
-                              <div class="sidebar-logo">DMOrbit</div>div>
-                              <nav class="sidebar-nav">
-                                                <a href="#" class="nav-item active" data-page="overview">Overview</a>a>
-                                                <a href="#" class="nav-item" data-page="automations">Automations</a>a>
-                                                <a href="#" class="nav-item" data-page="logs">Logs</a>a>
-                                                <a href="#" class="nav-item" data-page="account">Account</a>a>
-                              </nav>nav>
-                </aside>aside>
-                <main class="main-content">
-                              <header class="topbar">
-                                                <div id="topbar-workspace-name">My Workspace</div>div>
-                                                <button id="logout-btn">Sign Out</button>button>
-                              </header>header>
-                              <div class="page active" id="page-overview">
-                                                <h1>Welcome</h1>
-                                              <button id="open-wizard-btn">+ Create Automation</button>button>
-                                              <div id="stat-automations">0</div>div>
-                                              <div id="stat-comments">0</div>div>
-                                              <div id="stat-dms">0</div>div>
-                                              <div id="overview-content-area"></div>div>
-                                              <div id="ig-connection-card"></div>div>
-                              </div>div>
-                            <div class="page" id="page-automations" style="display:none">
-                                            <h2>Automations</h2>
-                                            <div id="automations-list"></div>div>
-                            </div>div>
-                            <div class="page" id="page-logs" style="display:none">
-                                            <h2>Logs</h2>
-                                            <div id="logs-timeline"></div>div>
-                            </div>div>
-                            <div class="page" id="page-account" style="display:none">
-                                            <h2>Account</h2>
-                                            <div id="account-status-content"></div>div>
-                            </div>div>
-                </main>main>
-      </div>div>
-    <div id="wizard-modal" class="wizard-overlay" style="display:none">
-            <div class="wizard-modal">
-                        <button id="close-wizard">Close</button>button>
-                        <div id="wizard-step-1">
-                                        <div class="radio-card selected" data-goal="link">Link</div>div>
-                                        <button id="wiz-next">Next</button>button>
-                        </div>div>
-                        <div id="wizard-step-2" style="display:none">
-                                        <input id="wiz-name"><input id="wiz-keywords">
-                                        <button id="wiz-back">Back</button>button>
-                        </div>div>
-                        <div id="wizard-step-3" style="display:none"><textarea id="wiz-dm"></textarea></div>div>
-                        <div id="wizard-step-4" style="display:none"><div id="review-name"></div>div></div>div>
-            </div>div>
-    </div>div>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-logo">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="#4F46E5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M2 17L12 22L22 17" stroke="#4F46E5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M2 12L12 17L22 12" stroke="#4F46E5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                DMOrbit
+            </div>
+            
+            <nav class="sidebar-nav">
+                <div class="nav-section">Workspace</div>
+                <a href="#" class="nav-item active" data-page="overview">
+                    <span class="nav-icon">📊</span>
+                    <span>Overview</span>
+                </a>
+                <a href="#" class="nav-item" data-page="automations">
+                    <span class="nav-icon">⚡</span>
+                    <span>Automations</span>
+                </a>
+                <a href="#" class="nav-item" data-page="templates">
+                    <span class="nav-icon">📁</span>
+                    <span>Templates</span>
+                </a>
+                <a href="#" class="nav-item" data-page="logs">
+                    <span class="nav-icon">📥</span>
+                    <span>Activity Log</span>
+                </a>
+
+                <div class="nav-section">Settings</div>
+                <a href="#" class="nav-item" data-page="account">
+                    <span class="nav-icon">📱</span>
+                    <span>Instagram Account</span>
+                </a>
+                <a href="#" class="nav-item">
+                    <span class="nav-icon">💳</span>
+                    <span>Billing & Plan</span>
+                </a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="user-menu" id="user-menu-btn">
+                    <div class="user-avatar" id="user-avatar">U</div>
+                    <div class="user-info">
+                        <div class="user-name" id="sidebar-user-name">Loading...</div>
+                        <div class="user-plan" id="sidebar-user-plan">Free Plan</div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Topbar -->
+            <header class="topbar">
+                <div class="topbar-left">
+                    <button class="menu-toggle" id="menu-toggle">☰</button>
+                    <div class="workspace-badge">
+                        <span class="dot" id="topbar-status-dot"></span>
+                        <span id="topbar-workspace-name">My Workspace</span>
+                    </div>
+                </div>
+                <div class="topbar-right">
+                    <a href="mailto:support@dmorbit.app" class="btn btn-ghost btn-sm">Help</a>
+                    <button class="btn btn-ghost btn-sm" id="logout-btn">Sign Out</button>
+                </div>
+            </header>
+
+            <!-- OVERVIEW PAGE -->
+            <div class="page active" id="page-overview">
+                
+                <!-- Hero Section -->
+                <div class="hero-section">
+                    <div class="hero-content">
+                        <h1 id="hero-greeting">Welcome back 👋</h1>
+                        <p>Your automations are ready to capture leads and engage your audience.</p>
+                    </div>
+                    <button class="btn btn-primary btn-lg" id="open-wizard-btn">+ Create Automation</button>
+                </div>
+
+                <!-- Instagram Connection Card -->
+                <div class="ig-connection-card" id="ig-connection-card">
+                    <div class="ig-profile">
+                        <div class="ig-avatar">📱</div>
+                        <div class="ig-details">
+                            <h3>Instagram Disconnected</h3>
+                            <div class="ig-status-badge disconnected">
+                                <span class="dot"></span> Action Required
+                            </div>
+                        </div>
+                    </div>
+                    <a href="/auth/instagram" class="btn btn-secondary">Connect Instagram</a>
+                </div>
+
+                <!-- Quick Stats -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-label">Active Automations</div>
+                        <div class="stat-value" id="stat-automations">0</div>
+                        <div class="stat-trend neutral">Ready to launch</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Comments Captured</div>
+                        <div class="stat-value" id="stat-comments">0</div>
+                        <div class="stat-trend neutral">This week</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">DMs Sent</div>
+                        <div class="stat-value" id="stat-dms">0</div>
+                        <div class="stat-trend neutral">This week</div>
+                    </div>
+                </div>
+
+                <!-- Empty State / Templates -->
+                <div id="overview-content-area">
+                    <h3 style="margin-bottom: 16px;">Start with a Template</h3>
+                    <div class="templates-grid">
+                        <div class="template-card" onclick="openWizard('Lead Magnet')">
+                            <div class="template-icon">🎁</div>
+                            <div class="template-title">Lead Magnet Delivery</div>
+                            <div class="template-desc">Send a PDF or link when they comment a specific word.</div>
+                        </div>
+                        <div class="template-card" onclick="openWizard('Webinar Registration')">
+                            <div class="template-icon">🎫</div>
+                            <div class="template-title">Webinar Registration</div>
+                            <div class="template-desc">Capture attendees directly from your reel comments.</div>
+                        </div>
+                        <div class="template-card" onclick="openWizard('Link in DM')">
+                            <div class="template-icon">🔗</div>
+                            <div class="template-title">Link in DM (Simple)</div>
+                            <div class="template-desc">Send a direct product link to boost conversions.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- AUTOMATIONS PAGE -->
+            <div class="page" id="page-automations">
+                <div class="hero-section">
+                    <div class="hero-content">
+                        <h2>Your Automations</h2>
+                        <p>Manage your active DM flows and triggers.</p>
+                    </div>
+                    <button class="btn btn-primary" onclick="document.getElementById('open-wizard-btn').click()">+ Create Automation</button>
+                </div>
+                <div id="automations-list" class="data-list">
+                    <div class="empty-state">
+                        <div class="empty-icon">⚡</div>
+                        <div class="empty-title">No automations yet</div>
+                        <div class="empty-desc">Create your first automation to start replying to comments instantly.</div>
+                        <button class="btn btn-secondary" onclick="document.getElementById('open-wizard-btn').click()">Create Now</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- LOGS PAGE -->
+            <div class="page" id="page-logs">
+                <div class="hero-section">
+                    <div class="hero-content">
+                        <h2>Activity Log</h2>
+                        <p>Recent DMs sent and comments captured.</p>
+                    </div>
+                    <button class="btn btn-secondary btn-sm" id="refresh-logs">↻ Refresh</button>
+                </div>
+                <div class="card">
+                    <div class="timeline" id="logs-timeline">
+                        <div class="empty-state">
+                            <div class="empty-icon">📝</div>
+                            <div class="empty-title">No activity yet</div>
+                            <div class="empty-desc">When your automations trigger, the history will appear here.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ACCOUNT PAGE -->
+            <div class="page" id="page-account">
+                <div class="hero-section">
+                    <div class="hero-content">
+                        <h2>Instagram Account</h2>
+                        <p>Manage your Meta API connection and permissions.</p>
+                    </div>
+                </div>
+                <div class="card card-elevated" style="max-width: 600px; margin-bottom: 24px;">
+                    <h3 style="margin-bottom: 16px;">Connection Health</h3>
+                    <div id="account-status-content">
+                        <div class="empty-state">Loading...</div>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- GUIDED WIZARD MODAL (CREATION FLOW) -->
+    <div class="wizard-overlay" id="wizard-modal">
+        <div class="wizard-modal">
+            <div class="wizard-header">
+                <div class="wizard-steps">
+                    <div class="w-step active" id="step-1-nav"><div class="w-step-num">1</div> Goal</div>
+                    <div class="w-step" id="step-2-nav"><div class="w-step-num">2</div> Trigger</div>
+                    <div class="w-step" id="step-3-nav"><div class="w-step-num">3</div> Message</div>
+                    <div class="w-step" id="step-4-nav"><div class="w-step-num">4</div> Review</div>
+                </div>
+                <button class="modal-close" id="close-wizard">✕</button>
+            </div>
+            
+            <div class="wizard-body">
+                <div class="wizard-content">
+                    
+                    <!-- STEP 1: GOAL -->
+                    <div class="wizard-step-pane" id="wizard-step-1">
+                        <h2 style="margin-bottom: 8px;">What is your goal?</h2>
+                        <p class="text-muted" style="margin-bottom: 24px;">Choose an objective for this automation.</p>
+                        
+                        <div class="radio-cards">
+                            <div class="radio-card selected" data-goal="link">
+                                <div class="radio-card-title">🔗 Send a Link</div>
+                                <div class="radio-card-desc">Deliver a product or website link via DM.</div>
+                            </div>
+                            <div class="radio-card" data-goal="lead">
+                                <div class="radio-card-title">🎁 Lead Magnet</div>
+                                <div class="radio-card-desc">Send a free PDF or resource to capture emails.</div>
+                            </div>
+                            <div class="radio-card" data-goal="coupon">
+                                <div class="radio-card-title">🎫 Send Coupon</div>
+                                <div class="radio-card-desc">Give a discount code to commenters.</div>
+                            </div>
+                            <div class="radio-card" data-goal="custom">
+                                <div class="radio-card-title">💬 Custom Reply</div>
+                                <div class="radio-card-desc">Just start a conversation in the DMs.</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- STEP 2: TRIGGER -->
+                    <div class="wizard-step-pane" id="wizard-step-2" style="display: none;">
+                        <h2 style="margin-bottom: 8px;">When should this trigger?</h2>
+                        <p class="text-muted" style="margin-bottom: 24px;">Define what the user needs to comment.</p>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Name this automation</label>
+                            <input type="text" id="wiz-name" class="form-input" placeholder="e.g. Summer Sale Link">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">User comments a specific keyword</label>
+                            <input type="text" id="wiz-keywords" class="form-input" placeholder="e.g. LINK, PRICE, PDF">
+                            <div class="form-hint">Users who comment this word will receive the DM.</div>
+                        </div>
+
+                        <div class="form-group" style="margin-top: 32px;">
+                            <label class="form-label">Where should we listen for comments?</label>
+                            <select id="wiz-target" class="form-input">
+                                <option value="global">Any Post or Reel (Recommended)</option>
+                                <option value="specific">A Specific Post</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- STEP 3: MESSAGE -->
+                    <div class="wizard-step-pane" id="wizard-step-3" style="display: none;">
+                        <h2 style="margin-bottom: 8px;">Customize the DM</h2>
+                        <p class="text-muted" style="margin-bottom: 24px;">Type the message they will receive in their inbox.</p>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Direct Message</label>
+                            <textarea id="wiz-dm" class="form-textarea" placeholder="Hey! Here is the link you requested: https://..."></textarea>
+                            <div class="form-hint">Keep it friendly and natural.</div>
+                        </div>
+                    </div>
+
+                    <!-- STEP 4: REVIEW -->
+                    <div class="wizard-step-pane" id="wizard-step-4" style="display: none;">
+                        <h2 style="margin-bottom: 8px;">Review & Publish</h2>
+                        <p class="text-muted" style="margin-bottom: 24px;">Make sure everything looks good before going live.</p>
+                        
+                        <div class="card card-elevated">
+                            <div style="margin-bottom: 12px;">
+                                <span class="text-muted text-sm">NAME</span><br>
+                                <strong id="review-name">Automation</strong>
+                            </div>
+                            <div style="margin-bottom: 12px;">
+                                <span class="text-muted text-sm">TRIGGER</span><br>
+                                Comments containing: <strong id="review-keywords">...</strong>
+                            </div>
+                            <div style="margin-bottom: 12px;">
+                                <span class="text-muted text-sm">TARGET</span><br>
+                                <strong id="review-target">Any Post</strong>
+                            </div>
+                            <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border);">
+                                <span class="text-muted text-sm" style="display:block; margin-bottom: 8px;">META COMPLIANCE</span>
+                                <div style="display: flex; gap: 8px; align-items: flex-start; font-size: 12px; color: var(--text-secondary);">
+                                    <span>🔒</span>
+                                    <span>This automation complies with Meta's 24-hour messaging window rule for comment-to-DM interactions.</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="wiz-msg" style="margin-top: 16px; color: var(--danger); font-size: 13px;"></div>
+                    </div>
+
+                </div>
+
+                <!-- Live Preview Sidebar -->
+                <div class="wizard-preview">
+                    <h4 style="margin-bottom: 16px; text-align: center; color: var(--text-muted);">Preview</h4>
+                    <div class="phone-preview">
+                        <div class="phone-header">Instagram Direct</div>
+                        <div class="phone-chat">
+                            <div class="chat-bubble received">
+                                <em>They commented on your post</em>
+                            </div>
+                            <div class="chat-bubble sent" id="preview-bubble">
+                                Hey! Here is the link you requested...
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="wizard-footer">
+                <button class="btn btn-ghost" id="wiz-back" style="visibility: hidden;">Back</button>
+                <button class="btn btn-primary" id="wiz-next">Next Step</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="wizard-overlay" id="browser-portal-modal" style="display: none; z-index: 9999;">
+        <div class="wizard-modal" style="max-width: 900px;">
+            <div class="wizard-header">
+                <div>
+                    <h3 style="margin: 0; display: flex; align-items: center; gap: 8px;">
+                        <span class="dot" style="background: #10B981; animation: pulse 2s infinite;"></span>
+                        Instagram Direct Connect
+                    </h3>
+                    <p style="margin: 4px 0 0; font-size: 13px; color: var(--text-muted);">
+                        <b>Secure Interface:</b> You are connecting via a secure engagement layer. DMOrbit does NOT store your password.
+                    </p>
+                </div>
+                <button class="modal-close" id="close-browser-portal">✕</button>
+            </div>
+            <div class="wizard-body" style="padding: 0; background: #000; position: relative;">
+                <div id="browser-loading" style="position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; background: rgba(0,0,0,0.8); z-index: 10;">
+                    <div style="font-size: 24px; margin-bottom: 16px;">🔄</div>
+                    <div>Establishing secure connection...</div>
+                </div>
+                <!-- Stream Image -->
+                <img id="browser-stream" style="width: 100%; height: auto; min-height: 500px; display: block; object-fit: contain; cursor: crosshair;" draggable="false">
+            </div>
+        </div>
+    </div>
+
     <script type="module" src="dashboard.js"></script>
 </body>
-</html>html></h2></h1>
-</body></title>
-  </head>
+</html>
