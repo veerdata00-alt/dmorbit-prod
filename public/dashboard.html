@@ -9,58 +9,59 @@
 <body>
       <div class="app-container">
                 <aside class="sidebar" id="sidebar">
-                              <div class="sidebar-logo">
-                                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                                                      <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="#4F46E5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                                                                      <path d="M2 17L12 22L22 17" stroke="#4F46E5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                                                                      <path d="M2 12L12 17L22 12" stroke="#4F46E5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                                                </svg>svg>
-                                                DMOrbit
-                              </div>div>
+                              <div class="sidebar-logo">DMOrbit</div>div>
                               <nav class="sidebar-nav">
-                                                <div class="nav-section">Workspace</div>div>
-                                                <a href="#" class="nav-item active" data-page="overview">
-                                                                      <span class="nav-icon">Chart</span>span>
-                                                                      <span>Overview</span>
-                                                </a>a>
-                                              <a href="#" class="nav-item" data-page="automations">
-                                                                  <span class="nav-icon">Zap</span>
-                                                                  <span>Automations</span>
-                                              </a>a>
-                                              <a href="#" class="nav-item" data-page="templates">
-                                                                  <span class="nav-icon">Folder</span>
-                                                                  <span>Templates</span>
-                                              </a>a>
-                                              <a href="#" class="nav-item" data-page="logs">
-                                                                  <span class="nav-icon">Log</span>
-                                                                  <span>Activity Log</span>
-                                              </a>a>
-                                              <div class="nav-section">Settings</div>div>
-                                              <a href="#" class="nav-item" data-page="account">
-                                                                  <span class="nav-icon">Phone</span>
-                                                                  <span>Instagram Account</span>
-                                              </a>a>
-                                              <a href="#" class="nav-item">
-                                                                  <span class="nav-icon">Card</span>
-                                                                  <span>Billing & Plan</span>
-                                              </a>a>
+                                                <a href="#" class="nav-item active" data-page="overview">Overview</a>a>
+                                                <a href="#" class="nav-item" data-page="automations">Automations</a>a>
+                                                <a href="#" class="nav-item" data-page="logs">Logs</a>a>
+                                                <a href="#" class="nav-item" data-page="account">Account</a>a>
                               </nav>nav>
-                            <div class="sidebar-footer">
-                                            <div class="user-menu" id="user-menu-btn">
-                                                                <div class="user-avatar" id="user-avatar">U</div>div>
-                                                                <div class="user-info">
-                                                                                        <div class="user-name" id="sidebar-user-name">Loading...</div>div>
-                                                                                        <div class="user-plan" id="sidebar-user-plan">Free Plan</div>div>
-                                                                </div>div>
-                                            </div>div>
-                            </div>div>
                 </aside>aside>
-              <main class="main-content">
-                          <header class="topbar">
-                                          <div class="topbar-left">
-                                                              <button class="menu-toggle" id="menu-toggle">Menu</button>button>
-                                                              <div class="workspace-badge">
-                                                                                      <span class="dot" id="topbar-status-dot"></span>
-                                                                                      </span></span>
+                <main class="main-content">
+                              <header class="topbar">
+                                                <div id="topbar-workspace-name">My Workspace</div>div>
+                                                <button id="logout-btn">Sign Out</button>button>
+                              </header>header>
+                              <div class="page active" id="page-overview">
+                                                <h1>Welcome</h1>
+                                              <button id="open-wizard-btn">+ Create Automation</button>button>
+                                              <div id="stat-automations">0</div>div>
+                                              <div id="stat-comments">0</div>div>
+                                              <div id="stat-dms">0</div>div>
+                                              <div id="overview-content-area"></div>div>
+                                              <div id="ig-connection-card"></div>div>
+                              </div>div>
+                            <div class="page" id="page-automations" style="display:none">
+                                            <h2>Automations</h2>
+                                            <div id="automations-list"></div>div>
+                            </div>div>
+                            <div class="page" id="page-logs" style="display:none">
+                                            <h2>Logs</h2>
+                                            <div id="logs-timeline"></div>div>
+                            </div>div>
+                            <div class="page" id="page-account" style="display:none">
+                                            <h2>Account</h2>
+                                            <div id="account-status-content"></div>div>
+                            </div>div>
+                </main>main>
+      </div>div>
+    <div id="wizard-modal" class="wizard-overlay" style="display:none">
+            <div class="wizard-modal">
+                        <button id="close-wizard">Close</button>button>
+                        <div id="wizard-step-1">
+                                        <div class="radio-card selected" data-goal="link">Link</div>div>
+                                        <button id="wiz-next">Next</button>button>
+                        </div>div>
+                        <div id="wizard-step-2" style="display:none">
+                                        <input id="wiz-name"><input id="wiz-keywords">
+                                        <button id="wiz-back">Back</button>button>
+                        </div>div>
+                        <div id="wizard-step-3" style="display:none"><textarea id="wiz-dm"></textarea></div>div>
+                        <div id="wizard-step-4" style="display:none"><div id="review-name"></div>div></div>div>
+            </div>div>
+    </div>div>
+    <script type="module" src="dashboard.js"></script>
+</body>
+</html>html></h2></h1>
 </body></title>
   </head>
