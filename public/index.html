@@ -1,1 +1,53 @@
 
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+        <meta charset="UTF-8">
+        <title>DMOrbit</title>
+      <link rel="stylesheet" href="style.css">
+  </head>
+<body>
+      <div class="landing-container">
+                <nav>
+                              <div class="logo">DMOrbit</div>div>
+                              <button class="btn-primary" id="open-auth">Sign In</button>button>
+                </nav>
+                <section class="hero">
+                              <h1>Automate Growth</h1>
+                            <button class="btn-primary" id="hero-get-started">Get Started</button>button>
+                </section>section>
+      </div>div>
+    <div class="auth-overlay" id="auth-overlay" style="display:none">
+            <div class="auth-card">
+                        <button id="close-auth">X</button>button>
+                        <h2>Welcome</h2>
+                        <form id="auth-form">
+                                        <input type="email" placeholder="Email" required>
+                                        <input type="password" placeholder="Password" required>
+                                        <button type="submit" class="btn-primary">Continue</button>button>
+                        </form>form>
+                        <button class="btn-google">Continue with Google</button>button>
+            </div>div>
+    </div>div>
+    <script>
+              const openAuth = document.getElementById('open-auth');
+              const heroGetStarted = document.getElementById('hero-get-started');
+              const closeAuth = document.getElementById('close-auth');
+              const overlay = document.getElementById('auth-overlay');
+              function showAuth() {
+                            overlay.style.display = 'block';
+                            setTimeout(() => overlay.classList.add('visible'), 10);
+              }
+              if(openAuth) openAuth.onclick = showAuth;
+              if(heroGetStarted) heroGetStarted.onclick = showAuth;
+              if(closeAuth) closeAuth.onclick = () => {
+                            overlay.classList.remove('visible');
+                            setTimeout(() => overlay.style.display = 'none', 300);
+              };
+                </script>
+</body>
+</html>html>
+    </script></h2></h1>
+                </nav>
+</body></title>
+  </head>
