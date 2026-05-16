@@ -1,12 +1,51 @@
 <!DOCTYPE html>
-<html>
-  <body>
-    <h1>Fix</h1>
-  <script>
-    console.log('test');
-  </script>
-  </body>
-</html>
-  </script></h1>
-  </body>
-</html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DMOrbit - Instagram Automation</title>
+  <link rel="stylesheet" href="style.css">
+  </head>
+<body>
+  <div class="landing-container">
+    <nav>
+      <div class="logo">DMOrbit</div>div>
+      <button class="btn-primary" id="open-auth">Sign In</button>button>
+    </nav>
+    <section class="hero">
+      <h1>Automate Growth</h1>
+    <button class="btn-primary" id="hero-get-started">Get Started</button>button>
+    </section>section>
+  </div>div>
+<div class="auth-overlay" id="auth-overlay" style="display:none">
+<div class="auth-card">
+<button id="close-auth">X</button>button>
+<h2>Welcome</h2>
+<div id="auth-error" class="auth-error hidden"></div>div>
+<button id="google-login">Google</button>button>
+<div class="email-form">
+<input type="email" id="email-input" placeholder="Email">
+<input type="password" id="password-input" placeholder="Password">
+<button id="email-submit">Sign In</button>button>
+</div>div>
+</div>div>
+</div>div>
+<script type="module">
+const overlay = document.getElementById('auth-overlay');
+const openBtns = [document.getElementById('open-auth'), document.getElementById('hero-get-started')];
+openBtns.forEach(btn => { if(btn) btn.onclick = () => overlay.style.display = 'block'; });
+document.getElementById('close-auth').onclick = () => overlay.style.display = 'none';
+document.getElementById('email-submit').onclick = async () => {
+  const email = document.getElementById('email-input').value;
+  const password = document.getElementById('password-input').value;
+  const res = await fetch('/api/login', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({email, password})
+  });
+  if (res.ok) window.location.reload();
+  else alert('Login failed');
+};
+</script>
+</body>
+</html
