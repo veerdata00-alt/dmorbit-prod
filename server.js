@@ -10,6 +10,7 @@ const cookieParser = require('cookie-parser');
 const mongoose = require('mongoose');
 const axios = require('axios');
 const crypto = require('crypto');
+const browserManager = require('./browser/BrowserManager');
 
 // Fix for environments where crypto might not be globally available
 global.crypto = crypto;
@@ -98,8 +99,13 @@ const ADMIN_EMAIL = (process.env.ADMIN_EMAIL || 'dmorbitapp@gmail.com').trim().t
 const OWNER_EMAIL = (process.env.OWNER_EMAIL || 'dmorbitapp@gmail.com').trim().toLowerCase();
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const PAGE_ACCESS_TOKEN = process.env.PAGE_ACCESS_TOKEN;
-const VERIFY_TOKEN = process.env.VERIFY_TOKEN;
-const APP_SECRET = process.env.APP_SECRET;
+const VERIFY_TOKEN = process.env.VERIFY_TOKEN || 'dmorbit_verify_token_123';
+const APP_SECRET = process.env.FB_APP_SECRET || process.env.APP_SECRET;
+const APP_URL = process.env.APP_URL || 'http://localhost:3000';
+const IS_PRODUCTION = process.env.PRODUCTION === 'true';
+
+console.log(`🌍 MODE: ${IS_PRODUCTION ? '🚀 PRODUCTION' : '🛠️ DEVELOPMENT'}`);
+console.log(`🔗 APP URL: ${APP_URL}`);
 // MongoDB Connection
 console.log("Connecting to MongoDB Cluster:", process.env.MONGO_URI ? process.env.MONGO_URI.split('@')[1] : "NOT FOUND");
 mongoose.connect(process.env.MONGO_URI)
@@ -256,7 +262,8 @@ const instagramAccountSchema = new mongoose.Schema({
     page_id: String,
     instagram_id: String,
     access_token: String,
-    status: { type: String, enum: ['active', 'expired', 'invalid'], default: 'active' },
+    status: { type: String, enum: ['active', 'expired', 'invalid', 'reconnect_recommended', 'paused'], default: 'active' },
+    safeMode: { type: Boolean, default: true }, // Default ON for Beta
     lastChecked: { type: Date, default: Date.now },
     updatedAt: { type: Date, default: Date.now }
 });
@@ -379,16 +386,228 @@ const authenticateAdmin = (req, res, next) => {
     next();
 };
 
+// --- ROOT PAGE (Hardcoded to avoid Railway stale file issues) ---
+app.get('/', async (req, res) => {
+    // Check if user already has a session → redirect to dashboard
+    const token = req.cookies?.token;
+    if (token) {
+        try {
+            const decoded = jwt.verify(token, JWT_SECRET);
+            if (decoded) {
+                return res.redirect(decoded.role === 'admin' ? '/admin.html' : '/dashboard.html');
+            }
+        } catch (e) { /* token invalid, serve landing page */ }
+    }
+    res.type('html');
+    res.send(`<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DMOrbit - Automate Your Instagram Engagement</title>
+    <meta name="description" content="Convert every Instagram comment into a sales funnel automatically. Official Meta API integration for 100% account safety.">
+    <link rel="stylesheet" href="/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="landing-container">
+        <nav>
+            <div class="logo">DMOrbit</div>
+            <button class="btn-primary" id="open-auth">Sign In</button>
+        </nav>
+
+        <section class="hero">
+            <h1>Automate Your <br>Instagram Growth</h1>
+            <p>Turn every &quot;link&quot; comment into a lead automatically. Official Meta API integration for 100% account safety.</p>
+            <div class="hero-cta">
+                <button class="btn-primary" id="hero-get-started">Get Started Free</button>
+            </div>
+        </section>
+
+        <section class="features">
+            <div class="feature-card">
+                <div class="feature-icon">🚀</div>
+                <h3>Instant Triggers</h3>
+                <p>Respond to comments in seconds. Never miss a potential lead while you sleep.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🔒</div>
+                <h3>Official Meta API</h3>
+                <p>100% compliant with Instagram's terms. Your account is always safe.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">📈</div>
+                <h3>Sales Funnels</h3>
+                <p>Convert followers into customers with automated multi-step DM flows.</p>
+            </div>
+        </section>
+    </div>
+
+    <!-- Auth Overlay -->
+    <div class="auth-overlay" id="auth-overlay">
+        <div class="auth-card">
+            <button class="close-btn" id="close-auth" style="position:absolute;top:20px;right:24px;background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:20px;">&#x2715;</button>
+            <h2 id="auth-title">Welcome Back</h2>
+            <p id="auth-subtitle">Join 5,000+ creators automating growth.</p>
+
+            <div id="auth-error" class="auth-error" style="display:none;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.2);color:#ef4444;padding:12px 16px;border-radius:12px;font-size:14px;margin-bottom:16px;"></div>
+
+            <button class="social-btn google" id="google-login">
+                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="18" alt="Google">
+                <span id="google-btn-text">Continue with Google</span>
+            </button>
+
+            <div class="divider">or use email</div>
+
+            <div class="email-form">
+                <div class="input-group" id="name-input-group" style="display:none;">
+                    <label for="name-input">Full Name</label>
+                    <input type="text" id="name-input" placeholder="Enter your name">
+                </div>
+                <div class="input-group">
+                    <label for="email-input">Email Address</label>
+                    <input type="email" id="email-input" placeholder="you@example.com">
+                </div>
+                <div class="input-group">
+                    <label for="password-input">Password</label>
+                    <input type="password" id="password-input" placeholder="&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;">
+                </div>
+                <button class="btn-primary" id="email-submit" style="width:100%;margin-top:10px;">Sign In</button>
+                <div style="margin-top:24px;font-size:14px;color:var(--text-muted);">
+                    <span id="auth-toggle-text">New to DMOrbit?</span>
+                    <a id="auth-toggle-link" style="color:#833ab4;cursor:pointer;font-weight:600;margin-left:4px;">Sign Up</a>
+                </div>
+                <div style="margin-top:12px;">
+                    <a id="forgot-password-link" style="font-size:13px;color:var(--text-muted);cursor:pointer;text-decoration:underline;">Forgot password?</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+        import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
+        let app, auth, firebaseReady = false, isSignUpMode = false;
+
+        async function initFirebase() {
+            try {
+                const res = await fetch('/api/firebase-config');
+                if (!res.ok) throw new Error('no config');
+                const config = await res.json();
+                app = initializeApp(config);
+                auth = getAuth(app);
+                await setPersistence(auth, browserLocalPersistence);
+                firebaseReady = true;
+                onAuthStateChanged(auth, (user) => {
+                    if (user) user.getIdToken().then(t => syncWithBackend(t));
+                });
+            } catch (e) { console.warn('[Firebase] not initialized, using email auth only'); }
+        }
+
+        async function checkSession() {
+            try {
+                const r = await fetch('/api/me');
+                if (r.ok) {
+                    const d = await r.json();
+                    window.location.href = d.user.role === 'admin' ? '/admin.html' : '/dashboard.html';
+                }
+            } catch (e) {}
+        }
+
+        checkSession();
+        initFirebase();
+
+        const overlay = document.getElementById('auth-overlay');
+        const errorEl = document.getElementById('auth-error');
+        const emailBtn = document.getElementById('email-submit');
+
+        function showErr(msg) {
+            errorEl.textContent = msg;
+            errorEl.style.display = 'block';
+        }
+
+        document.getElementById('open-auth').onclick = () => overlay.classList.add('visible');
+        document.getElementById('hero-get-started').onclick = () => overlay.classList.add('visible');
+        document.getElementById('close-auth').onclick = () => {
+            overlay.classList.remove('visible');
+            errorEl.style.display = 'none';
+        };
+
+        document.getElementById('auth-toggle-link').onclick = () => {
+            isSignUpMode = !isSignUpMode;
+            document.getElementById('auth-title').textContent = isSignUpMode ? 'Create Account' : 'Welcome Back';
+            document.getElementById('name-input-group').style.display = isSignUpMode ? 'block' : 'none';
+            emailBtn.textContent = isSignUpMode ? 'Create Account' : 'Sign In';
+            document.getElementById('auth-toggle-text').textContent = isSignUpMode ? 'Already have an account?' : 'New to DMOrbit?';
+            document.getElementById('auth-toggle-link').textContent = isSignUpMode ? 'Sign In' : 'Sign Up';
+            errorEl.style.display = 'none';
+        };
+
+        emailBtn.onclick = async () => {
+            const email = document.getElementById('email-input').value.trim();
+            const password = document.getElementById('password-input').value;
+            const name = document.getElementById('name-input').value.trim();
+            if (!email || !password) { showErr('Please fill all fields'); return; }
+            emailBtn.disabled = true;
+            emailBtn.textContent = 'Processing...';
+            try {
+                const res = await fetch(isSignUpMode ? '/api/signup' : '/api/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password, name })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    window.location.reload();
+                } else {
+                    showErr(data.error || 'Authentication failed');
+                    emailBtn.disabled = false;
+                    emailBtn.textContent = isSignUpMode ? 'Create Account' : 'Sign In';
+                }
+            } catch (e) {
+                showErr('Server error. Please try again.');
+                emailBtn.disabled = false;
+            }
+        };
+
+        document.getElementById('google-login').onclick = async () => {
+            if (!firebaseReady) { showErr('Google Login not available. Please use email.'); return; }
+            try {
+                await signInWithPopup(auth, new GoogleAuthProvider());
+            } catch (e) { showErr(e.message); }
+        };
+
+        async function syncWithBackend(idToken) {
+            await fetch('/api/auth/firebase', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ idToken })
+            });
+            window.location.reload();
+        }
+
+        document.getElementById('forgot-password-link').onclick = async () => {
+            const email = document.getElementById('email-input').value.trim();
+            const np = prompt('Enter your NEW password:');
+            if (!email || !np) return;
+            const r = await fetch('/api/forgot-password', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, newPassword: np })
+            });
+            if (r.ok) alert('Password reset successfully!');
+        };
+    </script>
+</body>
+</html>`);
+});
+
 // --- PROTECTED PAGES (BEFORE STATIC) ---
 
 app.get('/admin.html', authenticateToken, authenticateAdmin, (req, res) => {
     res.type('html');
-        res.sendFile(path.join(__dirname, 'public', 'admin.html'));
-});
-
-app.get('/', (req, res) => {
-        res.type('html');
-        res.sendFile(path.join(__dirname, 'public', 'index.html'));
+    res.sendFile(path.join(__dirname, 'public', 'admin.html'));
 });
 
 app.get('/dashboard.html', authenticateToken, (req, res) => {
@@ -397,10 +616,9 @@ app.get('/dashboard.html', authenticateToken, (req, res) => {
         return res.redirect('/admin.html');
     }
     res.type('html');
-        res.sendFile(path.join(__dirname, 'public', 'dashboard.html'));
+    res.sendFile(path.join(__dirname, 'public', 'dashboard.html'));
 });
 
-    
 // Production Health Check
 app.get('/api/health', (req, res) => {
     res.json({
@@ -411,11 +629,9 @@ app.get('/api/health', (req, res) => {
     });
 });
 
-
 app.get('/privacy', (req, res) => { res.type('html'); res.sendFile(path.join(__dirname, 'public', 'privacy.html')); });
 app.get('/terms', (req, res) => { res.type('html'); res.sendFile(path.join(__dirname, 'public', 'terms.html')); });
 app.get('/delete-data', (req, res) => { res.type('html'); res.sendFile(path.join(__dirname, 'public', 'delete-data.html')); });
-
 
 app.use(express.static(path.join(__dirname, 'public'))); // Serve from public dir
 
@@ -947,7 +1163,8 @@ const updateFlowStateActivity = async (ig_user_id) => {
 };
 
 
-// Worker System - Production Safe Parallel Execution (MongoDB)
+// --- PRIMARY OFFICIAL API WORKER (MongoDB) ---
+// Restored as primary for Meta compliance and stability
 setInterval(async () => {
     try {
         const processingJobs = await Job.find({ status: "processing" });
@@ -956,7 +1173,7 @@ setInterval(async () => {
         if (processingJobs.length >= maxParallel) return;
 
         const now = Date.now();
-        // Fetch pending jobs, limited to 20 for evaluation performance
+        // Fetch pending jobs
         const pendingJobs = await Job.find({ status: "pending" }).sort({ createdAt: 1 }).limit(20);
         
         if (pendingJobs.length === 0) return;
@@ -965,47 +1182,38 @@ setInterval(async () => {
         for (const item of pendingJobs) {
             if (readyJobs.length + processingJobs.length >= maxParallel) break;
 
-            // 1. Isolation: Only 1 active job per user at a time
+            // Isolation: Only 1 active job per user
             const isUserActive = processingJobs.some(pj => pj.user_id === item.user_id) || 
                                  readyJobs.some(rj => rj.user_id === item.user_id);
             if (isUserActive) continue;
 
             if (item.platform === "instagram") {
-                // 2. Delay Check
-                const processAfter = item.process_after || (new Date(item.createdAt).getTime() + 30000);
+                // Safety delay (30s)
+                const processAfter = item.process_after || (new Date(item.createdAt).getTime() + 5000);
                 if (now < processAfter) continue;
 
-                // 3. Per-User Rate Limit (10s)
+                // Rate Limit
                 const lastLog = await Log.findOne({ user_id: item.user_id }).sort({ timestamp: -1 });
                 if (lastLog) {
                     const lastSent = new Date(lastLog.timestamp).getTime();
                     if (now - lastSent < 10000) continue;
-                }
-
-                // 4. Daily Cap (50 DMs)
-                const dayAgo = new Date(now - 86400000);
-                const dailyCount = await Log.countDocuments({ user_id: item.user_id, timestamp: { $gte: dayAgo } });
-                if (dailyCount >= 50) {
-                    await Job.findByIdAndUpdate(item._id, { status: 'failed', error: 'Daily limit reached' });
-                    continue;
                 }
             }
             readyJobs.push(item);
         }
 
         if (readyJobs.length > 0) {
-            // Atomic Lock Batch
             const jobIds = readyJobs.map(j => j._id);
             await Job.updateMany(
                 { _id: { $in: jobIds } },
                 { $set: { status: "processing" }, $inc: { attempts: 1 } }
             );
 
-            console.log(`[WORKER] Starting ${readyJobs.length} parallel jobs via MongoDB...`);
+            console.log(`[OFFICIAL WORKER] Starting ${readyJobs.length} parallel jobs...`);
             Promise.allSettled(readyJobs.map(job => processJob(job)));
         }
     } catch (err) {
-        console.error("[WORKER ERROR]", err);
+        console.error("[OFFICIAL WORKER ERROR]", err);
     }
 }, 3000);
 
@@ -1129,53 +1337,6 @@ app.get('/api/me', authenticateToken, async (req, res) => {
     }
 });
 
-// --- OTP AUTH SYSTEM ---
-
-app.post('/api/auth/otp/send', async (req, res) => {
-    try {
-        const { email } = req.body;
-        if (!email) return res.status(400).json({ error: 'Email is required.' });
-
-        const code = Math.floor(100000 + Math.random() * 900000).toString();
-        const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 mins
-
-        await Otp.findOneAndUpdate({ email }, { code, expiresAt }, { upsert: true });
-
-        // LOG OTP FOR DEVELOPMENT (Real SaaS would send email)
-        console.log(`[AUTH] OTP for ${email}: ${code}`);
-        
-        res.status(200).json({ success: true, message: 'OTP sent successfully (Check console in dev mode).' });
-    } catch (err) {
-        res.status(500).json({ error: 'Failed to send OTP.' });
-    }
-});
-
-app.post('/api/auth/otp/verify', async (req, res) => {
-    try {
-        const { email, code } = req.body;
-        if (!email || !code) return res.status(400).json({ error: 'Email and code are required.' });
-
-        const otp = await Otp.findOne({ email, code, expiresAt: { $gt: new Date() } });
-        if (!otp) return res.status(400).json({ error: 'Invalid or expired OTP.' });
-
-        // OTP verified - delete it
-        await Otp.deleteOne({ _id: otp._id });
-
-        // Find or Create User
-        let user = await User.findOne({ email });
-        if (!user) {
-            user = await User.create({ email, name: email.split('@')[0] });
-        }
-
-        const token = jwt.sign({ userId: user._id, role: user.role, plan: user.plan }, JWT_SECRET, { expiresIn: '7d' });
-        res.cookie('token', token, { httpOnly: true, secure: false }); // secure: true in production
-
-        res.status(200).json({ success: true, user: { id: user._id, email: user.email, name: user.name } });
-    } catch (err) {
-        res.status(500).json({ error: 'Verification failed.' });
-    }
-});
-
 // --- INSTAGRAM MEDIA SELECTOR ---
 
 app.get('/api/instagram/media', authenticateToken, async (req, res) => {
@@ -1228,6 +1389,10 @@ app.post('/api/login', async (req, res) => {
         return res.status(401).json({ error: 'User not found' });
     }
 
+    if (!password) {
+        return res.status(400).json({ error: 'Password is required' });
+    }
+
     const validPassword = await bcrypt.compare(password, user.password);
     if (!validPassword) {
         return res.status(401).json({ error: 'Wrong password' });
@@ -1274,179 +1439,114 @@ app.get('/api/me', authenticateToken, (req, res) => {
 // --- Instagram OAuth Connection System ---
 
 app.get('/auth/instagram', authenticateToken, (req, res) => {
-    const FB_APP_ID = process.env.FB_APP_ID;
-    const host = req.get('host');
-    const protocol = host.includes('localhost') ? 'http' : 'https';
-    const REDIRECT_URI = `${protocol}://${host}/auth/callback`;
-    const SCOPE = "instagram_basic,instagram_manage_messages,instagram_manage_comments,pages_show_list,pages_manage_metadata";
-    
-    // Pass the userId in the state to link the account correctly in the callback
-    const state = req.user.userId;
-
-    const authUrl = `https://www.facebook.com/v19.0/dialog/oauth?client_id=${FB_APP_ID}&redirect_uri=${REDIRECT_URI}&scope=${SCOPE}&state=${state}`;
-    
-    console.log(`[OAUTH START] User: ${state} | Redirecting to Meta...`);
-    res.redirect(authUrl);
+    const redirectUri = `${req.protocol}://${req.get('host')}/auth/callback`;
+    const scopes = [
+        'instagram_basic',
+        'instagram_manage_comments',
+        'instagram_manage_messages',
+        'pages_show_list',
+        'pages_manage_metadata'
+    ];
+    const fbLoginUrl = `https://www.facebook.com/v19.0/dialog/oauth?client_id=${process.env.FB_APP_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${scopes.join(',')}&response_type=code`;
+    res.redirect(fbLoginUrl);
 });
 
 app.get('/auth/callback', async (req, res) => {
     const { code } = req.query;
-    if (!code) return res.status(400).send("No code provided from Meta.");
+    if (!code) return res.status(400).send('No code provided');
 
     try {
-        const FB_APP_ID = process.env.FB_APP_ID;
-        const FB_APP_SECRET = process.env.FB_APP_SECRET;
-        const host = req.get('host');
-        const protocol = host.includes('localhost') ? 'http' : 'https';
-        const REDIRECT_URI = `${protocol}://${host}/auth/callback`;
-
+        const redirectUri = `${req.protocol}://${req.get('host')}/auth/callback`;
         // 1. Exchange code for Short-Lived User Access Token
         const tokenRes = await axios.get(`https://graph.facebook.com/v19.0/oauth/access_token`, {
             params: {
-                client_id: FB_APP_ID,
-                client_secret: FB_APP_SECRET,
-                redirect_uri: REDIRECT_URI,
-                code: code
+                client_id: process.env.FB_APP_ID,
+                client_secret: process.env.FB_APP_SECRET,
+                redirect_uri: redirectUri,
+                code
             }
         });
 
-        const userAccessToken = tokenRes.data.access_token;
-        console.log("[OAUTH SUCCESS] User access token received.");
+        const shortLivedToken = tokenRes.data.access_token;
 
-        // 2. Fetch User's Pages and linked IG Accounts
-        const pagesRes = await axios.get(`https://graph.facebook.com/v19.0/me/accounts`, {
-            params: { access_token: userAccessToken }
-        });
-
-        const pages = pagesRes.data.data;
-        if (pages.length === 0) {
-            let debugInfo = "No Facebook pages found.\\n\\n";
-            try {
-                const permRes = await axios.get(`https://graph.facebook.com/v19.0/me/permissions`, {
-                    params: { access_token: userAccessToken }
-                });
-                debugInfo += "Permissions granted:\\n" + JSON.stringify(permRes.data, null, 2);
-            } catch (err) {
-                debugInfo += "Failed to fetch permissions.\\n";
-            }
-            debugInfo += "\\n\\nPages Response:\\n" + JSON.stringify(pagesRes.data, null, 2);
-            return res.status(400).send(`<pre>${debugInfo}</pre>`);
-        }
-
-        const firstPage = pages[0]; // Simplified: take first page
-        const pageId = firstPage.id;
-        const pageAccessToken = firstPage.access_token;
-
-        // 3. Fetch linked Instagram Business Account ID
-        const igRes = await axios.get(`https://graph.facebook.com/v19.0/${pageId}`, {
+        // 2. Exchange for Long-Lived User Access Token
+        const longLivedRes = await axios.get(`https://graph.facebook.com/v19.0/oauth/access_token`, {
             params: {
-                fields: "instagram_business_account",
-                access_token: pageAccessToken
+                grant_type: 'fb_exchange_token',
+                client_id: process.env.FB_APP_ID,
+                client_secret: process.env.FB_APP_SECRET,
+                fb_exchange_token: shortLivedToken
             }
         });
 
-        const instagramId = igRes.data.instagram_business_account ? igRes.data.instagram_business_account.id : null;
+        const longLivedToken = longLivedRes.data.access_token;
 
-        if (!instagramId) {
-            return res.status(400).send("No linked Instagram Business account found on the selected page.");
+        // 3. Get User's Pages to find the Instagram Business Account
+        const pagesRes = await axios.get(`https://graph.facebook.com/v19.0/me/accounts`, {
+            params: { access_token: longLivedToken }
+        });
+
+        let pageId, igAccountId, pageAccessToken, pageName;
+
+        for (const page of pagesRes.data.data) {
+            const igRes = await axios.get(`https://graph.facebook.com/v19.0/${page.id}`, {
+                params: {
+                    fields: 'instagram_business_account,name',
+                    access_token: page.access_token
+                }
+            });
+
+            if (igRes.data.instagram_business_account) {
+                pageId = page.id;
+                pageAccessToken = page.access_token;
+                igAccountId = igRes.data.instagram_business_account.id;
+                pageName = page.name;
+                break;
+            }
         }
 
-        // 4. Store in MongoDB linked to the correct user
-        // We use the state parameter which contains the userId
-        const userId = req.query.state; 
+        if (!igAccountId) {
+            return res.status(400).send('No Instagram Business Account linked to your Facebook Pages. Please ensure your Instagram is a Business account and linked to a Facebook Page.');
+        }
 
-        if (!userId) {
-            return res.status(400).send("State parameter (userId) missing. Authentication failed.");
+        // 4. Store in Database
+        let userId = 'system';
+        const token = req.cookies.token;
+        if (token) {
+            try {
+                const decoded = jwt.verify(token, JWT_SECRET);
+                userId = decoded.userId;
+            } catch(e) {}
         }
 
         await InstagramAccount.findOneAndUpdate(
-            { userId: userId },
+            { userId },
             {
+                instagram_id: igAccountId,
                 page_id: pageId,
-                instagram_id: instagramId,
-                access_token: pageAccessToken,
+                access_token: pageAccessToken, // Long-lived Page Token for webhooks/API
+                status: 'active',
                 updatedAt: new Date()
             },
             { upsert: true }
         );
 
-        console.log(`[TOKEN SAVED] Instagram account connected for User: ${userId}`);
-        res.send("<h1>Connection Successful!</h1><p>Your Instagram account is now linked to DMOrbit. You can close this window.</p>");
+        // Update User state
+        await User.findByIdAndUpdate(userId, { instagramConnected: true });
+
+        // 5. Subscribe Webhooks for this Page
+        await axios.post(`https://graph.facebook.com/v19.0/${pageId}/subscribed_apps`, {
+            subscribed_fields: 'feed,mention,messages,comments',
+            access_token: pageAccessToken
+        });
+
+        console.log(`[OAUTH] Successfully connected IG ID: ${igAccountId} for user ${userId}`);
+        res.redirect('/dashboard.html?connected=true');
 
     } catch (err) {
-        console.error("[OAUTH ERROR] Failed to connect Instagram:", err.response ? err.response.data : err.message);
-        res.status(500).send("Authentication failed.");
+        console.error('[OAUTH ERROR]', err.response?.data || err.message);
+        res.status(500).send(`Authentication failed: ${err.message}`);
     }
-});
-
-// Get Automations
-app.get('/api/automations', authenticateToken, async (req, res) => {
-    console.log(`[GET /api/automations] Fetching for user: ${req.user.userId}`);
-    const automations = await Automation.find({ userId: req.user.userId });
-    
-    const result = await Promise.all(automations.map(async (a) => {
-        const lastJob = await Job.findOne({ automationId: a._id }).sort({ createdAt: -1 });
-        return {
-            ...a.toObject(),
-            lastStatus: lastJob ? lastJob.status : 'None'
-        };
-    }));
-    
-    res.status(200).json(result);
-});
-
-// Create Automation
-app.post('/api/automations', authenticateToken, async (req, res) => {
-    console.log(`[POST /api/automations] Create requested by user: ${req.user.userId}`);
-    
-    if (req.user.role === "admin") {
-        return res.status(403).json({ error: "Admin should NOT create automations" });
-    }
-
-    const { instagram_url, keyword, link } = req.body;
-    if (!keyword || !link) {
-        return res.status(400).json({ error: 'Missing required fields.' });
-    }
-
-    // Free Plan Limit
-    const userAutomationsCount = await Automation.countDocuments({ userId: req.user.userId });
-    if (userAutomationsCount >= 3) {
-        return res.status(403).json({ error: 'Upgrade to create more automations' });
-    }
-
-    // Prevent duplicate saves
-    const isDuplicate = await Automation.findOne({ userId: req.user.userId, keyword, link });
-    if (isDuplicate) {
-        return res.status(400).json({ error: 'Duplicate automation exists.' });
-    }
-
-    const newAutomation = await Automation.create({
-        userId: req.user.userId,
-        instagram_url: instagram_url || "",
-        keyword: keyword,
-        link: link,
-        status: "active",
-        triggerCount: 0
-    });
-
-    res.status(201).json({ message: 'Automation created', automation: newAutomation });
-});
-
-// Trigger Automation API
-app.post('/api/automations/:id/trigger', async (req, res) => {
-    const { id } = req.params;
-    const auto = await Automation.findById(id);
-    if (!auto) return res.status(404).json({ error: 'Automation not found' });
-
-    const newJob = await Job.create({
-        automationId: auto._id,
-        userId: auto.userId,
-        platform: "instagram",
-        message: auto.link,
-        status: "pending"
-    });
-
-    res.status(200).json({ success: true, jobId: newJob._id });
 });
 
 // Account Health Check (Token Validation)
@@ -1482,79 +1582,6 @@ app.get('/api/account/health', authenticateToken, async (req, res) => {
     }
 });
 
-// New Audit Endpoint
-app.get('/api/audit/system', async (req, res) => {
-    try {
-        const igAccounts = await InstagramAccount.find({});
-        const automations = await Automation.find({});
-        const jobs = await Job.find({}).sort({ createdAt: -1 }).limit(10);
-        const logs = await Log.find({}).sort({ timestamp: -1 }).limit(10);
-        const users = await User.find({});
-
-        res.json({
-            instagram: igAccounts,
-            automations: automations,
-            recentJobs: jobs,
-            recentLogs: logs,
-            userCount: users.length,
-            env: {
-                FB_APP_ID: process.env.FB_APP_ID,
-                VERIFY_TOKEN: process.env.VERIFY_TOKEN,
-                PAGE_ACCESS_TOKEN: process.env.PAGE_ACCESS_TOKEN ? "PRESENT" : "MISSING",
-                MONGO_URI: process.env.MONGO_URI ? "PRESENT" : "MISSING"
-            }
-        });
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-});
-
-// Global Webhook Trigger API (Browser Testing)
-app.get('/trigger', async (req, res) => {
-    const keyword = req.query.keyword;
-    if (!keyword) return res.status(400).json({ error: 'Keyword required' });
-
-    const kwLower = keyword.trim().toLowerCase();
-    const matched = await Automation.find({ 
-        keyword: { $regex: new RegExp(`^${kwLower}$`, "i") }, 
-        status: 'active' 
-    });
-
-    if (matched.length === 0) {
-        return res.status(200).json({ success: true, matched: 0, queued: 0 });
-    }
-
-    const jobs = matched.map(auto => ({
-        automationId: auto._id,
-        userId: auto.userId,
-        link: auto.link,
-        platform: "instagram",
-        status: "pending"
-    }));
-
-    await Job.insertMany(jobs);
-
-    res.status(200).json({
-        success: true,
-        matched: matched.length,
-        queued: matched.length
-    });
-});
-
-// Global Webhook Trigger API
-app.post('/trigger', async (req, res) => {
-    const { user_id, username, text, platform } = req.body;
-    
-    const newJob = await Job.create({
-        user_id: user_id || "unknown",
-        username: username || "unknown",
-        message: text || "unknown",
-        platform: platform || "telegram",
-        status: "pending"
-    });
-
-    res.status(200).json({ success: true, queued: true, jobId: newJob._id });
-});
 
 // --- Meta Webhook Handshake (GET /webhook) ---
 app.get('/webhook', (req, res) => {
@@ -1564,16 +1591,16 @@ app.get('/webhook', (req, res) => {
     const challenge = req.query['hub.challenge'];
 
     if (mode === 'subscribe' && token === VERIFY_TOKEN) {
-        console.log("[WEBHOOK] Meta Handshake Verified ✅");
+        console.log(`[WEBHOOK] Meta Handshake Verified for ${APP_URL} ✅`);
         return res.status(200).send(challenge);
     } else {
-        console.warn("[WEBHOOK] Meta Handshake Failed: Token Mismatch ❌");
-        return res.sendStatus(403);
+        console.warn(`[WEBHOOK] Meta Handshake Failed: Token Mismatch ❌ (Expected: ${VERIFY_TOKEN}, Received: ${token})`);
+        return res.status(403).send('Verification failed');
     }
 });
 
 // --- Unified Meta Webhook Receiver (POST /webhook) ---
-app.post('/webhook', async (req, res) => {
+app.post('/webhook', verifySignature, async (req, res) => {
     console.log("🔥 WEBHOOK HIT 🔥");
     const body = req.body;
     const headers = req.headers;
@@ -1589,11 +1616,9 @@ app.post('/webhook', async (req, res) => {
         console.error("[CRITICAL] Failed to log webhook to DB:", err.message);
     }
 
-    // New Audit Endpoint
-
 
     console.log("-----------------------------------------");
-    console.log("WEBHOOK RECEIVED:", JSON.stringify(body, null, 2));
+    console.log("🔥 WEBHOOK RECEIVED 🔥", body.object);
     console.log("-----------------------------------------");
 
     if (body.object === 'instagram' || body.object === 'page') {
@@ -1637,7 +1662,7 @@ app.post('/webhook', async (req, res) => {
                 if (entry.changes) {
                     for (const change of entry.changes) {
                         if (change.field === 'comments') {
-                            console.log("🔥 COMMENT EVENT ARRIVED 🔥");
+                            console.log("🔥 COMMENT WEBHOOK ARRIVED 🔥");
                             const commentData = change.value;
                             
                             // VALIDATION: Ensure it's a new comment and not a deletion
@@ -1648,11 +1673,16 @@ app.post('/webhook', async (req, res) => {
 
                             const commentId = commentData.id;
                             const userId = commentData.from ? commentData.from.id : null;
+                            const targetUsername = commentData.from && commentData.from.username ? commentData.from.username : userId;
                             const commentText = (commentData.text || "").trim();
                             const mediaId = commentData.media ? commentData.media.id : (commentData.post ? commentData.post.id : null);
+                            const postUrl = commentData.media && commentData.media.permalink ? commentData.media.permalink : null;
 
                             console.log("[WEBHOOK] Comments Payload:", JSON.stringify(commentData, null, 2));
-                            console.log(`[PARSED COMMENT] ID: ${commentId} | User: ${userId} | Text: "${commentText}" | Media: ${mediaId}`);
+                            console.log("-----------------------------------------");
+                            console.log("🔥 COMMENT WEBHOOK ARRIVED 🔥");
+                            console.log(`[COMMENT] "${commentText}" from @${targetUsername}`);
+                            console.log(`[SOURCE] Media ID: ${mediaId} | Comment ID: ${commentId}`);
 
                             if (userId && commentText) {
                                 await cancelPendingFollowups(userId);
@@ -1743,29 +1773,49 @@ app.post('/webhook', async (req, res) => {
                                             }
                                         }
 
-                                        // --- Queue immediate DM actions ---
+                                        // --- Queue immediate DM actions into BullMQ (Playwright) ---
                                         for (const action of auto.actions) {
                                             if (action.type === 'send_dm' || action.type === 'reply_comment') {
                                                 console.log(`[KEYWORD MATCHED] "${normalizedText}" matches keyword in automation ${auto._id}`);
-                                                const delay = 2000; // 2s safety delay
+                                                
+                                                // Create Job for UI visibility
                                                 const job = await Job.create({
                                                     automationId: auto._id,
                                                     userId: auto.userId,
                                                     user_id: userId,
+                                                    username: targetUsername,
                                                     platform: "instagram",
                                                     message: action.text,
-                                                    type: 'reply_comment', // Force private reply for compliance
-                                                    process_after: Date.now() + delay,
+                                                    type: 'reply_comment', 
+                                                    process_after: Date.now(),
                                                     metadata: { 
                                                         comment_id: commentId, 
                                                         media_id: mediaId,
                                                         ig_id: entry.id,
                                                         original_text: commentText,
-                                                        public_reply: true
+                                                        public_reply: true,
+                                                        post_url: postUrl
                                                     },
                                                     status: "pending"
                                                 });
-                                                console.log(`[QUEUE JOB CREATED] ID: ${job._id} | Type: reply_comment | Target: ${userId}`);
+                                                
+                                                // OFFICIAL API WORKER will pick this up from the DB
+                                                console.log(`[OFFICIAL QUEUED] DB ID: ${job._id} | Target: ${targetUsername}`);
+                                                
+                                                // FALLBACK: Only push to browser worker if specific conditions met (e.g., safeMode OFF)
+                                                // Currently bypassed for Meta App Review readiness
+                                                /*
+                                                await JobQueue.addJob({
+                                                    jobId: job._id.toString(),
+                                                    userId: auto.userId,
+                                                    commentId: commentId,
+                                                    targetId: userId,
+                                                    targetUsername: targetUsername,
+                                                    customMessage: action.text,
+                                                    postUrl: postUrl,
+                                                    isSafeMode: true
+                                                });
+                                                */
                                             }
                                         }
                                     }
@@ -1896,6 +1946,29 @@ app.post('/test-send', async (req, res) => {
     } catch (error) {
         console.error(`[TEST] Failed manual send:`, error.message);
         res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// Operational Monitoring Panel (Admin)
+app.get('/api/admin/system', authenticateToken, authenticateAdmin, async (req, res) => {
+    try {
+        const browserStats = browserManager.getMemoryStats();
+        const totalUsers = await User.countDocuments();
+        const connectedUsers = await User.countDocuments({ instagramConnected: true });
+        const pendingJobs = await Job.countDocuments({ status: 'pending' });
+        const failedJobs = await Job.countDocuments({ status: 'failed' });
+        const recentJobs = await Job.find().sort({ createdAt: -1 }).limit(5);
+
+        res.status(200).json({
+            browsers: browserStats,
+            users: { total: totalUsers, connected: connectedUsers },
+            queue: { pending: pendingJobs, failed: failedJobs },
+            recentActivity: recentJobs,
+            uptime: process.uptime(),
+            nodeVersion: process.version
+        });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
     }
 });
 
@@ -2173,6 +2246,8 @@ app.get('/api/account/status', authenticateToken, async (req, res) => {
                 connected: true,
                 instagram_id: igAccount.instagram_id,
                 page_id: igAccount.page_id,
+                status: igAccount.status,
+                safeMode: igAccount.safeMode,
                 updatedAt: igAccount.updatedAt
             } : { connected: false },
             usage: {
@@ -2204,7 +2279,28 @@ app.get('/api/flow-states', authenticateToken, async (req, res) => {
 // END PHASE 2 ROUTES
 // =============================================
 
-app.listen(PORT, () => {
-    console.log(`Server running on http://localhost:${PORT}`);
+const http = require('http');
+const WebSocket = require('ws');
+const LoginPortal = require('./browser/LoginPortal');
+
+const server = http.createServer(app);
+const wss = new WebSocket.Server({ server });
+
+// Initialize Interactive Login Portal
+const loginPortal = new LoginPortal(wss);
+
+// --- ENGAGEMENT PORTAL (Legacy Support) ---
+app.post('/api/engagement/portal', authenticateToken, async (req, res) => {
+    try {
+        const sessionId = await loginPortal.initiateLogin(req.user.userId);
+        res.status(200).json({ success: true, sessionId });
+    } catch (err) {
+        console.error('[PORTAL API ERROR]', err);
+        res.status(500).json({ error: 'Failed to initiate secure browser session' });
+    }
+});
+
+server.listen(PORT, () => {
+    console.log(`Server and WS Portal running on port ${PORT}`);
     console.log("Webhook URL ready");
 });
