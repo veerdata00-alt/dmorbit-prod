@@ -382,7 +382,13 @@ const authenticateAdmin = (req, res, next) => {
 // --- PROTECTED PAGES (BEFORE STATIC) ---
 
 app.get('/admin.html', authenticateToken, authenticateAdmin, (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'admin.html'));
+    res.type('html');
+        res.sendFile(path.join(__dirname, 'public', 'admin.html'));
+});
+
+app.get('/', (req, res) => {
+        res.type('html');
+        res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 app.get('/dashboard.html', authenticateToken, (req, res) => {
@@ -390,9 +396,11 @@ app.get('/dashboard.html', authenticateToken, (req, res) => {
     if (req.user.role === 'admin' || req.user.email === OWNER_EMAIL) {
         return res.redirect('/admin.html');
     }
-    res.sendFile(path.join(__dirname, 'public', 'dashboard.html'));
+    res.type('html');
+        res.sendFile(path.join(__dirname, 'public', 'dashboard.html'));
 });
 
+    
 // Production Health Check
 app.get('/api/health', (req, res) => {
     res.json({
@@ -403,9 +411,11 @@ app.get('/api/health', (req, res) => {
     });
 });
 
-app.get('/privacy', (req, res) => res.sendFile(path.join(__dirname, 'public', 'privacy.html')));
-app.get('/terms', (req, res) => res.sendFile(path.join(__dirname, 'public', 'terms.html')));
-app.get('/delete-data', (req, res) => res.sendFile(path.join(__dirname, 'public', 'delete-data.html')));
+
+app.get('/privacy', (req, res) => { res.type('html'); res.sendFile(path.join(__dirname, 'public', 'privacy.html')); });
+app.get('/terms', (req, res) => { res.type('html'); res.sendFile(path.join(__dirname, 'public', 'terms.html')); });
+app.get('/delete-data', (req, res) => { res.type('html'); res.sendFile(path.join(__dirname, 'public', 'delete-data.html')); });
+
 
 app.use(express.static(path.join(__dirname, 'public'))); // Serve from public dir
 
