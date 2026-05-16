@@ -187,29 +187,51 @@ async function loadAccount() {
     container.innerHTML = '<div class="empty-state">Loading...</div>';
     try {
         const data = await API.accountStatus();
-        const health = await API.accountHealth();
         
         if (data.instagram?.connected) {
+            const status = data.instagram.status || 'active';
+            const statusMap = {
+                'active': { label: '🟢 Connected', color: 'rgba(16,185,129,0.1)', textColor: 'var(--success)', desc: 'Your account is healthy and DMs are firing.' },
+                'expired': { label: '🔴 Session Expired', color: 'rgba(239,68,68,0.1)', textColor: 'var(--danger)', desc: 'Instagram logged you out. Please reconnect to resume.' },
+                'invalid': { label: '🔴 Challenge Detected', color: 'rgba(239,68,68,0.1)', textColor: 'var(--danger)', desc: 'Instagram detected a suspicious login. Reconnect manually.' },
+                'reconnect_recommended': { label: '🟡 Reconnect Recommended', color: 'rgba(245,158,11,0.1)', textColor: 'var(--warning)', desc: 'To maintain stability, we recommend refreshing your session.' },
+                'paused': { label: '⚫ Automation Paused', color: 'rgba(107,114,128,0.1)', textColor: 'var(--text-muted)', desc: 'You have manually paused all automations.' }
+            };
+            const s = statusMap[status] || statusMap['active'];
+
             container.innerHTML = `
-                <div style="display:flex; gap: 16px; align-items:center; margin-bottom: 16px;">
+                <div style="display:flex; gap: 16px; align-items:center; margin-bottom: 20px;">
                     <div style="font-size: 32px;">📱</div>
-                    <div>
-                        <div style="font-weight: 500;">Connected to Meta</div>
-                        <div style="font-size: 13px; color: var(--text-muted);">Page ID: ${data.instagram.page_id}</div>
-                    </div>
+            <div>
+                <div style="font-weight: 600; color: var(--text-primary);">Instagram Business Profile</div>
+                <div style="font-size: 13px; color: var(--text-muted);">Connected via Official Meta API</div>
+            </div>
                 </div>
-                <div style="padding: 12px; background: ${health.status === 'active' ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)'}; color: ${health.status === 'active' ? 'var(--success)' : 'var(--danger)'}; border-radius: 8px; font-size: 13px;">
-                    Token Status: ${health.status === 'active' ? 'Healthy & Active' : 'Expired - Please Reconnect'}
+                
+                <div style="padding: 16px; background: ${s.color}; border-radius: 12px; margin-bottom: 20px; border-left: 4px solid ${s.textColor};">
+                    <div style="font-weight: 600; color: ${s.textColor}; margin-bottom: 4px;">${s.label}</div>
+                    <div style="font-size: 13px; color: var(--text-secondary);">${s.desc}</div>
                 </div>
-                <a href="/auth/instagram" class="btn btn-secondary" style="margin-top: 16px; width: 100%;">Reconnect / Refresh</a>
+
+                <div class="security-box" style="padding: 16px; background: var(--bg-alt); border-radius: 12px; font-size: 13px; color: var(--text-secondary); margin-bottom: 24px;">
+                    <div style="font-weight: 600; margin-bottom: 8px; color: var(--text-primary);">🔒 Your Security</div>
+                    <ul style="padding-left: 18px; margin: 0;">
+                        <li>We use official Meta Graph APIs for engagement.</li>
+                        <li>Automations are optimized for platform compliance.</li>
+                        <li>Your data is encrypted and handled securely.</li>
+                    </ul>
+                </div>
+
+                <button class="btn btn-secondary" onclick="window.startInteractiveLogin()" style="width: 100%;">Reconnect / Refresh Account</button>
             `;
         } else {
             container.innerHTML = `
                 <div class="empty-state">
                     <div class="empty-icon">📱</div>
                     <div class="empty-title">Instagram Disconnected</div>
-                    <div class="empty-desc">Connect your account to enable automations.</div>
-                    <a href="/auth/instagram" class="btn btn-primary">Connect Now</a>
+                    <div class="empty-desc">Connect your account using the official Meta integration to start engaging with your audience.</div>
+                    <a href="/auth/instagram" class="btn btn-primary" style="margin-top: 12px; text-decoration: none; display: inline-block;">Connect via Meta (Official)</a>
+                    <div style="margin-top: 12px; font-size: 11px; color: var(--text-muted); cursor: pointer;" onclick="window.startInteractiveLogin()">Alternative Connection (Advanced)</div>
                 </div>
             `;
         }
@@ -334,5 +356,92 @@ function formatDate(dateStr) {
     if (isNaN(d)) return '—';
     return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
 }
+
+// === INTERACTIVE BROWSER LOGIN LOGIC ===
+window.startInteractiveLogin = async function() {
+    const modal = document.getElementById('browser-portal-modal');
+    const streamImg = document.getElementById('browser-stream');
+    const loading = document.getElementById('browser-loading');
+    
+    modal.style.display = 'block';
+    loading.style.display = 'flex';
+    streamImg.src = '';
+    
+    try {
+        const res = await request('/api/engagement/portal', { method: 'POST' });
+        if (!res || !res.success) {
+            alert('Failed to launch secure browser. Try again.');
+            modal.style.display = 'none';
+            return;
+        }
+
+        const sessionId = res.sessionId;
+        
+        // Connect WS
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const wsUrl = `${protocol}//${window.location.host}`;
+        const ws = new WebSocket(wsUrl);
+        
+        window._currentWs = ws;
+        
+        ws.onopen = () => {
+            loading.style.display = 'none';
+            ws.send(JSON.stringify({ type: 'init', sessionId }));
+        };
+        
+        ws.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+            if (data.type === 'frame') {
+                streamImg.src = data.image;
+            } else if (data.type === 'success') {
+                alert(data.message);
+                modal.style.display = 'none';
+                ws.close();
+                loadAccount(); // Reload status
+                loadOverview();
+            } else if (data.type === 'error') {
+                alert('Session error: ' + data.message);
+                modal.style.display = 'none';
+            }
+        };
+        
+        ws.onclose = () => {
+            modal.style.display = 'none';
+        };
+
+        // Forward Interactions
+        streamImg.onclick = (e) => {
+            if (ws.readyState === 1) {
+                const rect = streamImg.getBoundingClientRect();
+                const scaleX = 1280 / rect.width; // 1280 is viewport width in backend
+                const scaleY = 800 / rect.height; // 800 is viewport height in backend
+                const x = (e.clientX - rect.left) * scaleX;
+                const y = (e.clientY - rect.top) * scaleY;
+                ws.send(JSON.stringify({ type: 'interaction', action: 'click', payload: { x, y } }));
+            }
+        };
+
+        // Keydown
+        const handleKeyDown = (e) => {
+            if (modal.style.display === 'block' && ws.readyState === 1) {
+                e.preventDefault();
+                ws.send(JSON.stringify({ type: 'interaction', action: 'type', payload: { key: e.key } }));
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        
+        // Cleanup listener on close
+        document.getElementById('close-browser-portal').onclick = () => {
+            window.removeEventListener('keydown', handleKeyDown);
+            if (ws.readyState === 1) ws.close();
+            modal.style.display = 'none';
+        };
+
+    } catch (e) {
+        console.error(e);
+        alert('An error occurred.');
+        modal.style.display = 'none';
+    }
+};
 
 init();
