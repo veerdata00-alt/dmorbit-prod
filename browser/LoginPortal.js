@@ -1,4 +1,4 @@
-const { v4: uuidv4 } = require('uuid');
+const crypto = require('crypto');
 const browserManager = require('./BrowserManager');
 const User = require('mongoose').model('User');
 const InstagramAccount = require('mongoose').model('InstagramAccount'); // Optional if we still use this model
@@ -61,7 +61,7 @@ class LoginPortal {
     }
 
     async initiateLogin(userId) {
-        const sessionId = uuidv4();
+        const sessionId = crypto.randomUUID();
         console.log(`[PORTAL] Initiating login for user ${userId}. Session: ${sessionId}`);
 
         try {
