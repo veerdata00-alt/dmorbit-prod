@@ -18,7 +18,6 @@ global.crypto = crypto;
 console.log("🚀 Server starting at:", new Date().toISOString());
 console.log("Node version:", process.version);
 const app = express();
-app.set('trust proxy', 1);
 
 // ── Firebase Client Config (served to frontend) ──
 const FIREBASE_CLIENT_CONFIG = {
@@ -387,227 +386,9 @@ const authenticateAdmin = (req, res, next) => {
     next();
 };
 
-// --- ROOT PAGE (Hardcoded to avoid Railway stale file issues) ---
-app.get('/', async (req, res) => {
-    // Check if user already has a session → redirect to dashboard
-    const token = req.cookies?.token;
-    if (token) {
-        try {
-            const decoded = jwt.verify(token, JWT_SECRET);
-            if (decoded) {
-                return res.redirect(decoded.role === 'admin' ? '/admin.html' : '/dashboard.html');
-            }
-        } catch (e) { /* token invalid, serve landing page */ }
-    }
-    res.type('html');
-    res.send(`<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DMOrbit - Automate Your Instagram Engagement</title>
-    <meta name="description" content="Convert every Instagram comment into a sales funnel automatically. Official Meta API integration for 100% account safety.">
-    <link rel="stylesheet" href="/style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-</head>
-<body>
-    <div class="landing-container">
-        <nav>
-            <div class="logo">DMOrbit</div>
-            <button class="btn-primary" id="open-auth">Sign In</button>
-        </nav>
-
-        <section class="hero">
-            <h1>Automate Your <br>Instagram Growth</h1>
-            <p>Turn every &quot;link&quot; comment into a lead automatically. Official Meta API integration for 100% account safety.</p>
-            <div class="hero-cta">
-                <button class="btn-primary" id="hero-get-started">Get Started Free</button>
-            </div>
-        </section>
-
-        <section class="features">
-            <div class="feature-card">
-                <div class="feature-icon">🚀</div>
-                <h3>Instant Triggers</h3>
-                <p>Respond to comments in seconds. Never miss a potential lead while you sleep.</p>
-            </div>
-            <div class="feature-card">
-                <div class="feature-icon">🔒</div>
-                <h3>Official Meta API</h3>
-                <p>100% compliant with Instagram's terms. Your account is always safe.</p>
-            </div>
-            <div class="feature-card">
-                <div class="feature-icon">📈</div>
-                <h3>Sales Funnels</h3>
-                <p>Convert followers into customers with automated multi-step DM flows.</p>
-            </div>
-        </section>
-    </div>
-
-    <!-- Auth Overlay -->
-    <div class="auth-overlay" id="auth-overlay">
-        <div class="auth-card">
-            <button class="close-btn" id="close-auth" style="position:absolute;top:20px;right:24px;background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:20px;">&#x2715;</button>
-            <h2 id="auth-title">Welcome Back</h2>
-            <p id="auth-subtitle">Join 5,000+ creators automating growth.</p>
-
-            <div id="auth-error" class="auth-error" style="display:none;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.2);color:#ef4444;padding:12px 16px;border-radius:12px;font-size:14px;margin-bottom:16px;"></div>
-
-            <button class="social-btn google" id="google-login">
-                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="18" alt="Google">
-                <span id="google-btn-text">Continue with Google</span>
-            </button>
-
-            <div class="divider">or use email</div>
-
-            <div class="email-form">
-                <div class="input-group" id="name-input-group" style="display:none;">
-                    <label for="name-input">Full Name</label>
-                    <input type="text" id="name-input" placeholder="Enter your name">
-                </div>
-                <div class="input-group">
-                    <label for="email-input">Email Address</label>
-                    <input type="email" id="email-input" placeholder="you@example.com">
-                </div>
-                <div class="input-group">
-                    <label for="password-input">Password</label>
-                    <input type="password" id="password-input" placeholder="&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;">
-                </div>
-                <button class="btn-primary" id="email-submit" style="width:100%;margin-top:10px;">Sign In</button>
-                <div style="margin-top:24px;font-size:14px;color:var(--text-muted);">
-                    <span id="auth-toggle-text">New to DMOrbit?</span>
-                    <a id="auth-toggle-link" style="color:#833ab4;cursor:pointer;font-weight:600;margin-left:4px;">Sign Up</a>
-                </div>
-                <div style="margin-top:12px;">
-                    <a id="forgot-password-link" style="font-size:13px;color:var(--text-muted);cursor:pointer;text-decoration:underline;">Forgot password?</a>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-        import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-
-        let app, auth, firebaseReady = false, isSignUpMode = false;
-
-        async function initFirebase() {
-            try {
-                const res = await fetch('/api/firebase-config');
-                if (!res.ok) throw new Error('no config');
-                const config = await res.json();
-                app = initializeApp(config);
-                auth = getAuth(app);
-                await setPersistence(auth, browserLocalPersistence);
-                firebaseReady = true;
-                onAuthStateChanged(auth, (user) => {
-                    if (user) user.getIdToken().then(t => syncWithBackend(t));
-                });
-            } catch (e) { console.warn('[Firebase] not initialized, using email auth only'); }
-        }
-
-        async function checkSession() {
-            try {
-                const r = await fetch('/api/me');
-                if (r.ok) {
-                    const d = await r.json();
-                    window.location.href = d.user.role === 'admin' ? '/admin.html' : '/dashboard.html';
-                }
-            } catch (e) {}
-        }
-
-        checkSession();
-        initFirebase();
-
-        const overlay = document.getElementById('auth-overlay');
-        const errorEl = document.getElementById('auth-error');
-        const emailBtn = document.getElementById('email-submit');
-
-        function showErr(msg) {
-            errorEl.textContent = msg;
-            errorEl.style.display = 'block';
-        }
-
-        document.getElementById('open-auth').onclick = () => overlay.classList.add('visible');
-        document.getElementById('hero-get-started').onclick = () => overlay.classList.add('visible');
-        document.getElementById('close-auth').onclick = () => {
-            overlay.classList.remove('visible');
-            errorEl.style.display = 'none';
-        };
-
-        document.getElementById('auth-toggle-link').onclick = () => {
-            isSignUpMode = !isSignUpMode;
-            document.getElementById('auth-title').textContent = isSignUpMode ? 'Create Account' : 'Welcome Back';
-            document.getElementById('name-input-group').style.display = isSignUpMode ? 'block' : 'none';
-            emailBtn.textContent = isSignUpMode ? 'Create Account' : 'Sign In';
-            document.getElementById('auth-toggle-text').textContent = isSignUpMode ? 'Already have an account?' : 'New to DMOrbit?';
-            document.getElementById('auth-toggle-link').textContent = isSignUpMode ? 'Sign In' : 'Sign Up';
-            errorEl.style.display = 'none';
-        };
-
-        emailBtn.onclick = async () => {
-            const email = document.getElementById('email-input').value.trim();
-            const password = document.getElementById('password-input').value;
-            const name = document.getElementById('name-input').value.trim();
-            if (!email || !password) { showErr('Please fill all fields'); return; }
-            emailBtn.disabled = true;
-            emailBtn.textContent = 'Processing...';
-            try {
-                const res = await fetch(isSignUpMode ? '/api/signup' : '/api/login', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email, password, name })
-                });
-                const data = await res.json();
-                if (res.ok) {
-                    window.location.reload();
-                } else {
-                    showErr(data.error || 'Authentication failed');
-                    emailBtn.disabled = false;
-                    emailBtn.textContent = isSignUpMode ? 'Create Account' : 'Sign In';
-                }
-            } catch (e) {
-                showErr('Server error. Please try again.');
-                emailBtn.disabled = false;
-            }
-        };
-
-        document.getElementById('google-login').onclick = async () => {
-            if (!firebaseReady) { showErr('Google Login not available. Please use email.'); return; }
-            try {
-                await signInWithPopup(auth, new GoogleAuthProvider());
-            } catch (e) { showErr(e.message); }
-        };
-
-        async function syncWithBackend(idToken) {
-            await fetch('/api/auth/firebase', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ idToken })
-            });
-            window.location.reload();
-        }
-
-        document.getElementById('forgot-password-link').onclick = async () => {
-            const email = document.getElementById('email-input').value.trim();
-            const np = prompt('Enter your NEW password:');
-            if (!email || !np) return;
-            const r = await fetch('/api/forgot-password', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, newPassword: np })
-            });
-            if (r.ok) alert('Password reset successfully!');
-        };
-    </script>
-</body>
-</html>`);
-});
-
 // --- PROTECTED PAGES (BEFORE STATIC) ---
 
 app.get('/admin.html', authenticateToken, authenticateAdmin, (req, res) => {
-    res.type('html');
     res.sendFile(path.join(__dirname, 'public', 'admin.html'));
 });
 
@@ -616,7 +397,6 @@ app.get('/dashboard.html', authenticateToken, (req, res) => {
     if (req.user.role === 'admin' || req.user.email === OWNER_EMAIL) {
         return res.redirect('/admin.html');
     }
-    res.type('html');
     res.sendFile(path.join(__dirname, 'public', 'dashboard.html'));
 });
 
@@ -630,9 +410,9 @@ app.get('/api/health', (req, res) => {
     });
 });
 
-app.get('/privacy', (req, res) => { res.type('html'); res.sendFile(path.join(__dirname, 'public', 'privacy.html')); });
-app.get('/terms', (req, res) => { res.type('html'); res.sendFile(path.join(__dirname, 'public', 'terms.html')); });
-app.get('/delete-data', (req, res) => { res.type('html'); res.sendFile(path.join(__dirname, 'public', 'delete-data.html')); });
+app.get('/privacy', (req, res) => res.sendFile(path.join(__dirname, 'public', 'privacy.html')));
+app.get('/terms', (req, res) => res.sendFile(path.join(__dirname, 'public', 'terms.html')));
+app.get('/delete-data', (req, res) => res.sendFile(path.join(__dirname, 'public', 'delete-data.html')));
 
 app.use(express.static(path.join(__dirname, 'public'))); // Serve from public dir
 
@@ -1440,9 +1220,7 @@ app.get('/api/me', authenticateToken, (req, res) => {
 // --- Instagram OAuth Connection System ---
 
 app.get('/auth/instagram', authenticateToken, (req, res) => {
-    const host = req.get('host');
-    const protocol = (host.includes('localhost') || host.includes('127.0.0.1')) ? req.protocol : 'https';
-    const redirectUri = `${protocol}://${host}/auth/callback`;
+    const redirectUri = `${req.protocol}://${req.get('host')}/auth/callback`;
     const scopes = [
         'instagram_basic',
         'instagram_manage_comments',
@@ -1459,9 +1237,7 @@ app.get('/auth/callback', async (req, res) => {
     if (!code) return res.status(400).send('No code provided');
 
     try {
-        const host = req.get('host');
-        const protocol = (host.includes('localhost') || host.includes('127.0.0.1')) ? req.protocol : 'https';
-        const redirectUri = `${protocol}://${host}/auth/callback`;
+        const redirectUri = `${req.protocol}://${req.get('host')}/auth/callback`;
         // 1. Exchange code for Short-Lived User Access Token
         const tokenRes = await axios.get(`https://graph.facebook.com/v19.0/oauth/access_token`, {
             params: {
@@ -2309,5 +2085,3 @@ server.listen(PORT, () => {
     console.log(`Server and WS Portal running on port ${PORT}`);
     console.log("Webhook URL ready");
 });
-// Build Trigger: 2026-05-18
-
