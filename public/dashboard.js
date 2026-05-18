@@ -402,12 +402,14 @@ window.startInteractiveLogin = async function() {
                 loadOverview();
             } else if (data.type === 'error') {
                 alert('Session error: ' + data.message);
-                modal.style.display = 'none';
+                modal.classList.remove('active');
+                setTimeout(() => { modal.style.display = 'none'; }, 200);
             }
         };
         
         ws.onclose = () => {
-            modal.style.display = 'none';
+            modal.classList.remove('active');
+            setTimeout(() => { modal.style.display = 'none'; }, 200);
         };
 
         // Forward Interactions
