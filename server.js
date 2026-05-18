@@ -205,7 +205,14 @@ const automationSchema = new mongoose.Schema({
     flowId: { type: mongoose.Schema.Types.ObjectId, ref: 'Flow', default: null },
     triggerCount: { type: Number, default: 0 },
     isActive: { type: Boolean, default: true },
-    createdAt: { type: Date, default: Date.now }
+    createdAt: { type: Date, default: Date.now },
+    
+    // New simplified fields for backward/alternative compatibility
+    postId: { type: String, index: true },
+    triggerType: { type: String, enum: ['KEYWORD', 'ANY_COMMENT'] },
+    keyword: String,
+    publicReplyText: String,
+    privateMessageText: String
 });
 const Automation = mongoose.model('Automation', automationSchema);
 
@@ -1647,12 +1654,22 @@ app.post('/webhook', verifySignature, async (req, res) => {
                                 // KEYWORD & TARGETING MATCHING
                                 const allAutos = await Automation.find({ userId: ownerId, isActive: true });
                                 const matched = allAutos.filter(a => {
-                                    // 1. Post Targeting Check
-                                    if (a.target?.type === 'specific' && a.target?.mediaId !== mediaId) {
+                                    // 1. Post Targeting Check (Supports standard target.mediaId & new postId format)
+                                    const targetMediaId = a.postId || (a.target?.type === 'specific' ? a.target?.mediaId : null);
+                                    if (targetMediaId && targetMediaId !== mediaId) {
                                         return false;
                                     }
 
-                                    // 2. Mode Check
+                                    // 2. Mode Check (Supports triggerType or mode)
+                                    if (a.triggerType) {
+                                        if (a.triggerType === 'ANY_COMMENT') return true;
+                                        if (a.triggerType === 'KEYWORD') {
+                                            const kw = a.keyword || "";
+                                            return normalizedText.includes(kw.toLowerCase().trim());
+                                        }
+                                        return false;
+                                    }
+
                                     if (a.mode === 'any_comment') return true;
 
                                     const keywords = a.trigger && a.trigger.keywords ? a.trigger.keywords : [];
@@ -1666,7 +1683,7 @@ app.post('/webhook', verifySignature, async (req, res) => {
                                     
                                     for (const auto of matched) {
                                         // ANTI-SPAM: Cooldown for Any Comment mode
-                                        if (auto.mode === 'any_comment') {
+                                        if (auto.mode === 'any_comment' || auto.triggerType === 'ANY_COMMENT') {
                                             const lastTrigger = await Log.findOne({ 
                                                 ownerId, 
                                                 user_id: userId, 
@@ -1682,7 +1699,59 @@ app.post('/webhook', verifySignature, async (req, res) => {
                                             }
                                         }
 
-                                        // --- Start Flow if attached ---
+                                        // --- 1. Execute direct actions for simplified compatible format ---
+                                        if (auto.publicReplyText || auto.privateMessageText) {
+                                            console.log(`[SIMPLIFIED ACTIONS] Executing direct API calls for automation ${auto._id}`);
+                                            const pageToken = ownerAccount.access_token;
+                                            
+                                            if (pageToken && pageToken !== "your_token_here") {
+                                                // Action A: Public comment reply
+                                                if (auto.publicReplyText) {
+                                                    try {
+                                                        const repliesUrl = `https://graph.facebook.com/v21.0/${commentId}/replies`;
+                                                        await axios.post(repliesUrl, {
+                                                            message: auto.publicReplyText,
+                                                            access_token: pageToken
+                                                        });
+                                                        console.log(`[SIMPLIFIED SUCCESS] Public reply sent to comment: ${commentId}`);
+                                                    } catch (err) {
+                                                        console.error("[SIMPLIFIED ERROR] Failed public reply:", err.response?.data || err.message);
+                                                    }
+                                                }
+
+                                                // Action B: Private inbox DM
+                                                if (auto.privateMessageText && userId) {
+                                                    try {
+                                                        const messagesUrl = `https://graph.facebook.com/v21.0/me/messages`;
+                                                        await axios.post(messagesUrl, {
+                                                            recipient: { id: userId },
+                                                            message: { text: auto.privateMessageText },
+                                                            access_token: pageToken
+                                                        });
+                                                        console.log(`[SIMPLIFIED SUCCESS] Private DM sent to user: ${userId}`);
+                                                    } catch (err) {
+                                                        console.error("[SIMPLIFIED ERROR] Failed private DM:", err.response?.data || err.message);
+                                                    }
+                                                }
+                                            } else {
+                                                console.warn("[SIMPLIFIED SIMULATION] No valid token, skipping real API calls.");
+                                            }
+
+                                            // Log success triggers in DB for Dashboard metrics
+                                            await Automation.findByIdAndUpdate(auto._id, { $inc: { triggerCount: 1 } });
+                                            await Log.create({
+                                                ownerId,
+                                                username: targetUsername || 'unknown',
+                                                user_id: userId,
+                                                keyword: auto.keyword || 'ANY_COMMENT',
+                                                dmLink: 'Simplified Direct Call',
+                                                metadata: { comment_id: commentId, automationId: auto._id },
+                                                platform: 'instagram',
+                                                timestamp: new Date()
+                                            });
+                                        }
+
+                                        // --- 2. Start Flow if attached ---
                                         if (auto.flowId) {
                                             const existingState = await FlowState.findOne({
                                                 flowId: auto.flowId,
@@ -1709,7 +1778,7 @@ app.post('/webhook', verifySignature, async (req, res) => {
                                             }
                                         }
 
-                                        // --- Queue immediate DM actions into BullMQ (Playwright) ---
+                                        // --- 3. Queue immediate DM actions into BullMQ (Playwright) ---
                                         for (const action of auto.actions) {
                                             if (action.type === 'send_dm' || action.type === 'reply_comment') {
                                                 console.log(`[KEYWORD MATCHED] "${normalizedText}" matches keyword in automation ${auto._id}`);
