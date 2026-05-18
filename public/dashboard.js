@@ -364,6 +364,7 @@ window.startInteractiveLogin = async function() {
     const loading = document.getElementById('browser-loading');
     
     modal.style.display = 'block';
+    modal.classList.add('active');
     loading.style.display = 'flex';
     streamImg.src = '';
     
@@ -434,7 +435,8 @@ window.startInteractiveLogin = async function() {
         document.getElementById('close-browser-portal').onclick = () => {
             window.removeEventListener('keydown', handleKeyDown);
             if (ws.readyState === 1) ws.close();
-            modal.style.display = 'none';
+            modal.classList.remove('active');
+            setTimeout(() => { modal.style.display = 'none'; }, 200);
         };
 
     } catch (e) {
