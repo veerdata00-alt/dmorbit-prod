@@ -1292,7 +1292,151 @@ app.get('/auth/callback', async (req, res) => {
         }
 
         if (!igAccountId) {
-            return res.status(400).send('No Instagram Business Account linked to your Facebook Pages. Please ensure your Instagram is a Business account and linked to a Facebook Page.');
+            console.log("❌ [OAUTH DEBUG] No linked Instagram Business Account found!");
+            console.log("Pages analyzed:", pagesRes.data.data);
+            
+            let pagesHtml = '';
+            if (pagesRes.data.data && pagesRes.data.data.length > 0) {
+                pagesHtml = pagesRes.data.data.map(p => `<li><strong>${p.name}</strong> (ID: ${p.id})</li>`).join('');
+            } else {
+                pagesHtml = '<li><em>No Facebook Pages found. Make sure you granted permissions for your Facebook Pages during the login popup!</em></li>';
+            }
+
+            return res.status(400).send(`
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>DMOrbit — Connection Help</title>
+                    <style>
+                        body {
+                            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+                            background: #0f172a;
+                            color: #f8fafc;
+                            line-height: 1.6;
+                            display: flex;
+                            justify-content: center;
+                            align-items: center;
+                            min-height: 100vh;
+                            margin: 0;
+                            padding: 20px;
+                        }
+                        .container {
+                            background: rgba(30, 41, 59, 0.7);
+                            border: 1px solid rgba(255, 255, 255, 0.1);
+                            padding: 40px;
+                            border-radius: 24px;
+                            max-width: 600px;
+                            width: 100%;
+                            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+                            backdrop-filter: blur(12px);
+                        }
+                        h1 {
+                            font-size: 24px;
+                            font-weight: 800;
+                            margin-bottom: 20px;
+                            color: #ef4444;
+                            display: flex;
+                            align-items: center;
+                            gap: 10px;
+                        }
+                        h3 {
+                            margin-top: 24px;
+                            font-weight: 700;
+                            color: #fff;
+                        }
+                        p {
+                            color: #94a3b8;
+                            font-size: 15px;
+                        }
+                        .pages-list {
+                            background: rgba(15, 23, 42, 0.5);
+                            border: 1px solid rgba(255, 255, 255, 0.05);
+                            border-radius: 12px;
+                            padding: 16px 24px;
+                            margin: 20px 0;
+                            list-style-type: none;
+                        }
+                        .pages-list li {
+                            margin-bottom: 8px;
+                            color: #e2e8f0;
+                        }
+                        .pages-list li:last-child {
+                            margin-bottom: 0;
+                        }
+                        .steps {
+                            margin-top: 24px;
+                        }
+                        .step {
+                            margin-bottom: 16px;
+                        }
+                        .step-num {
+                            background: linear-gradient(45deg, #833ab4, #fd1d1d);
+                            color: white;
+                            width: 24px;
+                            height: 24px;
+                            border-radius: 50%;
+                            display: inline-flex;
+                            justify-content: center;
+                            align-items: center;
+                            font-size: 12px;
+                            font-weight: 700;
+                            margin-right: 8px;
+                        }
+                        .btn-retry {
+                            background: linear-gradient(45deg, #833ab4, #fd1d1d);
+                            color: white;
+                            border: none;
+                            padding: 12px 24px;
+                            border-radius: 12px;
+                            font-weight: 600;
+                            cursor: pointer;
+                            text-decoration: none;
+                            display: inline-block;
+                            margin-top: 20px;
+                            transition: transform 0.2s ease;
+                        }
+                        .btn-retry:hover {
+                            transform: translateY(-2px);
+                        }
+                    </style>
+                </head>
+                <body>
+                    <div class="container">
+                        <h1>⚠️ Instagram Account Link Missing</h1>
+                        <p>Meta API ko aapke Facebook Page se connected koi <strong>Instagram Business / Creator</strong> account nahi mila.</p>
+                        
+                        <h3>Humne yeh Facebook Pages dhoondhe:</h3>
+                        <ul class="pages-list">
+                            ${pagesHtml}
+                        </ul>
+
+                        <div class="steps">
+                            <h3>Isko sahi karne ke liye steps:</h3>
+                            
+                            <div class="step">
+                                <span class="step-num">1</span>
+                                <strong>Instagram account ko Creator/Business mode me convert karein:</strong><br>
+                                <span style="font-size: 14px; color: #94a3b8;">Instagram mobile app me <em>Settings -> Account type -> Switch to Professional (Creator/Business)</em> karein. Personal accounts Meta API support nahi karte.</span>
+                            </div>
+
+                            <div class="step">
+                                <span class="step-num">2</span>
+                                <strong>Instagram ko Facebook Page se link karein:</strong><br>
+                                <span style="font-size: 14px; color: #94a3b8;">Facebook Page par jayein -> <em>Settings -> Linked Accounts -> Instagram</em> par click karein aur apna Instagram account link/connect karein.</span>
+                            </div>
+
+                            <div class="step">
+                                <span class="step-num">3</span>
+                                <strong>Meta Login popup me Page permission ensure karein:</strong><br>
+                                <span style="font-size: 14px; color: #94a3b8;">Jab aap Facebook login popup kholte hain, toh ensure karein ki aapne <strong>saare Pages</strong> aur <strong>Instagram accounts</strong> par tick-mark kiya hai.</span>
+                            </div>
+                        </div>
+
+                        <a href="/dashboard.html" class="btn-retry">Return to Dashboard & Retry</a>
+                    </div>
+                </body>
+                </html>
+            `);
         }
 
         // 4. Store in Database
