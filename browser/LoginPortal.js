@@ -89,7 +89,7 @@ class LoginPortal {
         } catch (error) {
             console.error('[PORTAL] Failed to initiate login:', error.message);
             this.cleanupSession(sessionId);
-            throw new Error('Failed to launch browser session.');
+            throw new Error('Failed to launch browser session: ' + error.message + '\n' + error.stack);
         }
     }
 
