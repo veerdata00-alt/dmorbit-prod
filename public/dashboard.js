@@ -369,10 +369,14 @@ window.startInteractiveLogin = async function() {
     streamImg.src = '';
     
     try {
+        console.log("📡 Calling /api/engagement/portal...");
         const res = await request('/api/engagement/portal', { method: 'POST' });
+        console.log("📡 Response from portal:", res);
+        window.lastPortalResponse = res;
         if (!res || !res.success) {
             alert('Failed to launch secure browser. Try again.');
-            modal.style.display = 'none';
+            modal.classList.remove('active');
+            setTimeout(() => { modal.style.display = 'none'; }, 200);
             return;
         }
 
