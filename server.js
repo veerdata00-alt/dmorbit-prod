@@ -2054,6 +2054,56 @@ app.delete('/api/flows/:id', authenticateToken, async (req, res) => {
     }
 });
 
+// Helper to resolve shortcodes/URLs of Instagram Posts to numeric Media IDs via Graph API
+async function resolveInstagramMediaId(userId, input) {
+    if (!input) return null;
+    
+    const trimmed = input.trim();
+    // If it's already a numeric ID, return it directly
+    if (/^\d+$/.test(trimmed)) {
+        return trimmed;
+    }
+
+    // Extract shortcode from URL (e.g. /p/C7Xyz12345/ or /reel/C7Xyz12345/)
+    let shortcode = trimmed;
+    const match = trimmed.match(/(?:p|reel|tv)\/([A-Za-z0-9_-]+)/);
+    if (match && match[1]) {
+        shortcode = match[1];
+    }
+
+    try {
+        const account = await InstagramAccount.findOne({ userId });
+        if (!account || !account.access_token || !account.instagram_id) {
+            console.warn(`[RESOLVE MEDIA] No Instagram account found for userId: ${userId}`);
+            return null;
+        }
+
+        // Fetch user's media list from Graph API
+        const url = `https://graph.facebook.com/v19.0/${account.instagram_id}/media`;
+        const response = await axios.get(url, {
+            params: {
+                access_token: account.access_token,
+                fields: 'id,shortcode,permalink'
+            }
+        });
+
+        if (response.data && response.data.data) {
+            // Find the media that matches the shortcode or contains it in the permalink
+            const found = response.data.data.find(m => m.shortcode === shortcode || (m.permalink && m.permalink.includes(shortcode)));
+            if (found) {
+                console.log(`[RESOLVE MEDIA] Successfully matched shortcode ${shortcode} to numeric ID: ${found.id}`);
+                return found.id;
+            }
+        }
+        
+        console.warn(`[RESOLVE MEDIA] Could not find media with shortcode ${shortcode} in user's media list.`);
+        return null;
+    } catch (err) {
+        console.error("[RESOLVE MEDIA] Error fetching media list from Meta:", err.response?.data || err.message);
+        return null;
+    }
+}
+
 // --- UPDATED AUTOMATION CRUD ---
 
 // Create Automation (Phase 2 — supports flow attachment & multi-keyword)
@@ -2075,6 +2125,15 @@ app.post('/api/v2/automations', authenticateToken, async (req, res) => {
             return res.status(403).json({ error: `Free plan limit reached (${limit} automations). Upgrade to Pro.` });
         }
 
+        // Resolve target post URL to numeric ID if specific
+        let targetPostId = target && target.type === 'specific' ? target.mediaId : null;
+        if (targetPostId) {
+            const resolvedId = await resolveInstagramMediaId(req.user.userId, targetPostId);
+            if (resolvedId) {
+                targetPostId = resolvedId;
+            }
+        }
+
         const actions = [];
         if (dmMessage) actions.push({ type: 'send_dm', text: dmMessage });
 
@@ -2082,7 +2141,7 @@ app.post('/api/v2/automations', authenticateToken, async (req, res) => {
             userId: req.user.userId,
             name: name || `Automation #${count + 1}`,
             platform: 'instagram',
-            target: target || { type: 'global' },
+            target: targetPostId ? { type: 'specific', mediaId: targetPostId } : { type: 'global' },
             mode: mode || 'keyword',
             trigger: { type: 'comment', keywords: keywords ? keywords.map(k => k.toLowerCase().trim()) : [] },
             actions,
@@ -2090,7 +2149,7 @@ app.post('/api/v2/automations', authenticateToken, async (req, res) => {
             isActive: true,
             
             // Populate simplified fields for direct compatibility
-            postId: target && target.type === 'specific' ? target.mediaId : null,
+            postId: targetPostId,
             triggerType: (mode || 'keyword') === 'any_comment' ? 'ANY_COMMENT' : 'KEYWORD',
             keyword: keywords && keywords.length > 0 ? keywords[0] : '',
             publicReplyText: 'Check your DM 👋',
@@ -2130,12 +2189,36 @@ app.put('/api/v2/automations/:id', authenticateToken, async (req, res) => {
         const updateData = {};
         
         if (name !== undefined) updateData.name = name;
-        if (keywords !== undefined) updateData['trigger.keywords'] = keywords.map(k => k.toLowerCase().trim());
-        if (dmMessage !== undefined) updateData['actions.0.text'] = dmMessage;
+        
+        if (target !== undefined) {
+            let targetPostId = target && target.type === 'specific' ? target.mediaId : null;
+            if (targetPostId) {
+                const resolvedId = await resolveInstagramMediaId(req.user.userId, targetPostId);
+                if (resolvedId) {
+                    targetPostId = resolvedId;
+                }
+            }
+            updateData.target = targetPostId ? { type: 'specific', mediaId: targetPostId } : { type: 'global' };
+            updateData.postId = targetPostId;
+        }
+
+        if (mode !== undefined) {
+            updateData.mode = mode;
+            updateData.triggerType = mode === 'any_comment' ? 'ANY_COMMENT' : 'KEYWORD';
+        }
+
+        if (keywords !== undefined) {
+            updateData['trigger.keywords'] = keywords.map(k => k.toLowerCase().trim());
+            updateData.keyword = keywords.length > 0 ? keywords[0] : '';
+        }
+
+        if (dmMessage !== undefined) {
+            updateData['actions.0.text'] = dmMessage;
+            updateData.privateMessageText = dmMessage;
+        }
+
         if (flowId !== undefined) updateData.flowId = flowId || null;
         if (isActive !== undefined) updateData.isActive = isActive;
-        if (target !== undefined) updateData.target = target;
-        if (mode !== undefined) updateData.mode = mode;
 
         const auto = await Automation.findOneAndUpdate(
             { _id: req.params.id, userId: req.user.userId },
@@ -2146,6 +2229,7 @@ app.put('/api/v2/automations/:id', authenticateToken, async (req, res) => {
         if (!auto) return res.status(404).json({ error: 'Automation not found' });
         res.status(200).json({ success: true, automation: auto });
     } catch (err) {
+        console.error('[API] Update Automation error:', err);
         res.status(500).json({ error: 'Internal Server Error' });
     }
 });
