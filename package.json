@@ -1,6 +1,6 @@
 {
   "name": "dmorbit",
-  "version": "1.0.1",
+  "version": "1.0.0",
   "description": "DMOrbit SaaS App with Node.js Backend",
   "main": "server.js",
   "scripts": {
