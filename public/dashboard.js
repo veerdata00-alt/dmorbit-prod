@@ -270,6 +270,17 @@ function setupWizard() {
         });
     });
 
+    const targetSelect = document.getElementById('wiz-target');
+    const specificPostGroup = document.getElementById('wiz-specific-post-group');
+    
+    targetSelect?.addEventListener('change', () => {
+        if (targetSelect.value === 'specific') {
+            specificPostGroup.style.display = 'block';
+        } else {
+            specificPostGroup.style.display = 'none';
+        }
+    });
+
     dmInput?.addEventListener('input', (e) => {
         previewBubble.textContent = e.target.value || 'Hey! Here is the link you requested...';
     });
@@ -280,11 +291,17 @@ function setupWizard() {
             nextBtn.textContent = 'Publishing...';
             nextBtn.disabled = true;
             
+            const targetType = document.getElementById('wiz-target').value;
+            const mediaIdInput = document.getElementById('wiz-post-id')?.value.trim() || null;
+
             const data = {
                 name: document.getElementById('wiz-name').value || 'My Automation',
                 mode: 'keyword',
                 keywords: document.getElementById('wiz-keywords').value.split(',').map(k => k.trim()).filter(Boolean),
-                target: { type: document.getElementById('wiz-target').value },
+                target: { 
+                    type: targetType,
+                    mediaId: targetType === 'specific' ? mediaIdInput : null
+                },
                 dmMessage: document.getElementById('wiz-dm').value
             };
 
