@@ -270,14 +270,14 @@ function setupWizard() {
         });
     });
 
-    const targetSelect = document.getElementById('wiz-target');
-    const specificPostGroup = document.getElementById('wiz-specific-post-group');
+    const triggerTypeSelect = document.getElementById('wiz-trigger-type');
+    const keywordGroup = document.getElementById('wiz-keyword-group');
     
-    targetSelect?.addEventListener('change', () => {
-        if (targetSelect.value === 'specific') {
-            specificPostGroup.style.display = 'block';
+    triggerTypeSelect?.addEventListener('change', () => {
+        if (triggerTypeSelect.value === 'keyword') {
+            keywordGroup.style.display = 'block';
         } else {
-            specificPostGroup.style.display = 'none';
+            keywordGroup.style.display = 'none';
         }
     });
 
@@ -288,19 +288,24 @@ function setupWizard() {
     nextBtn?.addEventListener('click', async () => {
         if (currentWizardStep === 4) {
             // Publish
+            const postIdVal = document.getElementById('wiz-post-id')?.value.trim();
+            if (!postIdVal) {
+                document.getElementById('wiz-msg').textContent = 'Instagram Post ID or URL is required.';
+                return;
+            }
+
             nextBtn.textContent = 'Publishing...';
             nextBtn.disabled = true;
             
-            const targetType = document.getElementById('wiz-target').value;
-            const mediaIdInput = document.getElementById('wiz-post-id')?.value.trim() || null;
+            const triggerType = document.getElementById('wiz-trigger-type').value;
 
             const data = {
                 name: document.getElementById('wiz-name').value || 'My Automation',
-                mode: 'keyword',
-                keywords: document.getElementById('wiz-keywords').value.split(',').map(k => k.trim()).filter(Boolean),
+                mode: triggerType, // 'any_comment' or 'keyword'
+                keywords: triggerType === 'keyword' ? document.getElementById('wiz-keywords').value.split(',').map(k => k.trim()).filter(Boolean) : [],
                 target: { 
-                    type: targetType,
-                    mediaId: targetType === 'specific' ? mediaIdInput : null
+                    type: 'specific',
+                    mediaId: postIdVal
                 },
                 dmMessage: document.getElementById('wiz-dm').value
             };
@@ -355,9 +360,14 @@ function updateWizardUI() {
     if (currentWizardStep === 4) {
         nextBtn.textContent = 'Publish Automation';
         // Populate review
-        document.getElementById('review-name').textContent = document.getElementById('wiz-name').value || 'Untitled';
-        document.getElementById('review-keywords').textContent = document.getElementById('wiz-keywords').value || 'None';
-        document.getElementById('review-target').textContent = document.getElementById('wiz-target').value === 'global' ? 'Any Post' : 'Specific Post';
+        const nameVal = document.getElementById('wiz-name').value || 'Untitled';
+        const triggerType = document.getElementById('wiz-trigger-type').value;
+        const keywordsVal = document.getElementById('wiz-keywords').value || '';
+        const postVal = document.getElementById('wiz-post-id').value || 'Not selected';
+
+        document.getElementById('review-name').textContent = nameVal;
+        document.getElementById('review-keywords').textContent = triggerType === 'any_comment' ? 'Any Comment' : `Keywords: ${keywordsVal}`;
+        document.getElementById('review-target').textContent = `Post: ${postVal}`;
     } else {
         nextBtn.textContent = 'Next Step';
     }
