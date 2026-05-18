@@ -246,8 +246,8 @@
 
                     <!-- STEP 2: TRIGGER -->
                     <div class="wizard-step-pane" id="wizard-step-2" style="display: none;">
-                        <h2 style="margin-bottom: 8px;">When should this trigger?</h2>
-                        <p class="text-muted" style="margin-bottom: 24px;">Define what the user needs to comment.</p>
+                        <h2 style="margin-bottom: 8px;">Target Post & Trigger</h2>
+                        <p class="text-muted" style="margin-bottom: 24px;">Select your Instagram post and trigger conditions.</p>
                         
                         <div class="form-group">
                             <label class="form-label">Name this automation</label>
@@ -255,23 +255,23 @@
                         </div>
 
                         <div class="form-group">
-                            <label class="form-label">User comments a specific keyword</label>
-                            <input type="text" id="wiz-keywords" class="form-input" placeholder="e.g. LINK, PRICE, PDF">
-                            <div class="form-hint">Users who comment this word will receive the DM.</div>
+                            <label class="form-label">Instagram Post ID or URL (Required)</label>
+                            <input type="text" id="wiz-post-id" class="form-input" placeholder="e.g. https://www.instagram.com/p/C7Xyz12345/ or 179234567890123">
+                            <div class="form-hint">Paste your Reels, Post, or Video link or its numeric ID.</div>
                         </div>
 
-                        <div class="form-group" style="margin-top: 32px;">
-                            <label class="form-label">Where should we listen for comments?</label>
-                            <select id="wiz-target" class="form-input">
-                                <option value="global">Any Post or Reel (Recommended)</option>
-                                <option value="specific">A Specific Post</option>
+                        <div class="form-group" style="margin-top: 24px;">
+                            <label class="form-label">Trigger Condition</label>
+                            <select id="wiz-trigger-type" class="form-input">
+                                <option value="any_comment">Any Comment (Respond to every comment)</option>
+                                <option value="keyword">Specific Comment Keyword (Respond only to keywords)</option>
                             </select>
                         </div>
 
-                        <div class="form-group" id="wiz-specific-post-group" style="margin-top: 16px; display: none;">
-                            <label class="form-label">Specific Post ID or URL</label>
-                            <input type="text" id="wiz-post-id" class="form-input" placeholder="e.g. 179234567890123 or https://www.instagram.com/p/.../">
-                            <div class="form-hint">Enter the Instagram Post ID or full post URL to target.</div>
+                        <div class="form-group" id="wiz-keyword-group" style="margin-top: 16px; display: none;">
+                            <label class="form-label">Comment Keywords</label>
+                            <input type="text" id="wiz-keywords" class="form-input" placeholder="e.g. LINK, PRICE, PDF">
+                            <div class="form-hint">Comma separated words. Users who comment these words will receive the DM.</div>
                         </div>
                     </div>
 
