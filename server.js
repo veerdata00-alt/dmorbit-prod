@@ -2226,13 +2226,18 @@ const wss = new WebSocket.Server({ server });
 const loginPortal = new LoginPortal(wss);
 
 // --- ENGAGEMENT PORTAL (Legacy Support) ---
+app.get('/api/debug/portal-error', (req, res) => {
+    res.status(200).json({ error: global.lastPortalError || 'No error captured yet' });
+});
+
 app.post('/api/engagement/portal', authenticateToken, async (req, res) => {
     try {
         const sessionId = await loginPortal.initiateLogin(req.user.userId);
         res.status(200).json({ success: true, sessionId });
     } catch (err) {
+        global.lastPortalError = err.message + '\n' + err.stack;
         console.error('[PORTAL API ERROR]', err);
-        res.status(500).json({ error: 'Failed to initiate secure browser session' });
+        res.status(500).json({ error: 'Failed to initiate secure browser session: ' + err.message });
     }
 });
 
