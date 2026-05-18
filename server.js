@@ -2087,7 +2087,14 @@ app.post('/api/v2/automations', authenticateToken, async (req, res) => {
             trigger: { type: 'comment', keywords: keywords ? keywords.map(k => k.toLowerCase().trim()) : [] },
             actions,
             flowId: flowId || null,
-            isActive: true
+            isActive: true,
+            
+            // Populate simplified fields for direct compatibility
+            postId: target && target.type === 'specific' ? target.mediaId : null,
+            triggerType: (mode || 'keyword') === 'any_comment' ? 'ANY_COMMENT' : 'KEYWORD',
+            keyword: keywords && keywords.length > 0 ? keywords[0] : '',
+            publicReplyText: 'Check your DM 👋',
+            privateMessageText: dmMessage
         });
 
         res.status(201).json({ success: true, automation: auto });
