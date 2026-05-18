@@ -211,6 +211,7 @@ const Automation = mongoose.model('Automation', automationSchema);
 
 const userSchema = new mongoose.Schema({
     email: { type: String, unique: true },
+    password: { type: String },
     firebaseId: { type: String, index: true },
     profilePicture: String,
     name: { type: String },
@@ -1168,6 +1169,10 @@ app.post('/api/login', async (req, res) => {
 
     if (!user) {
         return res.status(401).json({ error: 'User not found' });
+    }
+
+    if (!user.password) {
+        return res.status(400).json({ error: 'This account does not have a password set. Please use Google Sign-in.' });
     }
 
     if (!password) {
