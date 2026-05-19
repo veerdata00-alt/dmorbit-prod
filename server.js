@@ -227,7 +227,8 @@ const userSchema = new mongoose.Schema({
     profilePicture: String,
     name: { type: String },
     role: { type: String, default: 'user' },
-    plan: { type: String, enum: ['free', 'pro'], default: 'free' },
+    plan: { type: String, enum: ['FREE', 'BASIC', 'PRO', 'free', 'pro'], default: 'FREE' },
+    dmCountThisMonth: { type: Number, default: 0 },
     instagramConnected: { type: Boolean, default: false },
     createdAt: { type: Date, default: Date.now }
 });
@@ -1653,6 +1654,36 @@ function extractUrl(text) {
     return match ? match[0] : "https://web-production-dd826.up.railway.app";
 }
 
+// --- DMOrbit 3-Tier Pricing & Limitation Checker ---
+async function checkAutomationLimits(user) {
+    const currentPlan = (user.plan || 'FREE').toUpperCase();
+    const currentDmCount = user.dmCountThisMonth || 0;
+
+    // Fetch user's current active automations count
+    const activeAutomationsCount = await Automation.countDocuments({ 
+        userId: user._id, 
+        isActive: true 
+    });
+
+    console.log(`[DMOrbit Billing] Checking limits for User: ${user.email} | Plan: ${currentPlan} | DMs: ${currentDmCount}`);
+
+    if (currentPlan === 'FREE') {
+        if (currentDmCount >= 50) {
+            console.log("❌ Limit Exceeded: FREE Plan user reached 50 DMs limit.");
+            return { allowed: false, reason: "FREE_DM_LIMIT_EXCEEDED" };
+        }
+    } 
+    
+    if (currentPlan === 'BASIC') {
+        if (currentDmCount >= 1000) {
+            console.log("❌ Limit Exceeded: BASIC Plan user reached 1000 DMs limit.");
+            return { allowed: false, reason: "BASIC_DM_LIMIT_EXCEEDED" };
+        }
+    }
+
+    return { allowed: true };
+}
+
 // --- Unified Meta Webhook Receiver (POST /webhook) ---
 app.post('/webhook', verifySignature, async (req, res) => {
     console.log("🔥 WEBHOOK HIT 🔥");
@@ -1936,6 +1967,15 @@ app.post('/webhook', verifySignature, async (req, res) => {
 
                                         // --- 1. Execute direct actions for simplified compatible format ---
                                         if (auto.publicReplyText || auto.privateMessageText) {
+                                            const ownerUser = await User.findById(ownerId);
+                                            if (ownerUser) {
+                                                const limitStatus = await checkAutomationLimits(ownerUser);
+                                                if (!limitStatus.allowed) {
+                                                    console.log(`[BILLING] Automation blocked for user ${ownerId}: ${limitStatus.reason}`);
+                                                    continue;
+                                                }
+                                            }
+
                                             console.log(`[SIMPLIFIED ACTIONS] Executing direct API calls for automation ${auto._id}`);
                                             const pageToken = ownerAccount.access_token;
                                             
@@ -1982,6 +2022,7 @@ app.post('/webhook', verifySignature, async (req, res) => {
                                                         // Send Initial Access Card instead of plain text
                                                         await sendInitialAccessCard(userId, pageToken);
                                                         console.log(`[SIMPLIFIED SUCCESS] Follow-Gate Initial Card sent to user: ${userId}`);
+                                                        await User.updateOne({ _id: ownerId }, { $inc: { dmCountThisMonth: 1 } });
                                                     } catch (err) {
                                                         console.error("[SIMPLIFIED ERROR] Failed private DM:", err.response?.data || err.message);
                                                     }
