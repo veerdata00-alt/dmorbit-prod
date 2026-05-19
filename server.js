@@ -1772,8 +1772,7 @@ app.post('/webhook', verifySignature, async (req, res) => {
                                 }
 
                                 if (postbackPayload === "VERIFY_FOLLOW_CLICKED") {
-                                    // FIRST TIME: Always send the Cheeky Reminder (Fake Anti-Cheat)
-                                    console.log("[DMOrbit] Anti-Cheat Triggered: Sending Fake Reminder!");
+                                    console.log("[DMOrbit] First click on 'I'm following'. Triggering psychological block.");
                                     try {
                                         const url = `https://graph.facebook.com/v21.0/me/messages`;
                                         await axios.post(url, {
@@ -1794,8 +1793,8 @@ app.post('/webhook', verifySignature, async (req, res) => {
                                                                 },
                                                                 {
                                                                     type: "postback",
-                                                                    title: "Try Again ✅",
-                                                                    payload: "VERIFY_FOLLOW_CLICKED_AGAIN"
+                                                                    title: "I'm following ✅",
+                                                                    payload: "FINAL_FOLLOW_CLICKED"
                                                                 }
                                                             ]
                                                         }]
@@ -1805,13 +1804,12 @@ app.post('/webhook', verifySignature, async (req, res) => {
                                             access_token: pageToken
                                         });
                                     } catch (err) {
-                                        console.log("[DMOrbit] Fallback error in Cheeky Reminder");
+                                        console.error("Error sending 1st click response:", err.message);
                                     }
                                 }
 
-                                if (postbackPayload === "VERIFY_FOLLOW_CLICKED_AGAIN") {
-                                    // SECOND TIME: Give them the link!
-                                    console.log("[DMOrbit] User clicked Try Again. Sending final link.");
+                                if (postbackPayload === "FINAL_FOLLOW_CLICKED") {
+                                    console.log("[DMOrbit] Second click verified. Delivering final automation resource safely.");
                                     const link = extractUrl(automation?.privateMessageText);
                                     await sendFinalDeliveryCard(senderId, pageToken, link, automation?.name);
                                 }
