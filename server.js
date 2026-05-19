@@ -146,6 +146,8 @@ const logSchema = new mongoose.Schema({
     dmLink: String,
     metadata: mongoose.Schema.Types.Mixed,
     platform: String,
+    commentCount: { type: Number, default: 0 },
+    dmCount: { type: Number, default: 0 },
     timestamp: { type: Date, default: Date.now }
 });
 const Log = mongoose.model('Log', logSchema);
@@ -211,6 +213,8 @@ const automationSchema = new mongoose.Schema({
     postId: { type: String, index: true },
     triggerType: { type: String, enum: ['KEYWORD', 'ANY_COMMENT'] },
     keyword: String,
+    listenerType: { type: String, enum: ['MESSAGE', 'SMART_AI'], default: 'MESSAGE' },
+    aiPrompt: { type: String, default: '' },
     publicReplyText: String,
     privateMessageText: String
 });
@@ -1595,8 +1599,36 @@ app.post('/webhook', verifySignature, async (req, res) => {
                             await updateFlowStateActivity(senderId);
                             await cancelPendingFollowups(senderId);
 
-                            // Trigger for DMs (optional, existing logic preserved)
-                            // Note: The user said DM triggers work, so we keep this minimal or as is.
+                            // Trigger for DMs (DM Automation Test)
+                            const igAccountId = entry.id;
+                            const ownerAccount = await InstagramAccount.findOne({ instagram_id: igAccountId });
+                            
+                            if (ownerAccount) {
+                                const ownerId = ownerAccount.userId;
+                                const normalizedDm = messageText.toLowerCase().trim();
+                                
+                                const allAutos = await Automation.find({ userId: ownerId, isActive: true });
+                                const matched = allAutos.find(a => {
+                                    if (a.triggerType === 'ANY_COMMENT') return false; 
+                                    const kw = a.keyword || "";
+                                    return kw && normalizedDm.includes(kw.toLowerCase().trim());
+                                });
+
+                                if (matched && matched.privateMessageText) {
+                                    console.log(`[DM AUTOMATION] Matched keyword! Sending reply...`);
+                                    try {
+                                        const messagesUrl = `https://graph.facebook.com/v21.0/me/messages`;
+                                        await axios.post(messagesUrl, {
+                                            recipient: { id: senderId },
+                                            message: { text: matched.privateMessageText },
+                                            access_token: ownerAccount.access_token
+                                        });
+                                        console.log(`[DM SUCCESS] Auto-reply sent to user: ${senderId}`);
+                                    } catch (err) {
+                                        console.error("[DM ERROR]", err.response?.data || err.message);
+                                    }
+                                }
+                            }
                         }
                     }
                 }
