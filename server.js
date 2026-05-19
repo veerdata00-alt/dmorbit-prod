@@ -1546,6 +1546,84 @@ app.get('/webhook', (req, res) => {
     }
 });
 
+// --- DMOrbit Follow-Gate Template Engine ---
+
+async function sendInitialAccessCard(recipientId, pageToken) {
+    const url = `https://graph.facebook.com/v21.0/me/messages`;
+    const payload = {
+        recipient: { id: recipientId },
+        message: {
+            attachment: {
+                type: "template",
+                payload: {
+                    template_type: "generic",
+                    elements: [{
+                        title: "Hey 🖐",
+                        subtitle: "Saw your interest - I've got something useful for you. Tap below and I'll send it right away",
+                        buttons: [{ type: "postback", title: "Send me the access", payload: "REQUEST_ACCESS_CLICKED" }]
+                    }]
+                }
+            }
+        },
+        access_token: pageToken
+    };
+    await axios.post(url, payload);
+}
+
+async function sendFollowGateCard(recipientId, pageToken, profileUrl) {
+    const url = `https://graph.facebook.com/v21.0/me/messages`;
+    const payload = {
+        recipient: { id: recipientId },
+        message: {
+            attachment: {
+                type: "template",
+                payload: {
+                    template_type: "generic",
+                    elements: [{
+                        title: "Looks like you're not following yet 👀",
+                        subtitle: "Follow to unlock access.",
+                        buttons: [
+                            { type: "web_url", url: profileUrl || "https://instagram.com/", title: "Visit Profile" },
+                            { type: "postback", title: "I'm following ✅", payload: "VERIFY_FOLLOW_CLICKED" }
+                        ]
+                    }]
+                }
+            }
+        },
+        access_token: pageToken
+    };
+    await axios.post(url, payload);
+}
+
+async function sendFinalDeliveryCard(recipientId, pageToken, targetLink, fallbackText) {
+    const url = `https://graph.facebook.com/v21.0/me/messages`;
+    const payload = {
+        recipient: { id: recipientId },
+        message: {
+            attachment: {
+                type: "template",
+                payload: {
+                    template_type: "generic",
+                    elements: [{
+                        title: "Here you go 👇",
+                        subtitle: fallbackText || "This is what you asked for. Try it and let me know 👍",
+                        buttons: [{ type: "web_url", url: targetLink || "https://web-production-dd826.up.railway.app", title: "Click me" }]
+                    }]
+                }
+            }
+        },
+        access_token: pageToken
+    };
+    await axios.post(url, payload);
+}
+
+function extractUrl(text) {
+    if(!text) return "https://web-production-dd826.up.railway.app";
+    const urlRegex = /(https?:\/\/[^\s]+)/g;
+    const match = text.match(urlRegex);
+    return match ? match[0] : "https://web-production-dd826.up.railway.app";
+}
+
 // --- Unified Meta Webhook Receiver (POST /webhook) ---
 app.post('/webhook', verifySignature, async (req, res) => {
     console.log("🔥 WEBHOOK HIT 🔥");
@@ -1619,16 +1697,51 @@ app.post('/webhook', verifySignature, async (req, res) => {
                                 if (matched && replyText) {
                                     console.log(`[DM AUTOMATION] Matched keyword! Sending reply...`);
                                     try {
-                                        const messagesUrl = `https://graph.facebook.com/v21.0/me/messages`;
-                                        await axios.post(messagesUrl, {
-                                            recipient: { id: senderId },
-                                            message: { text: replyText },
-                                            access_token: ownerAccount.access_token
-                                        });
-                                        console.log(`[DM SUCCESS] Auto-reply sent to user: ${senderId}`);
+                                        // Send Initial Access Card instead of plain text
+                                        await sendInitialAccessCard(senderId, ownerAccount.access_token);
+                                        console.log(`[DM SUCCESS] Follow-Gate Initial Card sent to user: ${senderId}`);
                                     } catch (err) {
                                         console.error("[DM ERROR]", err.response?.data || err.message);
                                     }
+                                }
+                            }
+                        }
+
+                        // --- HANDLING INSTAGRAM BUTTON CLICK EVENTS (POSTBACKS) ---
+                        if (event.postback && event.postback.payload) {
+                            const postbackPayload = event.postback.payload;
+                            console.log(`[DMOrbit] Button Clicked! Payload received: ${postbackPayload}`);
+                            
+                            const igAccountId = entry.id;
+                            const ownerAccount = await InstagramAccount.findOne({ instagram_id: igAccountId });
+                            const pageToken = ownerAccount ? ownerAccount.access_token : null;
+
+                            if (pageToken && senderId && ownerAccount) {
+                                const automation = await Automation.findOne({ userId: ownerAccount.userId, isActive: true }).sort({ createdAt: -1 });
+
+                                if (postbackPayload === "REQUEST_ACCESS_CLICKED") {
+                                    try {
+                                        const followCheckUrl = `https://graph.facebook.com/v21.0/${senderId}?fields=is_viewer_follow_page&access_token=${pageToken}`;
+                                        const followRes = await axios.get(followCheckUrl).catch(() => null);
+                                        const isFollowing = followRes?.data?.is_viewer_follow_page || false;
+
+                                        const link = extractUrl(automation?.privateMessageText);
+                                        const profileUrl = `https://instagram.com/`;
+
+                                        if (isFollowing) {
+                                            await sendFinalDeliveryCard(senderId, pageToken, link, automation?.name);
+                                        } else {
+                                            await sendFollowGateCard(senderId, pageToken, profileUrl);
+                                        }
+                                    } catch (err) {
+                                        const link = extractUrl(automation?.privateMessageText);
+                                        await sendFinalDeliveryCard(senderId, pageToken, link, automation?.name);
+                                    }
+                                }
+
+                                if (postbackPayload === "VERIFY_FOLLOW_CLICKED") {
+                                    const link = extractUrl(automation?.privateMessageText);
+                                    await sendFinalDeliveryCard(senderId, pageToken, link, automation?.name);
                                 }
                             }
                         }
@@ -1796,13 +1909,9 @@ app.post('/webhook', verifySignature, async (req, res) => {
                                                 // Action B: Private inbox DM
                                                 if (auto.privateMessageText && userId) {
                                                     try {
-                                                        const messagesUrl = `https://graph.facebook.com/v21.0/me/messages`;
-                                                        await axios.post(messagesUrl, {
-                                                            recipient: { id: userId },
-                                                            message: { text: auto.privateMessageText },
-                                                            access_token: pageToken
-                                                        });
-                                                        console.log(`[SIMPLIFIED SUCCESS] Private DM sent to user: ${userId}`);
+                                                        // Send Initial Access Card instead of plain text
+                                                        await sendInitialAccessCard(userId, pageToken);
+                                                        console.log(`[SIMPLIFIED SUCCESS] Follow-Gate Initial Card sent to user: ${userId}`);
                                                     } catch (err) {
                                                         console.error("[SIMPLIFIED ERROR] Failed private DM:", err.response?.data || err.message);
                                                     }
