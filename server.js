@@ -1546,6 +1546,35 @@ app.get('/webhook', (req, res) => {
     }
 });
 
+// --- Smart Instagram Profile Redirect (Deep Link) ---
+app.get('/ig-profile', (req, res) => {
+    res.send(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Opening DMOrbit Profile...</title>
+            <meta name="viewport" content="width=device-width, initial-scale=1">
+            <style>
+                body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; background-color: #fafafa; flex-direction: column; }
+                .spinner { width: 40px; height: 40px; border: 4px solid rgba(0,0,0,0.1); border-left-color: #000; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 20px; }
+                @keyframes spin { 100% { transform: rotate(360deg); } }
+            </style>
+            <script>
+                // Try deep linking first, then fallback to normal web URL
+                window.location.href = "instagram://user?username=dmorbitapp";
+                setTimeout(function() {
+                    window.location.href = "https://instagram.com/dmorbitapp";
+                }, 1500);
+            </script>
+        </head>
+        <body>
+            <div class="spinner"></div>
+            <p style="color: #666; font-weight: 500;">Taking you to Instagram...</p>
+        </body>
+        </html>
+    `);
+});
+
 // --- DMOrbit Follow-Gate Template Engine ---
 
 async function sendInitialAccessCard(recipientId, pageToken) {
@@ -1726,7 +1755,7 @@ app.post('/webhook', verifySignature, async (req, res) => {
                                         const isFollowing = followRes?.data?.is_viewer_follow_page || false;
 
                                         const link = extractUrl(automation?.privateMessageText);
-                                        const profileUrl = `https://instagram.com/dmorbitapp/`;
+                                        const profileUrl = `https://web-production-dd826.up.railway.app/ig-profile`;
 
                                         if (isFollowing) {
                                             await sendFinalDeliveryCard(senderId, pageToken, link, automation?.name);
@@ -1737,7 +1766,7 @@ app.post('/webhook', verifySignature, async (req, res) => {
                                     } catch (err) {
                                         console.log("[DMOrbit Dev Mode Fallback] Follow API restricted. Forcing Follow-Gate Card for testing.");
                                         // Dev Mode Fallback: Force the follow gate card so you can test the UI buttons!
-                                        const profileUrl = `https://instagram.com/dmorbitapp/`;
+                                        const profileUrl = `https://web-production-dd826.up.railway.app/ig-profile`;
                                         await sendFollowGateCard(senderId, pageToken, profileUrl);
                                     }
                                 }
