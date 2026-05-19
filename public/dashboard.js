@@ -101,6 +101,11 @@ function loadPage(page) {
     else if (page === 'automations') loadAutomations();
     else if (page === 'logs') loadLogs();
     else if (page === 'account') loadAccount();
+    else if (page === 'billing') {
+        if (window.updateBillingWidget && currentUser) {
+            window.updateBillingWidget(currentUser.plan || 'FREE', currentUser.dmCountThisMonth || 0);
+        }
+    }
 }
 
 async function loadOverview() {
