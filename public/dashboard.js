@@ -335,6 +335,9 @@ function setupWizard() {
             const triggerMode = document.getElementById('wiz-trigger-mode')?.value || 'keyword';
             const keywordsInput = document.getElementById('wiz-keywords')?.value || '';
 
+            const replyStyleMode = document.getElementById('replyStyleMode')?.value || 'TEXT';
+            const instagramHandle = document.getElementById('instagramHandle')?.value || '';
+
             const data = {
                 name: document.getElementById('wiz-name').value || 'My Automation',
                 mode: triggerMode,
@@ -343,7 +346,9 @@ function setupWizard() {
                     type: 'specific',
                     mediaId: selectedMediaId
                 },
-                dmMessage: document.getElementById('wiz-dm').value
+                dmMessage: document.getElementById('wiz-dm').value,
+                replyStyleMode: replyStyleMode,
+                instagramHandle: instagramHandle
             };
 
             const res = await API.createAutomation(data);
