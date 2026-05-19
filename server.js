@@ -1684,6 +1684,77 @@ async function checkAutomationLimits(user) {
     return { allowed: true };
 }
 
+// --- DMOrbit Stripe Subscription & Billing Engine ---
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY || 'sk_test_mock_key');
+
+// Route 1: Create a Checkout Session (USD / INR adaptive depending on frontend)
+app.post('/api/billing/checkout', async (req, res) => {
+    const { userId, planType, currency } = req.body; // planType: 'BASIC' or 'PRO', currency: 'inr' or 'usd'
+    
+    // Determine pricing based on currency and plan choice
+    let amount = 0;
+    if (planType === 'BASIC') {
+        amount = currency === 'inr' ? 29900 : 900; // 299.00 INR vs 9.00 USD (in cents)
+    } else if (planType === 'PRO') {
+        amount = currency === 'inr' ? 59900 : 1900; // 599.00 INR vs 19.00 USD
+    }
+
+    try {
+        const session = await stripe.checkout.sessions.create({
+            payment_method_types: currency === 'inr' ? ['card', 'upi'] : ['card'],
+            line_items: [{
+                price_data: {
+                    currency: currency || 'inr',
+                    product_data: {
+                        name: `DMOrbit ${planType} Plan Subscription`,
+                        description: `Unlock advanced Instagram automation features for ${planType} tier.`,
+                    },
+                    unit_amount: amount,
+                },
+                quantity: 1,
+            }],
+            mode: 'payment', // Or 'subscription' depending on your Stripe account capability
+            success_url: `${process.env.CLIENT_URL || 'https://web-production-dd826.up.railway.app'}/dashboard.html?payment=success`,
+            cancel_url: `${process.env.CLIENT_URL || 'https://web-production-dd826.up.railway.app'}/dashboard.html?payment=cancel`,
+            metadata: { userId, planType }
+        });
+
+        res.json({ url: session.url });
+    } catch (err) {
+        console.error("[Stripe Error]:", err.message);
+        res.status(500).json({ error: "Failed to create checkout session" });
+    }
+});
+
+// Route 2: Stripe Webhook Listener to capture successful payments
+app.post('/api/billing/webhook', async (req, res) => {
+    const sig = req.headers['stripe-signature'];
+    let event;
+
+    try {
+        // Handle both stringified and already-parsed JSON safely
+        event = typeof req.body === 'string' || Buffer.isBuffer(req.body) ? JSON.parse(req.body) : req.body;
+    } catch (err) {
+        return res.status(400).send(`Webhook Error: ${err.message}`);
+    }
+
+    // Handle the checkout.session.completed event
+    if (event.type === 'checkout.session.completed') {
+        const session = event.data.object;
+        const { userId, planType } = session.metadata;
+
+        console.log(`[Stripe Webhook] Successful Payment! Upgrading User: ${userId} to ${planType}`);
+        
+        // Update user plan and reset their dynamic counter in DB
+        await User.updateOne(
+            { _id: userId },
+            { plan: planType, dmCountThisMonth: 0 }
+        );
+    }
+
+    res.json({ received: true });
+});
+
 // --- Unified Meta Webhook Receiver (POST /webhook) ---
 app.post('/webhook', verifySignature, async (req, res) => {
     console.log("🔥 WEBHOOK HIT 🔥");
