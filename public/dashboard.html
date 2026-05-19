@@ -306,6 +306,33 @@
                             <textarea id="wiz-dm" class="form-textarea" placeholder="Hey! Here is the link you requested: https://..."></textarea>
                             <div class="form-hint">Keep it friendly and natural.</div>
                         </div>
+
+                        <!-- Inject Reply Style Options -->
+                        <div class="reply-style-panel" style="margin-top: 15px; padding: 12px; border-radius: 8px; background: rgba(255,255,255,0.03); border: 1px solid #333;">
+                            <label style="display: block; font-weight: 600; margin-bottom: 6px; color: #e0e0e0; font-size: 14px;">Reply Style Mode</label>
+                            <select id="replyStyleMode" name="replyStyleMode" class="form-input" style="width: 100%; padding: 10px; background: #1a1a1a; color: #fff; border: 1px solid #444; border-radius: 6px;">
+                                <option value="TEXT">Standard Direct Message (Text Only)</option>
+                                <option value="FOLLOW_GATE">Viral Follow-Gate (Button Templates)</option>
+                            </select>
+
+                            <div id="igHandleContainer" style="display: none; margin-top: 12px;">
+                                <label style="display: block; font-weight: 600; margin-bottom: 6px; color: #e0e0e0; font-size: 13px;">Your Instagram Username (For Deep-Linking)</label>
+                                <input type="text" id="instagramHandle" name="instagramHandle" placeholder="e.g., dmorbitapp" style="width: 100%; padding: 10px; background: #1a1a1a; color: #fff; border: 1px solid #444; border-radius: 6px;" />
+                                <small style="color: #888; display: block; margin-top: 4px;">This forces the [Visit Profile] button to open natively inside the Instagram App.</small>
+                            </div>
+                        </div>
+
+                        <script>
+                            // Toggle Visibility based on Selection
+                            document.getElementById('replyStyleMode').addEventListener('change', function() {
+                                const handleContainer = document.getElementById('igHandleContainer');
+                                if (this.value === 'FOLLOW_GATE') {
+                                    handleContainer.style.display = 'block';
+                                } else {
+                                    handleContainer.style.display = 'none';
+                                }
+                            });
+                        </script>
                     </div>
 
                     <!-- STEP 4: REVIEW -->
