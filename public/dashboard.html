@@ -43,7 +43,7 @@
                     <span class="nav-icon">📱</span>
                     <span>Instagram Account</span>
                 </a>
-                <a href="#" class="nav-item">
+                <a href="#" class="nav-item" data-page="billing">
                     <span class="nav-icon">💳</span>
                     <span>Billing & Plan</span>
                 </a>
@@ -199,45 +199,65 @@
                     </div>
                 </div>
 
-                <!-- Billing Container -->
-                <div class="billing-container" style="max-width: 600px; margin-top: 30px; padding: 20px; border-radius: 12px; background: #111; border: 1px solid #222;">
-                    <h2 style="color: #fff; font-size: 20px; margin-bottom: 5px;">💳 Billing & Subscription</h2>
-                    <p style="color: #888; font-size: 14px; margin-bottom: 20px;">Manage your plan, monitor live usage limits, or upgrade your tier.</p>
-                    
-                    <div class="usage-box" style="background: rgba(255,255,255,0.02); padding: 15px; border-radius: 8px; margin-bottom: 25px; border: 1px solid #333;">
-                        <div style="display: flex; justify-content: space-between; color: #e0e0e0; font-size: 14px; margin-bottom: 8px;">
-                            <span>Current Plan: <strong id="currentPlanBadge" style="color: #00e676; background: rgba(0,230,118,0.1); padding: 2px 8px; border-radius: 4px;">FREE</strong></span>
-                            <span id="dmUsageText">0 / 50 DMs Used</span>
+                </div>
+            </div>
+
+            <!-- BILLING PAGE -->
+            <div class="page" id="page-billing">
+                <div class="hero-section">
+                    <div class="hero-content">
+                        <h2>💳 Billing & Subscription</h2>
+                        <p>Manage your subscription tier, track usage counters, or upgrade instantly via UPI/Card.</p>
+                    </div>
+                </div>
+                <div id="billingPlanSection" style="max-width: 800px; color: #fff;">
+                    <div style="background: rgba(255,255,255,0.02); border: 1px solid #222; padding: 20px; border-radius: 12px; margin-bottom: 30px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                            <span style="font-size: 15px; color: #aaa;">Current Account Tier: <strong id="currentPlanBadge" style="color: #00e676; background: rgba(0,230,118,0.1); padding: 3px 10px; border-radius: 6px; margin-left: 5px;">FREE PLAN</strong></span>
+                            <span id="dmUsageText" style="font-weight: 600; color: #e0e0e0;">0 / 50 DMs Used</span>
                         </div>
-                        <div style="width: 100%; height: 8px; background: #222; border-radius: 4px; overflow: hidden;">
-                            <div id="usageProgressBar" style="width: 0%; height: 100%; background: linear-gradient(90deg, #00e676, #00b0ff); transition: width 0.4s ease;"></div>
+                        <div style="width: 100%; height: 10px; background: #1a1a1a; border-radius: 5px; overflow: hidden; border: 1px solid #333;">
+                            <div id="usageProgressBar" style="width: 5%; height: 100%; background: linear-gradient(90deg, #00e676, #00b0ff); transition: width 0.5s ease;"></div>
                         </div>
                     </div>
 
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px;">
-                        <div style="background: #161616; padding: 20px; border-radius: 8px; border: 1px solid #333; text-align: center;">
-                            <h3 style="color: #fff; margin-bottom: 5px;">Basic Plan</h3>
-                            <p style="color: #888; font-size: 13px;">Perfect for growing creators</p>
-                            <div style="font-size: 24px; color: #fff; font-weight: bold; margin: 15px 0;">₹299 <span style="font-size: 14px; color: #666;">/mo</span></div>
-                            <ul style="color: #aaa; font-size: 13px; text-align: left; padding-left: 15px; margin-bottom: 20px; line-height: 1.6;">
-                                <li>Up to 5 Active Automations</li>
-                                <li>1,000 Auto-DMs per month</li>
-                                <li>Viral Follow-Gate Enabled ✅</li>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 25px;">
+                        <div style="background: #111; padding: 25px; border-radius: 12px; border: 1px solid #222; opacity: 0.8;">
+                            <h3 style="font-size: 18px; margin-bottom: 5px;">Free Tier</h3>
+                            <p style="color: #666; font-size: 13px; margin-bottom: 15px;">Basic testing sandbox</p>
+                            <div style="font-size: 28px; font-weight: bold; margin-bottom: 20px;">₹0 <span style="font-size: 14px; color: #444; font-weight: normal;">/ forever</span></div>
+                            <ul style="color: #888; font-size: 13px; padding-left: 18px; margin-bottom: 25px; line-height: 1.8;">
+                                <li>1 Active Automation</li>
+                                <li>50 Free Auto-DMs / mo</li>
+                                <li style="color: #ff5252; list-style-type: '× ';">Viral Follow-Gate (Locked 🔒)</li>
                             </ul>
-                            <button onclick="window.initiateCheckout('BASIC')" style="width: 100%; padding: 10px; background: #00b0ff; color: #fff; border: none; border-radius: 6px; font-weight: bold; cursor: pointer;">Upgrade to Basic</button>
+                            <button disabled style="width: 100%; padding: 12px; background: #222; color: #555; border: none; border-radius: 8px; font-weight: bold; cursor: not-allowed;">Current Plan</button>
                         </div>
 
-                        <div style="background: #161616; padding: 20px; border-radius: 8px; border: 1px solid #00e676; text-align: center; position: relative;">
-                            <span style="position: absolute; top: -10px; right: 20px; background: #00e676; color: #000; font-size: 11px; font-weight: bold; padding: 2px 8px; border-radius: 10px;">POPULAR</span>
-                            <h3 style="color: #fff; margin-bottom: 5px;">Pro Plan</h3>
-                            <p style="color: #888; font-size: 13px;">Unlimited viral power</p>
-                            <div style="font-size: 24px; color: #fff; font-weight: bold; margin: 15px 0;">₹599 <span style="font-size: 14px; color: #666;">/mo</span></div>
-                            <ul style="color: #aaa; font-size: 13px; text-align: left; padding-left: 15px; margin-bottom: 20px; line-height: 1.6;">
-                                <li>Unlimited Active Automations</li>
-                                <li>Unlimited Auto-DMs</li>
-                                <li>Advanced Anti-Spam Rotator</li>
+                        <div style="background: #111; padding: 25px; border-radius: 12px; border: 1px solid #333; position: relative;">
+                            <h3 style="font-size: 18px; margin-bottom: 5px;">Basic Pro</h3>
+                            <p style="color: #888; font-size: 13px; margin-bottom: 15px;">Perfect for growing creators</p>
+                            <div style="font-size: 28px; font-weight: bold; margin-bottom: 20px;">₹299 <span style="font-size: 14px; color: #666; font-weight: normal;">/ month</span></div>
+                            <ul style="color: #aaa; font-size: 13px; padding-left: 18px; margin-bottom: 25px; line-height: 1.8;">
+                                <li>Up to 5 Active Automations</li>
+                                <li>1,000 Verified Auto-DMs / mo</li>
+                                <li style="color: #00e676; list-style-type: '✓ ';">Viral Follow-Gate Active ✅</li>
                             </ul>
-                            <button onclick="window.initiateCheckout('PRO')" style="width: 100%; padding: 10px; background: #00e676; color: #000; border: none; border-radius: 6px; font-weight: bold; cursor: pointer;">Upgrade to Pro</button>
+                            <button onclick="window.initiateCheckout('BASIC')" style="width: 100%; padding: 12px; background: #00b0ff; color: #fff; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.2s;">Upgrade to Basic</button>
+                        </div>
+
+                        <div style="background: #111; padding: 25px; border-radius: 12px; border: 1px solid #00e676; position: relative;">
+                            <span style="position: absolute; top: -12px; right: 25px; background: #00e676; color: #000; font-size: 11px; font-weight: bold; padding: 3px 10px; border-radius: 20px;">BEST VALUE</span>
+                            <h3 style="font-size: 18px; margin-bottom: 5px;">Ultimate Pro</h3>
+                            <p style="color: #888; font-size: 13px; margin-bottom: 15px;">Unlimited scale & power</p>
+                            <div style="font-size: 28px; font-weight: bold; margin-bottom: 20px;">₹599 <span style="font-size: 14px; color: #666; font-weight: normal;">/ month</span></div>
+                            <ul style="color: #aaa; font-size: 13px; padding-left: 18px; margin-bottom: 25px; line-height: 1.8;">
+                                <li><strong>Unlimited</strong> Active Automations</li>
+                                <li><strong>Unlimited</strong> Auto-DMs & Comments</li>
+                                <li>Advanced Anti-Spam Rotator</li>
+                                <li>Priority API Queue Infrastructure</li>
+                            </ul>
+                            <button onclick="window.initiateCheckout('PRO')" style="width: 100%; padding: 12px; background: #00e676; color: #000; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.2s;">Upgrade to Ultimate Pro</button>
                         </div>
                     </div>
                 </div>
