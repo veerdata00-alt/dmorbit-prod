@@ -1609,18 +1609,20 @@ app.post('/webhook', verifySignature, async (req, res) => {
                                 
                                 const allAutos = await Automation.find({ userId: ownerId, isActive: true });
                                 const matched = allAutos.find(a => {
-                                    if (a.triggerType === 'ANY_COMMENT') return false; 
-                                    const kw = a.keyword || "";
+                                    if (a.triggerType === 'ANY_COMMENT' || a.mode === 'any_comment') return false; 
+                                    const kw = a.keyword || (a.trigger && a.trigger.keywords && a.trigger.keywords[0]) || "";
                                     return kw && normalizedDm.includes(kw.toLowerCase().trim());
                                 });
 
-                                if (matched && matched.privateMessageText) {
+                                const replyText = matched?.privateMessageText || (matched?.actions?.find(act => act.type === 'send_dm')?.text);
+
+                                if (matched && replyText) {
                                     console.log(`[DM AUTOMATION] Matched keyword! Sending reply...`);
                                     try {
                                         const messagesUrl = `https://graph.facebook.com/v21.0/me/messages`;
                                         await axios.post(messagesUrl, {
                                             recipient: { id: senderId },
-                                            message: { text: matched.privateMessageText },
+                                            message: { text: replyText },
                                             access_token: ownerAccount.access_token
                                         });
                                         console.log(`[DM SUCCESS] Auto-reply sent to user: ${senderId}`);
