@@ -1772,8 +1772,55 @@ app.post('/webhook', verifySignature, async (req, res) => {
                                 }
 
                                 if (postbackPayload === "VERIFY_FOLLOW_CLICKED") {
-                                    const link = extractUrl(automation?.privateMessageText);
-                                    await sendFinalDeliveryCard(senderId, pageToken, link, automation?.name);
+                                    try {
+                                        // Re-verify real-time follow status when they try to bypass
+                                        const followCheckUrl = `https://graph.facebook.com/v21.0/${senderId}?fields=is_viewer_follow_page&access_token=${pageToken}`;
+                                        const followRes = await axios.get(followCheckUrl).catch(() => null);
+                                        const isFollowing = followRes?.data?.is_viewer_follow_page || false;
+                                        const link = extractUrl(automation?.privateMessageText);
+
+                                        if (isFollowing) {
+                                            console.log("[DMOrbit] User verified! Sending final link.");
+                                            await sendFinalDeliveryCard(senderId, pageToken, link, automation?.name);
+                                        } else {
+                                            console.log("[DMOrbit] Anti-Cheat Triggered: User clicked 'I'm following' but has NOT followed.");
+                                            // Send the follow gate card again with a cheeky reminder
+                                            const url = `https://graph.facebook.com/v21.0/me/messages`;
+                                            await axios.post(url, {
+                                                recipient: { id: senderId },
+                                                message: {
+                                                    attachment: {
+                                                        type: "template",
+                                                        payload: {
+                                                            template_type: "generic",
+                                                            elements: [{
+                                                                title: "Nice try! But you're still not following yet 👀",
+                                                                subtitle: "Please click 'Visit Profile' and follow to instantly unlock the access.",
+                                                                buttons: [
+                                                                    {
+                                                                        type: "web_url",
+                                                                        url: "https://web-production-dd826.up.railway.app/ig-profile",
+                                                                        title: "Visit Profile"
+                                                                    },
+                                                                    {
+                                                                        type: "postback",
+                                                                        title: "Try Again ✅",
+                                                                        payload: "VERIFY_FOLLOW_CLICKED"
+                                                                    }
+                                                                ]
+                                                            }]
+                                                        }
+                                                    }
+                                                },
+                                                access_token: pageToken
+                                            });
+                                        }
+                                    } catch (err) {
+                                        // Fallback for Dev Mode testing if Meta restricts token data
+                                        console.log("[DMOrbit Dev Mode Mode] Proceeding with fallback delivery.");
+                                        const link = extractUrl(automation?.privateMessageText);
+                                        await sendFinalDeliveryCard(senderId, pageToken, link, automation?.name);
+                                    }
                                 }
                             }
                         }
