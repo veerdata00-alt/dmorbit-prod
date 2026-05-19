@@ -1731,11 +1731,14 @@ app.post('/webhook', verifySignature, async (req, res) => {
                                         if (isFollowing) {
                                             await sendFinalDeliveryCard(senderId, pageToken, link, automation?.name);
                                         } else {
+                                            // Real Flow: Send the Follow-Gate card if they don't follow
                                             await sendFollowGateCard(senderId, pageToken, profileUrl);
                                         }
                                     } catch (err) {
-                                        const link = extractUrl(automation?.privateMessageText);
-                                        await sendFinalDeliveryCard(senderId, pageToken, link, automation?.name);
+                                        console.log("[DMOrbit Dev Mode Fallback] Follow API restricted. Forcing Follow-Gate Card for testing.");
+                                        // Dev Mode Fallback: Force the follow gate card so you can test the UI buttons!
+                                        const profileUrl = `https://instagram.com/`;
+                                        await sendFollowGateCard(senderId, pageToken, profileUrl);
                                     }
                                 }
 
