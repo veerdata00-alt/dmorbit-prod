@@ -254,6 +254,7 @@ function setupWizard() {
         currentWizardStep = 1;
         updateWizardUI();
         modal.classList.add('active');
+        fetchInstagramMedia();
         if (templateGoal) {
             document.querySelectorAll('.radio-card').forEach(c => c.classList.remove('selected'));
             document.querySelector('.radio-card').classList.add('selected'); // default to first for now
@@ -270,15 +271,54 @@ function setupWizard() {
         });
     });
 
-    const triggerTypeSelect = document.getElementById('wiz-trigger-type');
-    const keywordGroup = document.getElementById('wiz-keyword-group');
-    
-    triggerTypeSelect?.addEventListener('change', () => {
-        if (triggerTypeSelect.value === 'keyword') {
-            keywordGroup.style.display = 'block';
-        } else {
-            keywordGroup.style.display = 'none';
-        }
+    // Trigger Condition Toggles
+    const modeKeyword = document.getElementById('trigger-mode-keyword');
+    const modeAny = document.getElementById('trigger-mode-any');
+    const triggerModeInput = document.getElementById('wiz-trigger-mode');
+    const keywordsGroup = document.getElementById('wiz-keywords-group');
+
+    modeKeyword?.addEventListener('click', () => {
+        if (!triggerModeInput || !modeKeyword || !modeAny || !keywordsGroup) return;
+        triggerModeInput.value = 'keyword';
+        modeKeyword.classList.add('selected');
+        modeKeyword.style.borderColor = '#4F46E5';
+        modeKeyword.style.background = 'rgba(79, 70, 229, 0.05)';
+        modeKeyword.style.color = 'var(--text-primary)';
+
+        modeAny.classList.remove('selected');
+        modeAny.style.borderColor = 'var(--border)';
+        modeAny.style.background = 'transparent';
+        modeAny.style.color = 'var(--text-muted)';
+        
+        keywordsGroup.style.display = 'block';
+    });
+
+    modeAny?.addEventListener('click', () => {
+        if (!triggerModeInput || !modeKeyword || !modeAny || !keywordsGroup) return;
+        triggerModeInput.value = 'any_comment';
+        modeAny.classList.add('selected');
+        modeAny.style.borderColor = '#4F46E5';
+        modeAny.style.background = 'rgba(79, 70, 229, 0.05)';
+        modeAny.style.color = 'var(--text-primary)';
+
+        modeKeyword.classList.remove('selected');
+        modeKeyword.style.borderColor = 'var(--border)';
+        modeKeyword.style.background = 'transparent';
+        modeKeyword.style.color = 'var(--text-muted)';
+        
+        keywordsGroup.style.display = 'none';
+    });
+
+    // Manual input sync
+    const manualPostInput = document.getElementById('wiz-manual-post-id');
+    manualPostInput?.addEventListener('input', (e) => {
+        const targetMediaInput = document.getElementById('wiz-selected-media-id');
+        if (targetMediaInput) targetMediaInput.value = e.target.value.trim();
+    });
+
+    // Refresh button
+    document.getElementById('sync-media-btn')?.addEventListener('click', () => {
+        fetchInstagramMedia();
     });
 
     dmInput?.addEventListener('input', (e) => {
@@ -288,24 +328,20 @@ function setupWizard() {
     nextBtn?.addEventListener('click', async () => {
         if (currentWizardStep === 4) {
             // Publish
-            const postIdVal = document.getElementById('wiz-post-id')?.value.trim();
-            if (!postIdVal) {
-                document.getElementById('wiz-msg').textContent = 'Instagram Post ID or URL is required.';
-                return;
-            }
-
             nextBtn.textContent = 'Publishing...';
             nextBtn.disabled = true;
             
-            const triggerType = document.getElementById('wiz-trigger-type').value;
+            const selectedMediaId = document.getElementById('wiz-selected-media-id')?.value.trim() || null;
+            const triggerMode = document.getElementById('wiz-trigger-mode')?.value || 'keyword';
+            const keywordsInput = document.getElementById('wiz-keywords')?.value || '';
 
             const data = {
                 name: document.getElementById('wiz-name').value || 'My Automation',
-                mode: triggerType, // 'any_comment' or 'keyword'
-                keywords: triggerType === 'keyword' ? document.getElementById('wiz-keywords').value.split(',').map(k => k.trim()).filter(Boolean) : [],
+                mode: triggerMode,
+                keywords: triggerMode === 'any_comment' ? [] : keywordsInput.split(',').map(k => k.trim()).filter(Boolean),
                 target: { 
                     type: 'specific',
-                    mediaId: postIdVal
+                    mediaId: selectedMediaId
                 },
                 dmMessage: document.getElementById('wiz-dm').value
             };
@@ -360,14 +396,13 @@ function updateWizardUI() {
     if (currentWizardStep === 4) {
         nextBtn.textContent = 'Publish Automation';
         // Populate review
-        const nameVal = document.getElementById('wiz-name').value || 'Untitled';
-        const triggerType = document.getElementById('wiz-trigger-type').value;
-        const keywordsVal = document.getElementById('wiz-keywords').value || '';
-        const postVal = document.getElementById('wiz-post-id').value || 'Not selected';
-
-        document.getElementById('review-name').textContent = nameVal;
-        document.getElementById('review-keywords').textContent = triggerType === 'any_comment' ? 'Any Comment' : `Keywords: ${keywordsVal}`;
-        document.getElementById('review-target').textContent = `Post: ${postVal}`;
+        const triggerMode = document.getElementById('wiz-trigger-mode')?.value || 'keyword';
+        const keywordsVal = document.getElementById('wiz-keywords')?.value || 'None';
+        document.getElementById('review-name').textContent = document.getElementById('wiz-name').value || 'Untitled';
+        document.getElementById('review-keywords').textContent = triggerMode === 'any_comment' ? 'Any Comment' : `Keywords: ${keywordsVal}`;
+        
+        const selectedPostId = document.getElementById('wiz-selected-media-id')?.value || 'None';
+        document.getElementById('review-target').textContent = `Target Post ID: ${selectedPostId}`;
     } else {
         nextBtn.textContent = 'Next Step';
     }
@@ -477,6 +512,83 @@ window.startInteractiveLogin = async function() {
         alert('An error occurred.');
         modal.style.display = 'none';
     }
+};
+
+async function fetchInstagramMedia() {
+    const grid = document.getElementById('media-grid');
+    if (!grid) return;
+    grid.innerHTML = `
+        <div style="grid-column: span 4; text-align: center; padding: 24px; color: var(--text-muted);">
+            🔄 Loading your recent posts...
+        </div>
+    `;
+    try {
+        const res = await fetch('/api/instagram/media');
+        if (!res.ok) {
+            grid.innerHTML = `
+                <div style="grid-column: span 4; text-align: center; padding: 24px; color: var(--danger);">
+                    ⚠️ Instagram not connected or failed to fetch posts.
+                </div>
+            `;
+            return;
+        }
+        const data = await res.json();
+        if (data.error) {
+            grid.innerHTML = `
+                <div style="grid-column: span 4; text-align: center; padding: 24px; color: var(--danger);">
+                    ⚠️ ${data.error}
+                </div>
+            `;
+            return;
+        }
+        
+        if (!Array.isArray(data) || data.length === 0) {
+            grid.innerHTML = `
+                <div style="grid-column: span 4; text-align: center; padding: 24px; color: var(--text-muted);">
+                    📭 No recent Instagram posts or reels found.
+                </div>
+            `;
+            return;
+        }
+
+        grid.innerHTML = data.map(item => {
+            const thumb = item.thumbnail_url || item.media_url || '';
+            const caption = item.caption ? escHtml(item.caption).slice(0, 40) + '...' : 'Instagram Post';
+            return `
+                <div class="media-select-card" data-id="${item.id}" style="position: relative; border-radius: 8px; overflow: hidden; cursor: pointer; aspect-ratio: 1; border: 2px solid transparent; transition: all 0.2s;" onclick="selectMedia('${item.id}')">
+                    <img src="${thumb}" style="width:100%; height:100%; object-fit:cover;">
+                    <div style="position:absolute; bottom:0; inset-x:0; background:rgba(0,0,0,0.7); color:white; font-size:9px; padding:4px; text-overflow:ellipsis; white-space:nowrap; overflow:hidden;">
+                        ${caption}
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+    } catch (e) {
+        console.error(e);
+        grid.innerHTML = `
+            <div style="grid-column: span 4; text-align: center; padding: 24px; color: var(--danger);">
+                ⚠️ Error fetching posts.
+            </div>
+        `;
+    }
+}
+
+window.selectMedia = function(mediaId) {
+    document.querySelectorAll('.media-select-card').forEach(card => {
+        if (card.dataset.id === mediaId) {
+            card.style.borderColor = '#4F46E5';
+            card.style.boxShadow = '0 0 8px rgba(79, 70, 229, 0.4)';
+        } else {
+            card.style.borderColor = 'transparent';
+            card.style.boxShadow = 'none';
+        }
+    });
+    const targetInput = document.getElementById('wiz-selected-media-id');
+    if (targetInput) targetInput.value = mediaId;
+    
+    const manualInput = document.getElementById('wiz-manual-post-id');
+    if (manualInput) manualInput.value = mediaId;
 };
 
 init();
