@@ -1726,7 +1726,7 @@ app.post('/webhook', verifySignature, async (req, res) => {
                                         const isFollowing = followRes?.data?.is_viewer_follow_page || false;
 
                                         const link = extractUrl(automation?.privateMessageText);
-                                        const profileUrl = `https://instagram.com/`;
+                                        const profileUrl = `https://instagram.com/dmorbitapp/`;
 
                                         if (isFollowing) {
                                             await sendFinalDeliveryCard(senderId, pageToken, link, automation?.name);
@@ -1737,7 +1737,7 @@ app.post('/webhook', verifySignature, async (req, res) => {
                                     } catch (err) {
                                         console.log("[DMOrbit Dev Mode Fallback] Follow API restricted. Forcing Follow-Gate Card for testing.");
                                         // Dev Mode Fallback: Force the follow gate card so you can test the UI buttons!
-                                        const profileUrl = `https://instagram.com/`;
+                                        const profileUrl = `https://instagram.com/dmorbitapp/`;
                                         await sendFollowGateCard(senderId, pageToken, profileUrl);
                                     }
                                 }
