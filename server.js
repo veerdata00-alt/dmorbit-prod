@@ -1755,7 +1755,7 @@ app.post('/webhook', verifySignature, async (req, res) => {
                                         const isFollowing = followRes?.data?.is_viewer_follow_page || false;
 
                                         const link = extractUrl(automation?.privateMessageText);
-                                        const profileUrl = `https://web-production-dd826.up.railway.app/ig-profile`;
+                                        const profileUrl = `https://www.instagram.com/_u/dmorbitapp/`;
 
                                         if (isFollowing) {
                                             await sendFinalDeliveryCard(senderId, pageToken, link, automation?.name);
@@ -1766,7 +1766,7 @@ app.post('/webhook', verifySignature, async (req, res) => {
                                     } catch (err) {
                                         console.log("[DMOrbit Dev Mode Fallback] Follow API restricted. Forcing Follow-Gate Card for testing.");
                                         // Dev Mode Fallback: Force the follow gate card so you can test the UI buttons!
-                                        const profileUrl = `https://web-production-dd826.up.railway.app/ig-profile`;
+                                        const profileUrl = `https://www.instagram.com/_u/dmorbitapp/`;
                                         await sendFollowGateCard(senderId, pageToken, profileUrl);
                                     }
                                 }
@@ -1788,7 +1788,7 @@ app.post('/webhook', verifySignature, async (req, res) => {
                                                             buttons: [
                                                                 {
                                                                     type: "web_url",
-                                                                    url: "https://web-production-dd826.up.railway.app/ig-profile",
+                                                                    url: "https://www.instagram.com/_u/dmorbitapp/",
                                                                     title: "Visit Profile"
                                                                 },
                                                                 {
