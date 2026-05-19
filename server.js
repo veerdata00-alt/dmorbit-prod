@@ -1760,12 +1760,34 @@ app.post('/webhook', verifySignature, async (req, res) => {
                                                 // Action A: Public comment reply
                                                 if (auto.publicReplyText) {
                                                     try {
+                                                        // DMOrbit Anti-Spam: Human-like Public Comment Replies Pool
+                                                        const publicReplyVariations = [
+                                                            "Check your DM 👋",
+                                                            "Kripya apna DM check karein ✨",
+                                                            "Sent! Please check your inbox 📥",
+                                                            "Aapke DM me details bhej di hain 🙌",
+                                                            "Details sent to your DMs! Check it out 🚀",
+                                                            "Inbox check kijiye, bhej diya hai 👍",
+                                                            "Check your messages, just dropped the link! 🔥",
+                                                            "Dropped a message in your DM, buddy! See you there 💥",
+                                                            "Kindly check your message requests/inbox 📩",
+                                                            "Sent! Check your primary or request folder 👋"
+                                                        ];
+
+                                                        // Pick a completely random reply from the pool to avoid robotic footprint
+                                                        const finalRandomReply = publicReplyVariations[Math.floor(Math.random() * publicReplyVariations.length)];
+                                                        
+                                                        // Use the user's custom reply if defined (and not the default), otherwise spin from the safe pool
+                                                        const messageToSend = (auto.publicReplyText && auto.publicReplyText !== 'Check your DM 👋') 
+                                                            ? auto.publicReplyText 
+                                                            : finalRandomReply;
+
                                                         const repliesUrl = `https://graph.facebook.com/v21.0/${commentId}/replies`;
                                                         await axios.post(repliesUrl, {
-                                                            message: auto.publicReplyText,
+                                                            message: messageToSend,
                                                             access_token: pageToken
                                                         });
-                                                        console.log(`[SIMPLIFIED SUCCESS] Public reply sent to comment: ${commentId}`);
+                                                        console.log(`[SIMPLIFIED SUCCESS] Public reply sent to comment: ${commentId} ("${messageToSend}")`);
                                                     } catch (err) {
                                                         console.error("[SIMPLIFIED ERROR] Failed public reply:", err.response?.data || err.message);
                                                     }
