@@ -246,32 +246,53 @@
 
                     <!-- STEP 2: TRIGGER -->
                     <div class="wizard-step-pane" id="wizard-step-2" style="display: none;">
-                        <h2 style="margin-bottom: 8px;">Target Post & Trigger</h2>
-                        <p class="text-muted" style="margin-bottom: 24px;">Select your Instagram post and trigger conditions.</p>
+                        <h2 style="margin-bottom: 8px;">Define your trigger & post</h2>
+                        <p class="text-muted" style="margin-bottom: 20px;">Name your flow, select comment condition, and choose your post.</p>
                         
                         <div class="form-group">
                             <label class="form-label">Name this automation</label>
                             <input type="text" id="wiz-name" class="form-input" placeholder="e.g. Summer Sale Link">
                         </div>
 
-                        <div class="form-group">
-                            <label class="form-label">Instagram Post ID or URL (Required)</label>
-                            <input type="text" id="wiz-post-id" class="form-input" placeholder="e.g. https://www.instagram.com/p/C7Xyz12345/ or 179234567890123">
-                            <div class="form-hint">Paste your Reels, Post, or Video link or its numeric ID.</div>
-                        </div>
-
-                        <div class="form-group" style="margin-top: 24px;">
+                        <!-- Trigger Condition Selection -->
+                        <div class="form-group" style="margin-top: 20px;">
                             <label class="form-label">Trigger Condition</label>
-                            <select id="wiz-trigger-type" class="form-input">
-                                <option value="any_comment">Any Comment (Respond to every comment)</option>
-                                <option value="keyword">Specific Comment Keyword (Respond only to keywords)</option>
-                            </select>
+                            <div class="radio-cards-horizontal" style="display: flex; gap: 12px; margin-top: 8px;">
+                                <div class="radio-card-sm selected" id="trigger-mode-keyword" style="flex: 1; padding: 12px; border: 2px solid #4F46E5; border-radius: 8px; cursor: pointer; text-align: center; font-weight: 500; background: rgba(79, 70, 229, 0.05);">
+                                    🔑 Specific Keyword
+                                </div>
+                                <div class="radio-card-sm" id="trigger-mode-any" style="flex: 1; padding: 12px; border: 2px solid var(--border); border-radius: 8px; cursor: pointer; text-align: center; font-weight: 500; color: var(--text-muted);">
+                                    💬 Any Comment
+                                </div>
+                            </div>
+                            <input type="hidden" id="wiz-trigger-mode" value="keyword">
                         </div>
 
-                        <div class="form-group" id="wiz-keyword-group" style="margin-top: 16px; display: none;">
-                            <label class="form-label">Comment Keywords</label>
+                        <!-- Keywords Input Group -->
+                        <div class="form-group" id="wiz-keywords-group" style="margin-top: 20px;">
+                            <label class="form-label">Trigger Keywords</label>
                             <input type="text" id="wiz-keywords" class="form-input" placeholder="e.g. LINK, PRICE, PDF">
-                            <div class="form-hint">Comma separated words. Users who comment these words will receive the DM.</div>
+                            <div class="form-hint">Users who comment this word will receive the DM. Separate with commas.</div>
+                        </div>
+
+                        <!-- Select Instagram Post -->
+                        <div class="form-group" style="margin-top: 28px;">
+                            <label class="form-label" style="display: flex; justify-content: space-between;">
+                                <span>Select Instagram Post / Reel</span>
+                                <span id="sync-media-btn" style="cursor: pointer; color: #4F46E5; font-size: 12px; font-weight: 600;">↻ Refresh Posts</span>
+                            </label>
+                            <div id="media-selector-container" style="margin-top: 8px;">
+                                <div id="media-grid" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; max-height: 220px; overflow-y: auto; padding: 8px; border: 1px solid var(--border); border-radius: 12px; background: var(--bg-alt);">
+                                    <div style="grid-column: span 4; text-align: center; padding: 24px; color: var(--text-muted);">
+                                        Loading your recent posts...
+                                    </div>
+                                </div>
+                                <input type="hidden" id="wiz-selected-media-id">
+                            </div>
+                            <div style="margin-top: 12px; display: flex; align-items: center; justify-content: space-between; gap: 12px;">
+                                <span style="font-size: 12px; color: var(--text-muted); white-space: nowrap;">Or enter URL/ID:</span>
+                                <input type="text" id="wiz-manual-post-id" class="form-input" style="padding: 6px 10px; font-size: 12px;" placeholder="Post ID (e.g. 1792345678) or Instagram URL">
+                            </div>
                         </div>
                     </div>
 
