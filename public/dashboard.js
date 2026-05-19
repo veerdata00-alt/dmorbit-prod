@@ -59,6 +59,11 @@ async function init() {
         setupNav();
         setupWizard();
         loadPage('overview');
+        
+        // Update Billing Widget
+        if (window.updateBillingWidget) {
+            window.updateBillingWidget(data.user.plan || 'FREE', data.user.dmCountThisMonth || 0);
+        }
     } catch (e) { 
         console.error(e);
     }
@@ -596,4 +601,50 @@ window.selectMedia = function(mediaId) {
     if (manualInput) manualInput.value = mediaId;
 };
 
+// --- DMOrbit Checkout & Billing Integration ---
+window.initiateCheckout = async function(planType) {
+    const userId = currentUser ? currentUser.id || currentUser._id : null; 
+    try {
+        const res = await fetch('/api/billing/checkout', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                userId: userId,
+                planType: planType,
+                currency: 'inr' // Defaulting to local currency for testing
+            })
+        });
+        const response = await res.json();
+        if (response && response.url) {
+            window.location.href = response.url; // Redirect directly to Stripe Secure Checkout
+        } else {
+            alert('Billing Error: ' + (response.error || 'Unable to initiate checkout session.'));
+        }
+    } catch (error) {
+        alert('Billing Error: Unable to initiate checkout session.');
+        console.error(error);
+    }
+};
+
+// Function to dynamically update Usage Bars on dashboard load
+window.updateBillingWidget = function(plan, currentDms) {
+    plan = (plan || 'FREE').toUpperCase();
+    const maxDms = plan === 'FREE' ? 50 : (plan === 'BASIC' ? 1000 : Infinity);
+    const badge = document.getElementById('currentPlanBadge');
+    if (badge) badge.innerText = plan;
+    
+    const usageText = document.getElementById('dmUsageText');
+    const progressBar = document.getElementById('usageProgressBar');
+    
+    if (maxDms === Infinity) {
+        if (usageText) usageText.innerText = `${currentDms || 0} / Unlimited DMs`;
+        if (progressBar) progressBar.style.width = '100%';
+    } else {
+        if (usageText) usageText.innerText = `${currentDms || 0} / ${maxDms} DMs Used`;
+        const percentage = Math.min(((currentDms || 0) / maxDms) * 100, 100);
+        if (progressBar) progressBar.style.width = `${percentage}%`;
+    }
+};
+
 init();
+
