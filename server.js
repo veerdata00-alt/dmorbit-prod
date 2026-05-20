@@ -1259,12 +1259,14 @@ app.get('/auth/instagram', authenticateToken, (req, res) => {
         'pages_show_list',
         'pages_manage_metadata'
     ];
-    const fbLoginUrl = `https://www.facebook.com/v19.0/dialog/oauth?client_id=${process.env.FB_APP_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${scopes.join(',')}&response_type=code`;
+    // Pass the userId securely in the state parameter
+    const state = req.user ? req.user.userId : '';
+    const fbLoginUrl = `https://www.facebook.com/v19.0/dialog/oauth?client_id=${process.env.FB_APP_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${scopes.join(',')}&response_type=code&state=${state}`;
     res.redirect(fbLoginUrl);
 });
 
 app.get('/auth/callback', async (req, res) => {
-    const { code } = req.query;
+    const { code, state } = req.query;
     if (!code) return res.status(400).send('No code provided');
 
     try {
@@ -1469,9 +1471,9 @@ app.get('/auth/callback', async (req, res) => {
         }
 
         // 4. Store in Database
-        let userId = 'system';
+        let userId = state || 'system';
         const token = req.cookies.token;
-        if (token) {
+        if (!state && token) {
             try {
                 const decoded = jwt.verify(token, JWT_SECRET);
                 userId = decoded.userId;
@@ -1503,8 +1505,9 @@ app.get('/auth/callback', async (req, res) => {
         res.redirect('/dashboard.html?connected=true');
 
     } catch (err) {
-        console.error('[OAUTH ERROR]', err.response?.data || err.message);
-        res.status(500).send(`Authentication failed: ${err.message}`);
+        const errorDetail = err.response ? JSON.stringify(err.response.data) : err.message;
+        console.error('[OAUTH ERROR]', errorDetail);
+        res.status(500).send(`Authentication failed. Facebook returned: ${errorDetail}`);
     }
 });
 
