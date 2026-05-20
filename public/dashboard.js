@@ -131,8 +131,14 @@ async function loadOverview() {
         const igCard = document.getElementById('ig-connection-card');
         
         if (stats.instagramConnected) {
-            igCard.style.display = 'none'; // Hide if connected, even if health check is pending/unknown
+            igCard.style.setProperty('display', 'none', 'important'); // Absolute Fail-Safe
             document.getElementById('topbar-status-dot').style.background = 'var(--success)';
+            
+            // Additional delayed fail-safe to combat CSS race conditions
+            setTimeout(() => {
+                const box = document.getElementById('ig-connection-card');
+                if (box) box.style.setProperty('display', 'none', 'important');
+            }, 1000);
         } else {
             igCard.style.display = 'flex';
             document.getElementById('topbar-status-dot').style.background = 'var(--warning)';
