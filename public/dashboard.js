@@ -64,6 +64,13 @@ async function init() {
         if (window.updateBillingWidget) {
             window.updateBillingWidget(data.user.plan || 'FREE', data.user.dmCountThisMonth || 0);
         }
+
+        // Live Dashboard Stats Polling
+        setInterval(() => {
+            if (document.getElementById('page-overview').classList.contains('active')) {
+                loadOverview();
+            }
+        }, 15000);
     } catch (e) { 
         console.error(e);
     }
@@ -152,6 +159,7 @@ async function loadAutomations() {
                     <div class="item-meta">
                         <span>💬 Keywords: ${(a.trigger?.keywords || []).join(', ')}</span>
                         <span>📊 Triggered: ${a.triggerCount || 0} times</span>
+                        <span style="margin-left: 10px; color: #aaa;">Action: ${a.replyStyleMode === 'FOLLOW_GATE' ? '⚡ Follow-Gate Mode' : '📝 Direct Message'}</span>
                     </div>
                 </div>
                 <div class="item-actions">
