@@ -130,8 +130,8 @@ async function loadOverview() {
         const health = await API.accountHealth();
         const igCard = document.getElementById('ig-connection-card');
         
-        if (stats.instagramConnected && health.status === 'active') {
-            igCard.style.display = 'none'; // Hide if healthy
+        if (stats.instagramConnected) {
+            igCard.style.display = 'none'; // Hide if connected, even if health check is pending/unknown
             document.getElementById('topbar-status-dot').style.background = 'var(--success)';
         } else {
             igCard.style.display = 'flex';
