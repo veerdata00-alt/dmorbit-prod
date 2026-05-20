@@ -119,8 +119,8 @@ async function loadOverview() {
     try {
         const stats = await API.stats();
         document.getElementById('stat-automations').textContent = stats.automations?.active ?? 0;
-        document.getElementById('stat-comments').textContent = stats.logs?.today || 0; // Simplified
-        document.getElementById('stat-dms').textContent = stats.logs?.thisWeek || 0;
+        document.getElementById('stat-comments').textContent = stats.logs?.thisWeek || 0; // Using weekly total logs for better visibility
+        document.getElementById('stat-dms').textContent = stats.totalDmsSent || 0;
 
         const health = await API.accountHealth();
         const igCard = document.getElementById('ig-connection-card');
