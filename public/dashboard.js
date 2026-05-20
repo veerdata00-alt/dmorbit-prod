@@ -666,37 +666,40 @@ window.updateBillingWidget = function(plan, currentDms) {
 
     // --- Unified Live Counters & Instagram State Binding ---
     async function hydrateDashboardLiveView() {
-        const userId = localStorage.getItem('userId') || 'mock_user_id';
         try {
-            // Fetch account connection state
-            const accountRes = await axios.get(`/api/instagram/accounts?userId=${userId}`);
-            const statsRes = await axios.get(`/api/dashboard/stats?userId=${userId}`);
+            // Fetch account connection state using built-in API helpers
+            const accountRes = await API.accountStatus();
+            const statsRes = await API.stats();
             
-            if (accountRes.data && accountRes.data.success && accountRes.data.accounts.length > 0) {
-                const account = accountRes.data.accounts[0];
-                console.log("[DMOrbit Dynamic Sync] Connected Account:", account.username);
+            if (accountRes.instagram && accountRes.instagram.connected) {
+                // For workspace title, we might need the IG username if available
+                // accountStatus might not return username directly, but we can try
+                const igUsername = accountRes.instagram.username || (currentUser && currentUser.name) || 'User';
+                console.log("[DMOrbit Dynamic Sync] Connected Account Verified");
                 
                 // Hide connect prompt if exists
-                const connectBox = document.getElementById('connectInstagramPrompt') || document.querySelector('.connect-prompt-box');
+                const connectBox = document.getElementById('ig-connection-card') || document.getElementById('connectInstagramPrompt') || document.querySelector('.connect-prompt-box');
                 if (connectBox) connectBox.style.display = 'none';
                 
                 // Update workspace title
-                const wsTitle = document.getElementById('workspaceTitle') || document.querySelector('.workspace-title') || document.querySelector('span[style*="Workspace"]');
-                if (wsTitle) wsTitle.innerText = `${account.username}'s Workspace`;
+                const wsTitle = document.getElementById('topbar-workspace-name') || document.getElementById('workspaceTitle') || document.querySelector('.workspace-title');
+                if (wsTitle && accountRes.instagram.username) {
+                    wsTitle.innerText = `${accountRes.instagram.username}'s Workspace`;
+                }
             }
 
-            if (statsRes.data && statsRes.data.success) {
-                const stats = statsRes.data;
+            if (statsRes && !statsRes.error) {
+                const stats = statsRes;
                 // Target exact inner text headers from screenshot layout safely
                 document.querySelectorAll('div').forEach(div => {
                     let title = div.innerText.trim();
                     if (title === 'Active Automations') {
                         let num = div.parentElement.querySelector('h3') || div.nextElementSibling;
-                        if (num) num.innerText = stats.activeAutomations || 0;
+                        if (num) num.innerText = stats.automations?.active || 0;
                     }
                     if (title === 'Comments Captured') {
                         let num = div.parentElement.querySelector('h3') || div.nextElementSibling;
-                        if (num) num.innerText = stats.commentsCaptured || 0;
+                        if (num) num.innerText = stats.logs?.thisWeek || 0;
                     }
                     if (title === 'DMs Sent') {
                         let num = div.parentElement.querySelector('h3') || div.nextElementSibling;
@@ -710,9 +713,10 @@ window.updateBillingWidget = function(plan, currentDms) {
     }
     
     // Auto polling every 15 seconds for live dashboard updates
-    $(document).ready(function() {
+    document.addEventListener('DOMContentLoaded', function() {
         hydrateDashboardLiveView();
         setInterval(hydrateDashboardLiveView, 15000);
     });
 
 init();
+
