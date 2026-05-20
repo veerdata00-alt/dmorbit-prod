@@ -65,6 +65,11 @@ async function init() {
             window.updateBillingWidget(data.user.plan || 'FREE', data.user.dmCountThisMonth || 0);
         }
 
+        // Resiliency: Inject JWT token into OAuth links in case cookies are blocked
+        document.querySelectorAll('a[href="/auth/instagram"]').forEach(el => {
+            el.href = `/auth/instagram?token=${token}`;
+        });
+
         // Live Dashboard Stats Polling
         setInterval(() => {
             if (document.getElementById('page-overview').classList.contains('active')) {
