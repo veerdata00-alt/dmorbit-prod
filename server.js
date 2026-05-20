@@ -19,6 +19,26 @@ console.log("🚀 Server starting at:", new Date().toISOString());
 console.log("Node version:", process.version);
 const app = express();
 
+// DMOrbit Tier Limits Verification Middleware
+async function checkPlanLimits(req, res, next) {
+    const { userId } = req.body || req.query;
+    if (!userId) return next();
+    try {
+        const user = await User.findById(userId);
+        if (!user) return next();
+        
+        let limit = 50; // default fallback
+        if (user.currentPlan === 'Free') limit = 500;
+        if (user.currentPlan === 'Creator Basic') limit = 10000;
+        if (user.currentPlan === 'Ultimate Pro') limit = Infinity;
+
+        if (user.dmCountThisMonth >= limit) {
+            return res.status(403).json({ success: false, message: "Monthly DM limit reached for your plan." });
+        }
+        next();
+    } catch (err) { next(); }
+}
+
 // ── Firebase Client Config (served to frontend) ──
 const FIREBASE_CLIENT_CONFIG = {
     apiKey: process.env.FIREBASE_API_KEY,
