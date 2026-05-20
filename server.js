@@ -1259,8 +1259,7 @@ app.get('/auth/instagram', authenticateToken, (req, res) => {
         'pages_show_list',
         'pages_manage_metadata',
         'pages_messaging',
-        'pages_read_engagement',
-        'pages_manage_posts'
+        'pages_read_engagement'
     ];
     // Pass the userId securely in the state parameter
     const state = req.user ? req.user.userId : '';
