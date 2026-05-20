@@ -664,5 +664,33 @@ window.updateBillingWidget = function(plan, currentDms) {
     }
 };
 
-init();
+    // --- DMOrbit Global Account Sync & Tile Hydration Engine ---
+    async function checkGlobalInstagramConnection() {
+        const userId = localStorage.getItem('userId') || 'mock_user_id';
+        try {
+            const response = await axios.get(`/api/instagram/accounts?userId=${userId}`);
+            if (response.data && response.data.success && response.data.accounts.length > 0) {
+                const connectedAccount = response.data.accounts[0];
+                console.log("[DMOrbit Sync] Globally Connected Account Verified:", connectedAccount.username);
+                
+                // 1. Hide the redundant 'Connect Instagram' prompt box on dashboard layout
+                if(document.getElementById('connectInstagramPrompt')) {
+                    document.getElementById('connectInstagramPrompt').style.display = 'none';
+                }
+                
+                // 2. Hydrate Workspace Title dynamically
+                const workspaceTitle = document.querySelector('span[style*="Workspace"]') || document.getElementsByClassName('workspace-title')[0] || document.getElementById('workspaceTitle');
+                if(workspaceTitle) workspaceTitle.innerText = `${connectedAccount.username}'s Workspace`;
 
+                // 3. Fire Analytics Stats Hydration instantly
+                if (typeof loadLiveDashboardStats === 'function') {
+                    loadLiveDashboardStats();
+                }
+            }
+        } catch (error) {
+            console.log("Sync engine shifting to standby mode.");
+        }
+    }
+    checkGlobalInstagramConnection();
+
+init();
