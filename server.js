@@ -1497,7 +1497,7 @@ app.get('/auth/callback', async (req, res) => {
 
         // 5. Subscribe Webhooks for this Page
         await axios.post(`https://graph.facebook.com/v19.0/${pageId}/subscribed_apps`, {
-            subscribed_fields: 'feed,mention,messages,comments',
+            subscribed_fields: 'feed,messages',
             access_token: pageAccessToken
         });
 
