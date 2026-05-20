@@ -2556,7 +2556,8 @@ app.get('/api/dashboard/stats', authenticateToken, async (req, res) => {
             FlowState.countDocuments({ ownerId: userId, status: 'active' }),
             Log.countDocuments({ ownerId: userId, timestamp: { $gte: dayAgo } }),
             Log.countDocuments({ ownerId: userId, timestamp: { $gte: weekAgo } }),
-            InstagramAccount.findOne({ userId })
+            InstagramAccount.findOne({ userId }),
+            User.findById(userId)
         ]);
 
         const topAutomation = await Automation.findOne({ userId }).sort({ triggerCount: -1 });
@@ -2566,6 +2567,7 @@ app.get('/api/dashboard/stats', authenticateToken, async (req, res) => {
             jobs: { total: totalJobs, pending: pendingJobs, completed: completedJobs, failed: failedJobs },
             flows: { total: totalFlows, activeStates: activeFlowStates },
             logs: { today: logsToday, thisWeek: logsThisWeek },
+            totalDmsSent: userDoc?.dmCountThisMonth || 0,
             topKeyword: topAutomation?.trigger?.keywords?.[0] || null,
             instagramConnected: !!igAccount,
             plan: req.user.plan || 'free'
