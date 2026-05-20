@@ -324,7 +324,18 @@ const isHtmlRequest = (req) => req.headers.accept && req.headers.accept.includes
 
 // Middleware to verify JWT
 const authenticateToken = async (req, res, next) => {
-    const token = req.cookies.token;
+    let token = req.cookies.token;
+    
+    // Fallback to Authorization Header
+    if (!token && req.headers.authorization) {
+        token = req.headers.authorization.split(' ')[1];
+    }
+    
+    // Fallback to Query String (useful for <a> links)
+    if (!token && req.query.token) {
+        token = req.query.token;
+    }
+
     if (!token) {
         if (isHtmlRequest(req)) return res.redirect('/');
         return res.status(401).json({ error: 'Unauthorized. Please log in.' });
