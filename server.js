@@ -1831,6 +1831,21 @@ app.post('/webhook', verifySignature, async (req, res) => {
                                         // Send Initial Access Card instead of plain text
                                         await sendInitialAccessCard(senderId, ownerAccount.access_token);
                                         console.log(`[DM SUCCESS] Follow-Gate Initial Card sent to user: ${senderId}`);
+                                        
+                                        // Analytics Sync: Update Dashboard Counters for DMs
+                                        await Automation.findByIdAndUpdate(matched._id, { $inc: { triggerCount: 1 } });
+                                        await User.updateOne({ _id: ownerId }, { $inc: { dmCountThisMonth: 1 } });
+                                        await Log.create({
+                                            ownerId: ownerId,
+                                            username: senderId, // Fallback since IG doesn't send username in messaging
+                                            user_id: senderId,
+                                            keyword: matched.keyword || (matched.trigger && matched.trigger.keywords ? matched.trigger.keywords[0] : 'DM_KEYWORD'),
+                                            dmLink: 'DM Reply',
+                                            metadata: { automationId: matched._id },
+                                            platform: 'instagram',
+                                            timestamp: new Date()
+                                        });
+                                        
                                     } catch (err) {
                                         console.error("[DM ERROR]", err.response?.data || err.message);
                                     }
