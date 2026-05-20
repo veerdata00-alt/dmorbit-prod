@@ -664,33 +664,55 @@ window.updateBillingWidget = function(plan, currentDms) {
     }
 };
 
-    // --- DMOrbit Global Account Sync & Tile Hydration Engine ---
-    async function checkGlobalInstagramConnection() {
+    // --- Unified Live Counters & Instagram State Binding ---
+    async function hydrateDashboardLiveView() {
         const userId = localStorage.getItem('userId') || 'mock_user_id';
         try {
-            const response = await axios.get(`/api/instagram/accounts?userId=${userId}`);
-            if (response.data && response.data.success && response.data.accounts.length > 0) {
-                const connectedAccount = response.data.accounts[0];
-                console.log("[DMOrbit Sync] Globally Connected Account Verified:", connectedAccount.username);
+            // Fetch account connection state
+            const accountRes = await axios.get(`/api/instagram/accounts?userId=${userId}`);
+            const statsRes = await axios.get(`/api/dashboard/stats?userId=${userId}`);
+            
+            if (accountRes.data && accountRes.data.success && accountRes.data.accounts.length > 0) {
+                const account = accountRes.data.accounts[0];
+                console.log("[DMOrbit Dynamic Sync] Connected Account:", account.username);
                 
-                // 1. Hide the redundant 'Connect Instagram' prompt box on dashboard layout
-                if(document.getElementById('connectInstagramPrompt')) {
-                    document.getElementById('connectInstagramPrompt').style.display = 'none';
-                }
+                // Hide connect prompt if exists
+                const connectBox = document.getElementById('connectInstagramPrompt') || document.querySelector('.connect-prompt-box');
+                if (connectBox) connectBox.style.display = 'none';
                 
-                // 2. Hydrate Workspace Title dynamically
-                const workspaceTitle = document.querySelector('span[style*="Workspace"]') || document.getElementsByClassName('workspace-title')[0] || document.getElementById('workspaceTitle');
-                if(workspaceTitle) workspaceTitle.innerText = `${connectedAccount.username}'s Workspace`;
-
-                // 3. Fire Analytics Stats Hydration instantly
-                if (typeof loadLiveDashboardStats === 'function') {
-                    loadLiveDashboardStats();
-                }
+                // Update workspace title
+                const wsTitle = document.getElementById('workspaceTitle') || document.querySelector('.workspace-title') || document.querySelector('span[style*="Workspace"]');
+                if (wsTitle) wsTitle.innerText = `${account.username}'s Workspace`;
             }
-        } catch (error) {
-            console.log("Sync engine shifting to standby mode.");
+
+            if (statsRes.data && statsRes.data.success) {
+                const stats = statsRes.data;
+                // Target exact inner text headers from screenshot layout safely
+                document.querySelectorAll('div').forEach(div => {
+                    let title = div.innerText.trim();
+                    if (title === 'Active Automations') {
+                        let num = div.parentElement.querySelector('h3') || div.nextElementSibling;
+                        if (num) num.innerText = stats.activeAutomations || 0;
+                    }
+                    if (title === 'Comments Captured') {
+                        let num = div.parentElement.querySelector('h3') || div.nextElementSibling;
+                        if (num) num.innerText = stats.commentsCaptured || 0;
+                    }
+                    if (title === 'DMs Sent') {
+                        let num = div.parentElement.querySelector('h3') || div.nextElementSibling;
+                        if (num) num.innerText = stats.totalDmsSent || 0;
+                    }
+                });
+            }
+        } catch (err) {
+            console.log("Hydration loop on standby...");
         }
     }
-    checkGlobalInstagramConnection();
+    
+    // Auto polling every 15 seconds for live dashboard updates
+    $(document).ready(function() {
+        hydrateDashboardLiveView();
+        setInterval(hydrateDashboardLiveView, 15000);
+    });
 
 init();
