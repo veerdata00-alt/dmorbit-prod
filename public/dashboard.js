@@ -150,22 +150,23 @@ async function loadOverview() {
 async function loadAutomations() {
     const listBody = document.getElementById('automationsTableBody');
     if (!listBody) return;
-    listBody.innerHTML = '<tr><td colspan="5" class="p-8 text-center text-gray-500">Loading...</td></tr>';
+    listBody.innerHTML = '<tr><td colspan="6" class="p-8 text-center text-gray-500">Loading...</td></tr>';
     try {
         const autos = await API.automations();
         if (!autos.length) {
-            listBody.innerHTML = '<tr><td colspan="5" class="p-8 text-center text-gray-500">No automations created yet. Setup your first keyword!</td></tr>';
+            listBody.innerHTML = '<tr><td colspan="6" class="p-8 text-center text-gray-500">No automations created yet. Setup your first keyword!</td></tr>';
             return;
         }
 
-        listBody.innerHTML = autos.map(auto => {
+        listBody.innerHTML = autos.map((auto, index) => {
             const isChecked = auto.isActive ? 'checked' : '';
             const keywordText = (auto.trigger?.keywords || []).join(', ') || 'ANY_COMMENT';
             const replyMsg = auto.replyStyleMode === 'FOLLOW_GATE' ? '⚡ Viral Follow-Gate' : (auto.privateMessageText || 'Direct Message');
             return `
-                <tr class="border-b border-gray-800 hover:bg-gray-900 transition-all">
-                    <td class="p-4 text-white font-medium font-mono">#${escHtml(keywordText)}</td>
-                    <td class="p-4 text-gray-400 max-w-xs truncate">${escHtml(replyMsg)}</td>
+                <tr class="border-b border-gray-800 hover:bg-gray-900/40 transition-all">
+                    <td class="p-4 text-center text-gray-500 font-medium">${index + 1}</td>
+                    <td class="p-4 text-white font-semibold font-mono text-purple-400">#${escHtml(keywordText)}</td>
+                    <td class="p-4 text-gray-300 max-w-xs truncate">${escHtml(replyMsg)}</td>
                     <td class="p-4 text-emerald-400 font-bold">${auto.triggerCount || 0} hits</td>
                     <td class="p-4">
                         <label class="relative inline-flex items-center cursor-pointer">
@@ -174,7 +175,7 @@ async function loadAutomations() {
                         </label>
                     </td>
                     <td class="p-4">
-                        <button onclick="window.deleteAutomationRecord('${auto._id}')" class="text-red-500 hover:text-red-400 transition-colors p-2 rounded hover:bg-red-500/10">
+                        <button onclick="window.deleteAutomationRecord('${auto._id}')" class="bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white transition-all px-3 py-1.5 rounded-lg text-xs font-medium">
                             🗑️ Delete
                         </button>
                     </td>
@@ -182,7 +183,7 @@ async function loadAutomations() {
             `;
         }).join('');
     } catch (e) { 
-        listBody.innerHTML = '<tr><td colspan="5" class="p-8 text-center text-red-500">Failed to load automations.</td></tr>'; 
+        listBody.innerHTML = '<tr><td colspan="6" class="p-8 text-center text-red-500">Failed to load automations.</td></tr>'; 
     }
 }
 
@@ -219,7 +220,18 @@ window.deleteAutomationRecord = async function(id) {
         } else {
             alert("Failed to delete automation");
         }
-    } catch(err) { alert("Failed to delete automation"); }
+    } catch(err) { 
+        try {
+            const res2 = await request(`/api/automations/delete?automationId=${id}`, { method: 'DELETE' });
+            if (res2 && res2.success) {
+                console.log(`[DMOrbit Sync] Automation ${id} deleted.`);
+                loadAutomations();
+                loadOverview();
+            } else {
+                alert("Failed to delete automation");
+            }
+        } catch(e) { alert("Failed to delete automation"); }
+    }
 };
 
 async function loadLogs() {
