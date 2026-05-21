@@ -49,12 +49,21 @@ async function init() {
         if (!data.user) { window.location.href = '/'; return; }
         currentUser = data.user;
         
-        // Update User Profiles
-        document.getElementById('user-avatar').textContent = (data.user.name || data.user.email || 'U')[0].toUpperCase();
-        document.getElementById('sidebar-user-name').textContent = data.user.name || data.user.email;
-        document.getElementById('sidebar-user-plan').textContent = `${(data.user.plan || 'free').toUpperCase()} PLAN`;
-        document.getElementById('topbar-workspace-name').textContent = `${(data.user.name || 'My').split(' ')[0]}'s Workspace`;
-        document.getElementById('hero-greeting').textContent = `Welcome back, ${(data.user.name || '').split(' ')[0] || 'there'} 👋`;
+        // Update User Profiles Safely
+        const avatarEl = document.getElementById('user-avatar');
+        if (avatarEl) avatarEl.textContent = (data.user.name || data.user.email || 'U')[0].toUpperCase();
+        
+        const sidebarNameEl = document.getElementById('sidebar-user-name');
+        if (sidebarNameEl) sidebarNameEl.textContent = data.user.name || data.user.email;
+        
+        const sidebarPlanEl = document.getElementById('sidebar-user-plan');
+        if (sidebarPlanEl) sidebarPlanEl.textContent = `${(data.user.plan || 'free').toUpperCase()} PLAN`;
+        
+        const topbarWorkspaceEl = document.getElementById('topbar-workspace-name');
+        if (topbarWorkspaceEl) topbarWorkspaceEl.textContent = `${(data.user.name || 'My').split(' ')[0]}'s Workspace`;
+        
+        const heroGreetingEl = document.getElementById('hero-greeting');
+        if (heroGreetingEl) heroGreetingEl.textContent = `Welcome back, ${(data.user.name || '').split(' ')[0] || 'there'} 👋`;
 
         setupNav();
         setupWizard();
@@ -823,7 +832,7 @@ window.updateBillingWidget = function(plan, currentDms) {
                         <div style="width: 48px; height: 48px; background: rgba(16,185,129,0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-bottom: 12px; color: #10b981; box-shadow: 0 0 15px rgba(16,185,129,0.2);">
                             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
                         </div>
-                        <div style="font-size: 15px; font-weight: 600; color: #fff; margin-bottom: 4px;">API Connected</div>
+                        <div style="font-size: 15px; font-weight: 600; color: #fff; margin-bottom: 4px;">Instagram Connected</div>
                         <div style="font-size: 13px; color: #10b981;">Webhooks active</div>
                     `;
                 } else {
