@@ -457,6 +457,7 @@ app.get('/api/health', (req, res) => {
 app.get('/privacy', (req, res) => res.sendFile(path.join(__dirname, 'public', 'privacy.html')));
 app.get('/terms', (req, res) => res.sendFile(path.join(__dirname, 'public', 'terms.html')));
 app.get('/delete-data', (req, res) => res.sendFile(path.join(__dirname, 'public', 'delete-data.html')));
+app.get('/google187b8d249eaf18ad.html', (req, res) => res.sendFile(path.join(__dirname, 'public', 'google187b8d249eaf18ad.html')));
 
 app.use(express.static(path.join(__dirname, 'public'))); // Serve from public dir
 
