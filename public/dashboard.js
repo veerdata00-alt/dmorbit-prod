@@ -154,7 +154,17 @@ async function loadAutomations() {
     try {
         const autos = await API.automations();
         if (!autos.length) {
-            listBody.innerHTML = '<tr><td colspan="6" class="p-8 text-center text-gray-500">No automations created yet. Setup your first keyword!</td></tr>';
+            listBody.innerHTML = `<tr><td colspan="6" class="p-12 text-center">
+                <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding: 40px 0;">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color:var(--text-muted); margin-bottom:16px;"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="9" y1="3" x2="9" y2="21"></line></svg>
+                    <h3 style="color:var(--text-primary); font-size:16px; margin-bottom:8px;">No automations found</h3>
+                    <p style="color:var(--text-muted); font-size:14px; margin-bottom:24px;">Create your first keyword trigger to start capturing leads.</p>
+                    <button class="btn btn-primary" onclick="window.openWizard()" style="display:flex; align-items:center; gap:8px;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                        Create Automation
+                    </button>
+                </div>
+            </td></tr>`;
             return;
         }
 
@@ -175,8 +185,9 @@ async function loadAutomations() {
                         </label>
                     </td>
                     <td class="p-4">
-                        <button onclick="window.deleteAutomationRecord('${auto._id}')" class="bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white transition-all px-3 py-1.5 rounded-lg text-xs font-medium">
-                            🗑️ Delete
+                        <button onclick="window.deleteAutomationRecord('${auto._id}')" class="bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white transition-all px-3 py-1.5 rounded-lg text-xs font-medium flex items-center justify-center gap-1.5 mx-auto">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>
+                            Delete
                         </button>
                     </td>
                 </tr>
@@ -232,7 +243,7 @@ async function loadLogs() {
         if (!logs || !logs.length) {
             container.innerHTML = `
                 <div class="empty-state">
-                    <div class="empty-icon">📝</div>
+                    <div class="empty-icon"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg></div>
                     <div class="empty-title">No activity yet</div>
                     <div class="empty-desc">When your automations trigger, the history will appear here.</div>
                 </div>
@@ -242,7 +253,7 @@ async function loadLogs() {
 
         container.innerHTML = logs.map((l, i) => `
             <div class="timeline-item">
-                <div class="timeline-icon ${i === 0 ? 'primary' : ''}">💬</div>
+                <div class="timeline-icon ${i === 0 ? 'primary' : ''}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg></div>
                 <div class="timeline-content">
                     <div class="timeline-title">Replied to ${escHtml(l.user_id || 'user')}</div>
                     <div class="timeline-time">Triggered by "${escHtml(l.keyword)}" • ${formatDate(l.timestamp)}</div>
@@ -263,17 +274,17 @@ async function loadAccount() {
         if (data.instagram?.connected) {
             const status = data.instagram.status || 'active';
             const statusMap = {
-                'active': { label: '🟢 Connected', color: 'rgba(16,185,129,0.1)', textColor: 'var(--success)', desc: 'Your account is healthy and DMs are firing.' },
-                'expired': { label: '🔴 Session Expired', color: 'rgba(239,68,68,0.1)', textColor: 'var(--danger)', desc: 'Instagram logged you out. Please reconnect to resume.' },
-                'invalid': { label: '🔴 Challenge Detected', color: 'rgba(239,68,68,0.1)', textColor: 'var(--danger)', desc: 'Instagram detected a suspicious login. Reconnect manually.' },
-                'reconnect_recommended': { label: '🟡 Reconnect Recommended', color: 'rgba(245,158,11,0.1)', textColor: 'var(--warning)', desc: 'To maintain stability, we recommend refreshing your session.' },
-                'paused': { label: '⚫ Automation Paused', color: 'rgba(107,114,128,0.1)', textColor: 'var(--text-muted)', desc: 'You have manually paused all automations.' }
+                'active': { label: 'Connected', color: 'rgba(16,185,129,0.1)', textColor: 'var(--success)', desc: 'Your account is healthy and DMs are firing.' },
+                'expired': { label: 'Session Expired', color: 'rgba(239,68,68,0.1)', textColor: 'var(--danger)', desc: 'Instagram logged you out. Please reconnect to resume.' },
+                'invalid': { label: 'Challenge Detected', color: 'rgba(239,68,68,0.1)', textColor: 'var(--danger)', desc: 'Instagram detected a suspicious login. Reconnect manually.' },
+                'reconnect_recommended': { label: 'Reconnect Recommended', color: 'rgba(245,158,11,0.1)', textColor: 'var(--warning)', desc: 'To maintain stability, we recommend refreshing your session.' },
+                'paused': { label: 'Automation Paused', color: 'rgba(107,114,128,0.1)', textColor: 'var(--text-muted)', desc: 'You have manually paused all automations.' }
             };
             const s = statusMap[status] || statusMap['active'];
 
             container.innerHTML = `
                 <div style="display:flex; gap: 16px; align-items:center; margin-bottom: 20px;">
-                    <div style="font-size: 32px;">📱</div>
+                    <div style="color: var(--primary);"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect><line x1="12" y1="18" x2="12.01" y2="18"></line></svg></div>
             <div>
                 <div style="font-weight: 600; color: var(--text-primary);">Instagram Business Profile</div>
                 <div style="font-size: 13px; color: var(--text-muted);">Connected via Official Meta API</div>
@@ -286,7 +297,10 @@ async function loadAccount() {
                 </div>
 
                 <div class="security-box" style="padding: 16px; background: var(--bg-alt); border-radius: 12px; font-size: 13px; color: var(--text-secondary); margin-bottom: 24px;">
-                    <div style="font-weight: 600; margin-bottom: 8px; color: var(--text-primary);">🔒 Your Security</div>
+                    <div style="font-weight: 600; margin-bottom: 8px; color: var(--text-primary); display:flex; align-items:center; gap:6px;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                        Your Security
+                    </div>
                     <ul style="padding-left: 18px; margin: 0;">
                         <li>We use official Meta Graph APIs for engagement.</li>
                         <li>Automations are optimized for platform compliance.</li>
@@ -299,7 +313,7 @@ async function loadAccount() {
         } else {
             container.innerHTML = `
                 <div class="empty-state">
-                    <div class="empty-icon">📱</div>
+                    <div class="empty-icon"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect><line x1="12" y1="18" x2="12.01" y2="18"></line></svg></div>
                     <div class="empty-title">Instagram Disconnected</div>
                     <div class="empty-desc">Connect your account using the official Meta integration to start engaging with your audience.</div>
                     <a href="/auth/instagram" class="btn btn-primary" style="margin-top: 12px; text-decoration: none; display: inline-block;">Connect via Meta (Official)</a>
