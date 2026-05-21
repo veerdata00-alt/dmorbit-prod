@@ -148,65 +148,42 @@ async function loadOverview() {
 }
 
 async function loadAutomations() {
-    const list = document.getElementById('automations-list');
-    list.innerHTML = '<div class="empty-state">Loading...</div>';
+    const listBody = document.getElementById('automationsTableBody');
+    if (!listBody) return;
+    listBody.innerHTML = '<tr><td colspan="5" class="p-8 text-center text-gray-500">Loading...</td></tr>';
     try {
         const autos = await API.automations();
         if (!autos.length) {
-            list.innerHTML = `
-                <div class="empty-state">
-                    <div class="empty-icon">⚡</div>
-                    <div class="empty-title">No automations yet</div>
-                    <div class="empty-desc">Create your first automation to start replying to comments instantly.</div>
-                    <button class="btn btn-secondary" onclick="document.getElementById('open-wizard-btn').click()">Create Now</button>
-                </div>
-            `;
+            listBody.innerHTML = '<tr><td colspan="5" class="p-8 text-center text-gray-500">No automations created yet. Setup your first keyword!</td></tr>';
             return;
         }
 
-        list.innerHTML = `
-            <div style="overflow-x: auto; background: var(--bg-alt); border-radius: 12px; border: 1px solid var(--border);">
-                <table style="width: 100%; text-align: left; border-collapse: collapse; min-width: 600px;">
-                    <thead>
-                        <tr style="border-bottom: 1px solid var(--border); color: var(--text-muted); font-size: 12px; text-transform: uppercase;">
-                            <th style="padding: 16px; font-weight: 600;">Keyword</th>
-                            <th style="padding: 16px; font-weight: 600;">DM Reply</th>
-                            <th style="padding: 16px; font-weight: 600;">Triggers</th>
-                            <th style="padding: 16px; font-weight: 600;">Status</th>
-                            <th style="padding: 16px; font-weight: 600;">Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${autos.map(auto => {
-                            const isChecked = auto.isActive ? 'checked' : '';
-                            const keywordText = (auto.trigger?.keywords || []).join(', ') || 'ANY_COMMENT';
-                            const replyMsg = auto.replyStyleMode === 'FOLLOW_GATE' ? '⚡ Viral Follow-Gate' : (auto.privateMessageText || 'Direct Message');
-                            return `
-                                <tr style="border-bottom: 1px solid var(--border); transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.02)'" onmouseout="this.style.background='transparent'">
-                                    <td style="padding: 16px; color: var(--text-primary); font-family: monospace; font-weight: 500;">#${escHtml(keywordText)}</td>
-                                    <td style="padding: 16px; color: var(--text-secondary); max-width: 250px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escHtml(replyMsg)}</td>
-                                    <td style="padding: 16px; color: var(--success); font-weight: bold;">${auto.triggerCount || 0} hits</td>
-                                    <td style="padding: 16px;">
-                                        <label style="position: relative; display: inline-flex; align-items: center; cursor: pointer;">
-                                            <input type="checkbox" ${isChecked} style="opacity: 0; position: absolute; width: 0; height: 0;" onchange="window.toggleAutomationState('${auto._id}', this.checked)">
-                                            <div style="width: 44px; height: 24px; background: ${auto.isActive ? '#4F46E5' : '#374151'}; border-radius: 9999px; position: relative; transition: background 0.3s;">
-                                                <div style="width: 20px; height: 20px; background: white; border-radius: 50%; position: absolute; top: 2px; left: ${auto.isActive ? '22px' : '2px'}; transition: left 0.3s; box-shadow: 0 2px 4px rgba(0,0,0,0.2);"></div>
-                                            </div>
-                                        </label>
-                                    </td>
-                                    <td style="padding: 16px;">
-                                        <button onclick="window.deleteAutomationRecord('${auto._id}')" style="background: rgba(239, 68, 68, 0.1); color: #EF4444; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='rgba(239, 68, 68, 0.2)'" onmouseout="this.style.background='rgba(239, 68, 68, 0.1)'">
-                                            🗑️ Delete
-                                        </button>
-                                    </td>
-                                </tr>
-                            `;
-                        }).join('')}
-                    </tbody>
-                </table>
-            </div>
-        `;
-    } catch (e) { list.innerHTML = '<div class="empty-state">Failed to load automations.</div>'; }
+        listBody.innerHTML = autos.map(auto => {
+            const isChecked = auto.isActive ? 'checked' : '';
+            const keywordText = (auto.trigger?.keywords || []).join(', ') || 'ANY_COMMENT';
+            const replyMsg = auto.replyStyleMode === 'FOLLOW_GATE' ? '⚡ Viral Follow-Gate' : (auto.privateMessageText || 'Direct Message');
+            return `
+                <tr class="border-b border-gray-800 hover:bg-gray-900 transition-all">
+                    <td class="p-4 text-white font-medium font-mono">#${escHtml(keywordText)}</td>
+                    <td class="p-4 text-gray-400 max-w-xs truncate">${escHtml(replyMsg)}</td>
+                    <td class="p-4 text-emerald-400 font-bold">${auto.triggerCount || 0} hits</td>
+                    <td class="p-4">
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" ${isChecked} class="sr-only peer" onchange="window.toggleAutomationState('${auto._id}', this.checked)">
+                            <div class="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gradient-to-r peer-checked:from-pink-500 peer-checked:to-purple-600"></div>
+                        </label>
+                    </td>
+                    <td class="p-4">
+                        <button onclick="window.deleteAutomationRecord('${auto._id}')" class="text-red-500 hover:text-red-400 transition-colors p-2 rounded hover:bg-red-500/10">
+                            🗑️ Delete
+                        </button>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+    } catch (e) { 
+        listBody.innerHTML = '<tr><td colspan="5" class="p-8 text-center text-red-500">Failed to load automations.</td></tr>'; 
+    }
 }
 
 window.toggleAutomationState = async function(id, isActive) {
