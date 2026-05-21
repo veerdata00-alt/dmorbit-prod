@@ -2750,7 +2750,8 @@ app.post('/api/automations/toggle', authenticateToken, async (req, res) => {
 });
 
 app.delete('/api/automations/delete', authenticateToken, async (req, res) => {
-    const { automationId } = req.body;
+    const automationId = req.body.automationId || req.query.automationId;
+    if (!automationId) return res.status(400).json({ error: 'Missing automationId' });
     try {
         const result = await Automation.deleteOne({ _id: automationId, userId: req.user.userId });
         if (result.deletedCount === 0) return res.status(404).json({ error: 'Automation not found' });
