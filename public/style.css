@@ -303,11 +303,18 @@ p {
 @media (max-width: 767px) {
     .hero-mockup-wrapper {
         padding: 4px !important;
+        overflow-x: hidden !important;
     }
     .hero-mockup-container {
         flex-direction: column !important;
         padding: 12px !important;
         gap: 16px !important;
+        min-height: auto !important;
+        overflow-x: hidden !important;
+    }
+    .hero-main-content {
+        gap: 16px !important;
+        overflow-x: hidden !important;
     }
     .hero-sidebar {
         width: 100% !important;
@@ -331,11 +338,17 @@ p {
     }
     .hero-stats-row {
         flex-direction: column !important;
+        gap: 12px !important;
     }
     .hero-flow-row {
         flex-direction: column !important;
+        gap: 12px !important;
     }
-    .hero-stats-row > div {
+    .hero-stats-row > div, .hero-flow-row > div {
         width: 100% !important;
+        flex: none !important;
+    }
+    .shimmer-text {
+        font-size: 24px !important;
     }
 }
