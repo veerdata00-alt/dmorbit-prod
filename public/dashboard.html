@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DMOrbit — Dashboard</title>
+    <title>DMOrbit — Workspace</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="dashboard.css">
 </head>
@@ -12,10 +12,10 @@
         <!-- Sidebar -->
         <aside class="sidebar" id="sidebar">
             <div class="sidebar-logo">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="#4F46E5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    <path d="M2 17L12 22L22 17" stroke="#4F46E5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    <path d="M2 12L12 17L22 12" stroke="#4F46E5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 2L2 7L12 12L22 7L12 2Z"></path>
+                    <path d="M2 17L12 22L22 17"></path>
+                    <path d="M2 12L12 17L22 12"></path>
                 </svg>
                 DMOrbit
             </div>
@@ -23,29 +23,41 @@
             <nav class="sidebar-nav">
                 <div class="nav-section">Workspace</div>
                 <a href="#" class="nav-item active" data-page="overview">
-                    <span class="nav-icon">📊</span>
+                    <span class="nav-icon">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9"></rect><rect x="14" y="3" width="7" height="5"></rect><rect x="14" y="12" width="7" height="9"></rect><rect x="3" y="16" width="7" height="5"></rect></svg>
+                    </span>
                     <span>Overview</span>
                 </a>
                 <a href="#" class="nav-item" data-page="automations">
-                    <span class="nav-icon">⚡</span>
+                    <span class="nav-icon">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+                    </span>
                     <span>Automations</span>
                 </a>
                 <a href="#" class="nav-item" data-page="templates">
-                    <span class="nav-icon">📁</span>
+                    <span class="nav-icon">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>
+                    </span>
                     <span>Templates</span>
                 </a>
                 <a href="#" class="nav-item" data-page="logs">
-                    <span class="nav-icon">📥</span>
+                    <span class="nav-icon">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                    </span>
                     <span>Activity Log</span>
                 </a>
 
                 <div class="nav-section">Settings</div>
                 <a href="#" class="nav-item" data-page="account">
-                    <span class="nav-icon">📱</span>
+                    <span class="nav-icon">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
+                    </span>
                     <span>Instagram Account</span>
                 </a>
                 <a href="#" class="nav-item" data-page="billing">
-                    <span class="nav-icon">💳</span>
+                    <span class="nav-icon">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>
+                    </span>
                     <span>Billing & Plan</span>
                 </a>
             </nav>
@@ -57,6 +69,7 @@
                         <div class="user-name" id="sidebar-user-name">Loading...</div>
                         <div class="user-plan" id="sidebar-user-plan">Free Plan</div>
                     </div>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--text-muted);"><polyline points="18 15 12 9 6 15"></polyline></svg>
                 </div>
             </div>
         </aside>
@@ -66,14 +79,16 @@
             <!-- Topbar -->
             <header class="topbar">
                 <div class="topbar-left">
-                    <button class="menu-toggle" id="menu-toggle">☰</button>
+                    <button class="menu-toggle" id="menu-toggle">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+                    </button>
                     <div class="workspace-badge">
                         <span class="dot" id="topbar-status-dot"></span>
                         <span id="topbar-workspace-name">My Workspace</span>
                     </div>
                 </div>
                 <div class="topbar-right">
-                    <a href="mailto:support@dmorbit.app" class="btn btn-ghost btn-sm">Help</a>
+                    <a href="mailto:support@dmorbit.app" class="btn btn-ghost btn-sm">Support</a>
                     <button class="btn btn-ghost btn-sm" id="logout-btn">Sign Out</button>
                 </div>
             </header>
@@ -87,13 +102,18 @@
                         <h1 id="hero-greeting">Welcome back 👋</h1>
                         <p>Your automations are ready to capture leads and engage your audience.</p>
                     </div>
-                    <button class="btn btn-primary btn-lg" id="open-wizard-btn">+ Create Automation</button>
+                    <button class="btn btn-primary btn-lg" id="open-wizard-btn">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                        Create Automation
+                    </button>
                 </div>
 
                 <!-- Instagram Connection Card -->
                 <div class="ig-connection-card" id="ig-connection-card">
                     <div class="ig-profile">
-                        <div class="ig-avatar">📱</div>
+                        <div class="ig-avatar">
+                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
+                        </div>
                         <div class="ig-details">
                             <h3>Instagram Disconnected</h3>
                             <div class="ig-status-badge disconnected">
@@ -101,7 +121,7 @@
                             </div>
                         </div>
                     </div>
-                    <a href="/auth/instagram" class="btn btn-secondary">Connect Instagram</a>
+                    <a href="/auth/instagram" class="btn btn-primary" style="box-shadow: none;">Connect Account</a>
                 </div>
 
                 <!-- Quick Stats -->
@@ -109,7 +129,7 @@
                     <div class="stat-card">
                         <div class="stat-label">Active Automations</div>
                         <div class="stat-value" id="stat-automations">0</div>
-                        <div class="stat-trend neutral">Ready to launch</div>
+                        <div class="stat-trend neutral">Live right now</div>
                     </div>
                     <div class="stat-card">
                         <div class="stat-label">Comments Captured</div>
@@ -125,7 +145,7 @@
 
                 <!-- Empty State / Templates -->
                 <div id="overview-content-area">
-                    <h3 style="margin-bottom: 16px;">Start with a Template</h3>
+                    <h3 style="margin-bottom: 24px;">Start with a Template</h3>
                     <div class="templates-grid">
                         <div class="template-card" onclick="openWizard('Lead Magnet')">
                             <div class="template-icon">🎁</div>
@@ -153,29 +173,32 @@
                         <h2>Your Automations</h2>
                         <p>Manage your active DM flows and triggers.</p>
                     </div>
-                    <button class="btn btn-primary" onclick="document.getElementById('open-wizard-btn').click()">+ Create Automation</button>
+                    <button class="btn btn-primary" onclick="document.getElementById('open-wizard-btn').click()">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                        Create New
+                    </button>
                 </div>
                 <div id="automations-list" class="data-list">
-                    <div class="mt-8 bg-gray-900/50 border border-gray-800 rounded-xl p-6 backdrop-blur-sm">
-                        <div class="sm:flex sm:items-center justify-between mb-4">
+                    <div class="mt-4 bg-[#18181b99] backdrop-blur-xl border border-white/10 rounded-2xl p-6 shadow-2xl">
+                        <div class="sm:flex sm:items-center justify-between mb-6">
                             <div>
-                                <h3 class="text-lg font-bold text-white">Your Live Automations</h3>
-                                <p class="text-sm text-gray-400 mt-1">Manage, Pause, or Delete your Instagram trigger keywords live.</p>
+                                <h3 class="text-lg font-bold text-white tracking-tight">Active Workflows</h3>
+                                <p class="text-sm text-gray-400 mt-1">Manage, pause, or edit your Instagram automations.</p>
                             </div>
                         </div>
                         <div class="mt-4 overflow-x-auto">
-                            <table class="min-w-full divide-y divide-gray-800 text-left text-sm text-gray-300">
-                                <thead class="bg-gray-950/80 text-gray-400 uppercase text-xs font-semibold tracking-wider">
+                            <table class="min-w-full divide-y divide-white/5 text-left text-sm text-gray-300">
+                                <thead class="bg-white/5 text-gray-400 uppercase text-xs font-semibold tracking-wider rounded-t-lg">
                                     <tr>
-                                        <th class="p-4 text-center">#</th>
+                                        <th class="p-4 text-center rounded-tl-lg">#</th>
                                         <th class="p-4">Trigger Keyword</th>
                                         <th class="p-4">Reply Message</th>
                                         <th class="p-4">Analytics</th>
                                         <th class="p-4">Status</th>
-                                        <th class="p-4">Actions</th>
+                                        <th class="p-4 rounded-tr-lg">Actions</th>
                                     </tr>
                                 </thead>
-                                <tbody id="automationsTableBody" class="divide-y divide-gray-800 bg-gray-900/20">
+                                <tbody id="automationsTableBody" class="divide-y divide-white/5 bg-transparent">
                                     <!-- Populated by JS -->
                                 </tbody>
                             </table>
@@ -191,16 +214,34 @@
                         <h2>Activity Log</h2>
                         <p>Recent DMs sent and comments captured.</p>
                     </div>
-                    <button class="btn btn-secondary btn-sm" id="refresh-logs">↻ Refresh</button>
+                    <button class="btn btn-secondary btn-sm" id="refresh-logs">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>
+                        Refresh
+                    </button>
                 </div>
                 <div class="card">
                     <div class="timeline" id="logs-timeline">
                         <div class="empty-state">
                             <div class="empty-icon">📝</div>
                             <div class="empty-title">No activity yet</div>
-                            <div class="empty-desc">When your automations trigger, the history will appear here.</div>
+                            <div class="empty-desc">Your automation logs will appear here once users start commenting on your posts.</div>
                         </div>
                     </div>
+                </div>
+            </div>
+
+            <!-- TEMPLATES PAGE (Placeholder) -->
+            <div class="page" id="page-templates">
+                <div class="hero-section">
+                    <div class="hero-content">
+                        <h2>Templates Library</h2>
+                        <p>Ready-to-use workflows to boost your engagement.</p>
+                    </div>
+                </div>
+                <div class="empty-state">
+                    <div class="empty-icon">📁</div>
+                    <div class="empty-title">Coming Soon</div>
+                    <div class="empty-desc">We are curating high-converting templates for you. Check back later!</div>
                 </div>
             </div>
 
@@ -209,255 +250,151 @@
                 <div class="hero-section">
                     <div class="hero-content">
                         <h2>Instagram Account</h2>
-                        <p>Manage your Meta API connection and permissions.</p>
+                        <p>Manage your connected Meta business accounts.</p>
                     </div>
                 </div>
-                <div class="card card-elevated" style="max-width: 600px; margin-bottom: 24px;">
+                <div class="card" style="max-width: 600px;">
                     <h3 style="margin-bottom: 16px;">Connection Health</h3>
-                    <div id="account-status-content">
-                        <div class="empty-state">Loading...</div>
+                    <div id="account-health-container">
+                        Loading...
                     </div>
                 </div>
             </div>
 
-            <!-- BILLING PAGE -->
+            <!-- BILLING PAGE (Placeholder) -->
             <div class="page" id="page-billing">
                 <div class="hero-section">
                     <div class="hero-content">
-                        <h2>💳 Billing & Subscription</h2>
-                        <p>Manage your subscription tier, track usage counters, or upgrade instantly via UPI/Card.</p>
+                        <h2>Billing & Plan</h2>
+                        <p>Manage your subscription and usage limits.</p>
                     </div>
                 </div>
-                <div id="billingPlanSection" style="max-width: 800px; color: #fff;">
-                    <div style="background: rgba(255,255,255,0.02); border: 1px solid #222; padding: 20px; border-radius: 12px; margin-bottom: 30px;">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                            <span style="font-size: 15px; color: #aaa;">Current Account Tier: <strong id="currentPlanBadge" style="color: #00e676; background: rgba(0,230,118,0.1); padding: 3px 10px; border-radius: 6px; margin-left: 5px;">FREE PLAN</strong></span>
-                            <span id="dmUsageText" style="font-weight: 600; color: #e0e0e0;">0 / 50 DMs Used</span>
-                        </div>
-                        <div style="width: 100%; height: 10px; background: #1a1a1a; border-radius: 5px; overflow: hidden; border: 1px solid #333;">
-                            <div id="usageProgressBar" style="width: 5%; height: 100%; background: linear-gradient(90deg, #00e676, #00b0ff); transition: width 0.5s ease;"></div>
-                        </div>
-                    </div>
-
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 25px;">
-                        <div style="background: #111; padding: 25px; border-radius: 12px; border: 1px solid #222; opacity: 0.8;">
-                            <h3 style="font-size: 18px; margin-bottom: 5px;">Free Tier</h3>
-                            <p style="color: #666; font-size: 13px; margin-bottom: 15px;">Basic testing sandbox</p>
-                            <div style="font-size: 28px; font-weight: bold; margin-bottom: 20px;">₹0 <span style="font-size: 14px; color: #444; font-weight: normal;">/ forever</span></div>
-                            <ul style="color: #888; font-size: 13px; padding-left: 18px; margin-bottom: 25px; line-height: 1.8;">
-                                <li>1 Active Automation</li>
-                                <li>50 Free Auto-DMs / mo</li>
-                                <li style="color: #ff5252; list-style-type: '× ';">Viral Follow-Gate (Locked 🔒)</li>
-                            </ul>
-                            <button disabled style="width: 100%; padding: 12px; background: #222; color: #555; border: none; border-radius: 8px; font-weight: bold; cursor: not-allowed;">Current Plan</button>
-                        </div>
-
-                        <div style="background: #111; padding: 25px; border-radius: 12px; border: 1px solid #333; position: relative;">
-                            <h3 style="font-size: 18px; margin-bottom: 5px;">Basic Pro</h3>
-                            <p style="color: #888; font-size: 13px; margin-bottom: 15px;">Perfect for growing creators</p>
-                            <div style="font-size: 28px; font-weight: bold; margin-bottom: 20px;">₹299 <span style="font-size: 14px; color: #666; font-weight: normal;">/ month</span></div>
-                            <ul style="color: #aaa; font-size: 13px; padding-left: 18px; margin-bottom: 25px; line-height: 1.8;">
-                                <li>Up to 5 Active Automations</li>
-                                <li>1,000 Verified Auto-DMs / mo</li>
-                                <li style="color: #00e676; list-style-type: '✓ ';">Viral Follow-Gate Active ✅</li>
-                            </ul>
-                            <button onclick="window.initiateCheckout('BASIC')" style="width: 100%; padding: 12px; background: #00b0ff; color: #fff; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.2s;">Upgrade to Basic</button>
-                        </div>
-
-                        <div style="background: #111; padding: 25px; border-radius: 12px; border: 1px solid #00e676; position: relative;">
-                            <span style="position: absolute; top: -12px; right: 25px; background: #00e676; color: #000; font-size: 11px; font-weight: bold; padding: 3px 10px; border-radius: 20px;">BEST VALUE</span>
-                            <h3 style="font-size: 18px; margin-bottom: 5px;">Ultimate Pro</h3>
-                            <p style="color: #888; font-size: 13px; margin-bottom: 15px;">Unlimited scale & power</p>
-                            <div style="font-size: 28px; font-weight: bold; margin-bottom: 20px;">₹599 <span style="font-size: 14px; color: #666; font-weight: normal;">/ month</span></div>
-                            <ul style="color: #aaa; font-size: 13px; padding-left: 18px; margin-bottom: 25px; line-height: 1.8;">
-                                <li><strong>Unlimited</strong> Active Automations</li>
-                                <li><strong>Unlimited</strong> Auto-DMs & Comments</li>
-                                <li>Advanced Anti-Spam Rotator</li>
-                                <li>Priority API Queue Infrastructure</li>
-                            </ul>
-                            <button onclick="window.initiateCheckout('PRO')" style="width: 100%; padding: 12px; background: #00e676; color: #000; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.2s;">Upgrade to Ultimate Pro</button>
-                        </div>
-                    </div>
+                <div class="empty-state">
+                    <div class="empty-icon">💳</div>
+                    <div class="empty-title">Free Plan Active</div>
+                    <div class="empty-desc">You are currently on the Free Plan. Upgrade options will be available soon.</div>
                 </div>
             </div>
 
         </main>
     </div>
 
-    <!-- GUIDED WIZARD MODAL (CREATION FLOW) -->
-    <div class="wizard-overlay" id="wizard-modal">
+    <!-- WIZARD MODAL -->
+    <div class="wizard-overlay" id="wizard-overlay">
         <div class="wizard-modal">
             <div class="wizard-header">
                 <div class="wizard-steps">
-                    <div class="w-step active" id="step-1-nav"><div class="w-step-num">1</div> Goal</div>
-                    <div class="w-step" id="step-2-nav"><div class="w-step-num">2</div> Trigger</div>
-                    <div class="w-step" id="step-3-nav"><div class="w-step-num">3</div> Message</div>
-                    <div class="w-step" id="step-4-nav"><div class="w-step-num">4</div> Review</div>
+                    <div class="w-step active" id="step-nav-1"><div class="w-step-num">1</div> Trigger</div>
+                    <div class="w-step" id="step-nav-2"><div class="w-step-num">2</div> Action</div>
+                    <div class="w-step" id="step-nav-3"><div class="w-step-num">3</div> Review</div>
                 </div>
-                <button class="modal-close" id="close-wizard">✕</button>
+                <button class="btn btn-ghost btn-sm" id="close-wizard">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
             </div>
             
             <div class="wizard-body">
                 <div class="wizard-content">
-                    
-                    <!-- STEP 1: GOAL -->
-                    <div class="wizard-step-pane" id="wizard-step-1">
-                        <h2 style="margin-bottom: 8px;">What is your goal?</h2>
-                        <p class="text-muted" style="margin-bottom: 24px;">Choose an objective for this automation.</p>
-                        
-                        <div class="radio-cards">
-                            <div class="radio-card selected" data-goal="link">
-                                <div class="radio-card-title">🔗 Send a Link</div>
-                                <div class="radio-card-desc">Deliver a product or website link via DM.</div>
-                            </div>
-                            <div class="radio-card" data-goal="lead">
-                                <div class="radio-card-title">🎁 Lead Magnet</div>
-                                <div class="radio-card-desc">Send a free PDF or resource to capture emails.</div>
-                            </div>
-                            <div class="radio-card" data-goal="coupon">
-                                <div class="radio-card-title">🎫 Send Coupon</div>
-                                <div class="radio-card-desc">Give a discount code to commenters.</div>
-                            </div>
-                            <div class="radio-card" data-goal="custom">
-                                <div class="radio-card-title">💬 Custom Reply</div>
-                                <div class="radio-card-desc">Just start a conversation in the DMs.</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- STEP 2: TRIGGER -->
-                    <div class="wizard-step-pane" id="wizard-step-2" style="display: none;">
-                        <h2 style="margin-bottom: 8px;">Define your trigger & post</h2>
-                        <p class="text-muted" style="margin-bottom: 20px;">Name your flow, select comment condition, and choose your post.</p>
+                    <!-- Step 1: Trigger -->
+                    <div id="wizard-step-1" style="display: block;">
+                        <h2 style="margin-bottom: 24px;">What should trigger this automation?</h2>
                         
                         <div class="form-group">
-                            <label class="form-label">Name this automation</label>
-                            <input type="text" id="wiz-name" class="form-input" placeholder="e.g. Summer Sale Link">
+                            <label class="form-label">Platform</label>
+                            <div class="radio-cards">
+                                <div class="radio-card selected">
+                                    <div class="radio-card-title">Instagram</div>
+                                    <div class="radio-card-desc">Posts, Reels, and Lives</div>
+                                </div>
+                            </div>
                         </div>
 
-                        <!-- Trigger Condition Selection -->
-                        <div class="form-group" style="margin-top: 20px;">
+                        <div class="form-group">
                             <label class="form-label">Trigger Condition</label>
-                            <div class="radio-cards-horizontal" style="display: flex; gap: 12px; margin-top: 8px;">
-                                <div class="radio-card-sm selected" id="trigger-mode-keyword" style="flex: 1; padding: 12px; border: 2px solid #4F46E5; border-radius: 8px; cursor: pointer; text-align: center; font-weight: 500; background: rgba(79, 70, 229, 0.05);">
-                                    🔑 Specific Keyword
-                                </div>
-                                <div class="radio-card-sm" id="trigger-mode-any" style="flex: 1; padding: 12px; border: 2px solid var(--border); border-radius: 8px; cursor: pointer; text-align: center; font-weight: 500; color: var(--text-muted);">
-                                    💬 Any Comment
-                                </div>
-                            </div>
-                            <input type="hidden" id="wiz-trigger-mode" value="keyword">
+                            <select id="w-trigger-type" class="form-input">
+                                <option value="KEYWORD">Specific Keyword (Recommended)</option>
+                                <option value="ANY_COMMENT">Any Comment</option>
+                            </select>
                         </div>
 
-                        <!-- Keywords Input Group -->
-                        <div class="form-group" id="wiz-keywords-group" style="margin-top: 20px;">
-                            <label class="form-label">Trigger Keywords</label>
-                            <input type="text" id="wiz-keywords" class="form-input" placeholder="e.g. LINK, PRICE, PDF">
-                            <div class="form-hint">Users who comment this word will receive the DM. Separate with commas.</div>
+                        <div class="form-group" id="w-keyword-group">
+                            <label class="form-label">Trigger Keyword</label>
+                            <input type="text" id="w-keyword" class="form-input" placeholder="e.g. LINK, INFO, PDF">
+                            <div class="form-hint">Users must comment this exact word (case-insensitive) to trigger the DM.</div>
                         </div>
 
-                        <!-- Select Instagram Post -->
-                        <div class="form-group" style="margin-top: 28px;">
-                            <label class="form-label" style="display: flex; justify-content: space-between;">
-                                <span>Select Instagram Post / Reel</span>
-                                <span id="sync-media-btn" style="cursor: pointer; color: #4F46E5; font-size: 12px; font-weight: 600;">↻ Refresh Posts</span>
-                            </label>
-                            <div id="media-selector-container" style="margin-top: 8px;">
-                                <div id="media-grid" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; max-height: 220px; overflow-y: auto; padding: 8px; border: 1px solid var(--border); border-radius: 12px; background: var(--bg-alt);">
-                                    <div style="grid-column: span 4; text-align: center; padding: 24px; color: var(--text-muted);">
-                                        Loading your recent posts...
-                                    </div>
-                                </div>
-                                <input type="hidden" id="wiz-selected-media-id">
-                            </div>
-                            <div style="margin-top: 12px; display: flex; align-items: center; justify-content: space-between; gap: 12px;">
-                                <span style="font-size: 12px; color: var(--text-muted); white-space: nowrap;">Or enter URL/ID:</span>
-                                <input type="text" id="wiz-manual-post-id" class="form-input" style="padding: 6px 10px; font-size: 12px;" placeholder="Post ID (e.g. 1792345678) or Instagram URL">
-                            </div>
+                        <div class="form-group">
+                            <label class="form-label">Target Post (Optional)</label>
+                            <select id="w-post-id" class="form-input">
+                                <option value="">All Posts & Reels</option>
+                            </select>
+                            <div class="form-hint">Leave as 'All Posts & Reels' to trigger across your entire profile.</div>
                         </div>
                     </div>
 
-                    <!-- STEP 3: MESSAGE -->
-                    <div class="wizard-step-pane" id="wizard-step-3" style="display: none;">
-                        <h2 style="margin-bottom: 8px;">Customize the DM</h2>
-                        <p class="text-muted" style="margin-bottom: 24px;">Type the message they will receive in their inbox.</p>
+                    <!-- Step 2: Action -->
+                    <div id="wizard-step-2" style="display: none;">
+                        <h2 style="margin-bottom: 24px;">What should happen next?</h2>
                         
                         <div class="form-group">
-                            <label class="form-label">Direct Message</label>
-                            <textarea id="wiz-dm" class="form-textarea" placeholder="Hey! Here is the link you requested: https://..."></textarea>
-                            <div class="form-hint">Keep it friendly and natural.</div>
+                            <label class="form-label">Public Reply (Optional)</label>
+                            <textarea id="w-public-reply" class="form-textarea" placeholder="e.g. Sending it your way! Check your DMs 🚀"></textarea>
+                            <div class="form-hint">This will be posted as a reply to their comment.</div>
                         </div>
 
-                        <!-- Inject Reply Style Options -->
-                        <div class="reply-style-panel" style="margin-top: 15px; padding: 12px; border-radius: 8px; background: rgba(255,255,255,0.03); border: 1px solid #333;">
-                            <label style="display: block; font-weight: 600; margin-bottom: 6px; color: #e0e0e0; font-size: 14px;">Reply Style Mode</label>
-                            <select id="replyStyleMode" name="replyStyleMode" class="form-input" style="width: 100%; padding: 10px; background: #1a1a1a; color: #fff; border: 1px solid #444; border-radius: 6px;">
-                                <option value="TEXT">Standard Direct Message (Text Only)</option>
-                                <option value="FOLLOW_GATE">Viral Follow-Gate (Button Templates)</option>
-                            </select>
-
-                            <div id="igHandleContainer" style="display: none; margin-top: 12px;">
-                                <label style="display: block; font-weight: 600; margin-bottom: 6px; color: #e0e0e0; font-size: 13px;">Your Instagram Username (For Deep-Linking)</label>
-                                <input type="text" id="instagramHandle" name="instagramHandle" placeholder="e.g., dmorbitapp" style="width: 100%; padding: 10px; background: #1a1a1a; color: #fff; border: 1px solid #444; border-radius: 6px;" />
-                                <small style="color: #888; display: block; margin-top: 4px;">This forces the [Visit Profile] button to open natively inside the Instagram App.</small>
-                            </div>
+                        <div class="form-group">
+                            <label class="form-label">Direct Message Content (Required)</label>
+                            <textarea id="w-private-dm" class="form-textarea" placeholder="e.g. Hey! Thanks for commenting. Here is the link you requested: https://example.com"></textarea>
+                            <div class="form-hint">This is the automated DM sent directly to their inbox.</div>
                         </div>
-
-                        <script>
-                            // Toggle Visibility based on Selection
-                            document.getElementById('replyStyleMode').addEventListener('change', function() {
-                                const handleContainer = document.getElementById('igHandleContainer');
-                                if (this.value === 'FOLLOW_GATE') {
-                                    handleContainer.style.display = 'block';
-                                } else {
-                                    handleContainer.style.display = 'none';
-                                }
-                            });
-                        </script>
                     </div>
 
-                    <!-- STEP 4: REVIEW -->
-                    <div class="wizard-step-pane" id="wizard-step-4" style="display: none;">
-                        <h2 style="margin-bottom: 8px;">Review & Publish</h2>
-                        <p class="text-muted" style="margin-bottom: 24px;">Make sure everything looks good before going live.</p>
+                    <!-- Step 3: Review -->
+                    <div id="wizard-step-3" style="display: none;">
+                        <h2 style="margin-bottom: 24px;">Review & Launch</h2>
                         
-                        <div class="card card-elevated">
-                            <div style="margin-bottom: 12px;">
-                                <span class="text-muted text-sm">NAME</span><br>
-                                <strong id="review-name">Automation</strong>
+                        <div class="card" style="margin-bottom: 16px;">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                                <span class="text-secondary">Trigger:</span>
+                                <strong id="review-trigger">User comments "LINK" on Any Post</strong>
                             </div>
-                            <div style="margin-bottom: 12px;">
-                                <span class="text-muted text-sm">TRIGGER</span><br>
-                                Comments containing: <strong id="review-keywords">...</strong>
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                                <span class="text-secondary">Public Reply:</span>
+                                <span id="review-public" style="text-align: right; max-width: 60%;">"Sending it your way! Check your DMs 🚀"</span>
                             </div>
-                            <div style="margin-bottom: 12px;">
-                                <span class="text-muted text-sm">TARGET</span><br>
-                                <strong id="review-target">Any Post</strong>
+                            <div style="display: flex; justify-content: space-between;">
+                                <span class="text-secondary">DM:</span>
+                                <span id="review-private" style="text-align: right; max-width: 60%;">"Hey! Thanks for commenting. Here is the link..."</span>
                             </div>
-                            <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border);">
-                                <span class="text-muted text-sm" style="display:block; margin-bottom: 8px;">META COMPLIANCE</span>
-                                <div style="display: flex; gap: 8px; align-items: flex-start; font-size: 12px; color: var(--text-secondary);">
-                                    <span>🔒</span>
-                                    <span>This automation complies with Meta's 24-hour messaging window rule for comment-to-DM interactions.</span>
+                        </div>
+
+                        <div class="ig-connection-card">
+                            <div class="ig-profile">
+                                <div class="ig-avatar" style="width: 32px; height: 32px; font-size: 14px;">✅</div>
+                                <div class="ig-details">
+                                    <h3 style="font-size: 14px; margin: 0;">Ready to launch</h3>
+                                    <div class="text-muted" style="font-size: 12px;">This automation will go live immediately.</div>
                                 </div>
                             </div>
                         </div>
-                        <div id="wiz-msg" style="margin-top: 16px; color: var(--danger); font-size: 13px;"></div>
                     </div>
 
                 </div>
-
-                <!-- Live Preview Sidebar -->
+                
+                <!-- Right Side: Phone Preview -->
                 <div class="wizard-preview">
-                    <h4 style="margin-bottom: 16px; text-align: center; color: var(--text-muted);">Preview</h4>
+                    <h3 style="font-size: 14px; margin-bottom: 16px; text-align: center;">Live Preview</h3>
                     <div class="phone-preview">
-                        <div class="phone-header">Instagram Direct</div>
+                        <div class="phone-header">instagram</div>
                         <div class="phone-chat">
-                            <div class="chat-bubble received">
-                                <em>They commented on your post</em>
+                            <div class="chat-bubble received" style="font-size: 12px; align-self: center; background: transparent; color: var(--text-muted);">
+                                User commented on your post
                             </div>
-                            <div class="chat-bubble sent" id="preview-bubble">
-                                Hey! Here is the link you requested...
+                            <div class="chat-bubble received">
+                                <span id="preview-keyword-display">LINK</span>
+                            </div>
+                            <div class="chat-bubble sent" id="preview-dm-display">
+                                Hey! Thanks for commenting. Here is the link...
                             </div>
                         </div>
                     </div>
@@ -465,37 +402,13 @@
             </div>
 
             <div class="wizard-footer">
-                <button class="btn btn-ghost" id="wiz-back" style="visibility: hidden;">Back</button>
-                <button class="btn btn-primary" id="wiz-next">Next Step</button>
+                <button class="btn btn-secondary" id="w-btn-back" style="visibility: hidden;">Back</button>
+                <button class="btn btn-primary" id="w-btn-next">Continue</button>
             </div>
         </div>
     </div>
 
-    <div class="wizard-overlay" id="browser-portal-modal" style="display: none; z-index: 9999;">
-        <div class="wizard-modal" style="max-width: 900px;">
-            <div class="wizard-header">
-                <div>
-                    <h3 style="margin: 0; display: flex; align-items: center; gap: 8px;">
-                        <span class="dot" style="background: #10B981; animation: pulse 2s infinite;"></span>
-                        Instagram Direct Connect
-                    </h3>
-                    <p style="margin: 4px 0 0; font-size: 13px; color: var(--text-muted);">
-                        <b>Secure Interface:</b> You are connecting via a secure engagement layer. DMOrbit does NOT store your password.
-                    </p>
-                </div>
-                <button class="modal-close" id="close-browser-portal">✕</button>
-            </div>
-            <div class="wizard-body" style="padding: 0; background: #000; position: relative;">
-                <div id="browser-loading" style="position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; background: rgba(0,0,0,0.8); z-index: 10;">
-                    <div style="font-size: 24px; margin-bottom: 16px;">🔄</div>
-                    <div>Establishing secure connection...</div>
-                </div>
-                <!-- Stream Image -->
-                <img id="browser-stream" style="width: 100%; height: auto; min-height: 500px; display: block; object-fit: contain; cursor: crosshair;" draggable="false">
-            </div>
-        </div>
-    </div>
-
+    <!-- Application Logic -->
     <script type="module" src="dashboard.js?v=4"></script>
 </body>
 </html>
