@@ -4,108 +4,40 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Data Deletion Instructions - DMOrbit</title>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --primary: #00f2fe;
-            --secondary: #4facfe;
-            --bg: #0f172a;
-            --text: #f8fafc;
-            --muted: #94a3b8;
-        }
-        body {
-            font-family: 'Outfit', sans-serif;
-            background-color: var(--bg);
-            color: var(--text);
-            line-height: 1.6;
-            margin: 0;
-            padding: 40px 20px;
-        }
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
-            background: rgba(30, 41, 59, 0.5);
-            padding: 40px;
-            border-radius: 24px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
-        }
-        h1 {
-            color: var(--primary);
-            font-size: 2.5rem;
-            margin-bottom: 1rem;
-        }
-        h2 {
-            color: var(--secondary);
-            margin-top: 2rem;
-        }
-        p, li {
-            color: var(--muted);
-        }
-        .back-link {
-            display: inline-block;
-            margin-bottom: 2rem;
-            color: var(--primary);
-            text-decoration: none;
-            font-weight: 600;
-        }
-        .back-link:hover {
-            text-decoration: underline;
-        }
-        .step {
-            margin-bottom: 1.5rem;
-        }
-        .step-number {
-            display: inline-block;
-            width: 30px;
-            height: 30px;
-            background: var(--primary);
-            color: var(--bg);
-            border-radius: 50%;
-            text-align: center;
-            line-height: 30px;
-            font-weight: 600;
-            margin-right: 10px;
-        }
-    </style>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 </head>
 <body>
-    <div class="container">
-        <a href="/" class="back-link">← Back to DMOrbit</a>
-        <h1>Data Deletion Instructions</h1>
-        <p>At DMOrbit, we value your privacy and provide a simple way to delete your data and revoke our access to your Instagram account.</p>
+    <div class="landing-container">
+        <!-- Navigation -->
+        <nav class="navbar">
+            <a href="/" style="text-decoration: none;" class="logo">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7L12 12L22 7L12 2Z"></path><path d="M2 17L12 22L22 17"></path><path d="M2 12L12 17L22 12"></path></svg>
+                DMOrbit
+            </a>
+        </nav>
 
-        <h2>How to Delete Your Data</h2>
-        
-        <div class="step">
-            <span class="step-number">1</span>
-            <strong>Disconnect via Dashboard:</strong> Log in to your DMOrbit dashboard and navigate to the "Settings" or "Integrations" section. Click "Disconnect Instagram" to remove our access tokens.
+        <div class="policy-container animate-fade-in glass-panel">
+            <h1 class="text-gradient">Data Deletion Instructions</h1>
+            <p style="font-size: 14px; margin-bottom: 32px;">Required for Facebook / Meta App Compliance</p>
+            
+            <p>According to Facebook Platform rules, we have to provide a User Data Deletion Callback URL or Data Deletion Instructions URL. If you want to delete your activities and data for the DMOrbit App, you can remove your activities by the following instructions:</p>
+            
+            <ol style="margin-left: 24px; color: var(--text-muted); margin-bottom: 24px; line-height: 1.7;">
+                <li>Go to Your Facebook Account's "Settings & Privacy". Click "Settings".</li>
+                <li>Go to "Security and Login".</li>
+                <li>Look for "Apps and Websites" and you will see all of your apps activities.</li>
+                <li>Select the option box of "DMOrbit".</li>
+                <li>Click the "Remove" button.</li>
+            </ol>
+            
+            <h2>Complete Account Deletion</h2>
+            <p>If you wish to completely wipe your DMOrbit account, associated email, and all saved automation rules from our database, please log into your DMOrbit Dashboard, navigate to Settings, and click "Delete Account", or email us directly at <a href="mailto:support@dmorbit.app" style="color: var(--primary);">support@dmorbit.app</a>.</p>
+            
+            <div style="margin-top: 40px; padding-top: 24px; border-top: 1px solid var(--border-light); text-align: center; font-size: 13px; color: var(--text-muted);">
+                &copy; 2026 DMOrbit. All rights reserved.
+            </div>
         </div>
-
-        <div class="step">
-            <span class="step-number">2</span>
-            <strong>Remove via Facebook:</strong> 
-            <ul>
-                <li>Go to your Facebook Profile's "Settings & Privacy".</li>
-                <li>Click on "Settings".</li>
-                <li>Look for "Apps and Websites" in the left sidebar.</li>
-                <li>Find "DMOrbit" and click "Remove".</li>
-            </ul>
-        </div>
-
-        <div class="step">
-            <span class="step-number">3</span>
-            <strong>Request Full Account Deletion:</strong> If you wish to permanently delete your DMOrbit account and all associated logs, please send an email to <strong>support@dmorbit.app</strong> with the subject "Data Deletion Request". We will process your request within 48 hours and send you a confirmation email.
-        </div>
-
-        <h2>What Data is Deleted?</h2>
-        <p>Upon receiving a deletion request, we permanently remove:</p>
-        <ul>
-            <li>Your Meta Access Tokens.</li>
-            <li>Your Automation history and logs.</li>
-            <li>Your user profile information (Email, Name, Profile Picture).</li>
-        </ul>
-        <p>Note: Once deleted, this information cannot be recovered.</p>
     </div>
 </body>
 </html>
