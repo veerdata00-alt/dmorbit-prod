@@ -164,23 +164,86 @@ async function loadAutomations() {
             return;
         }
 
-        list.innerHTML = autos.map(a => `
-            <div class="data-item">
-                <div class="item-main">
-                    <div class="item-title">${escHtml(a.name || 'Untitled')}</div>
-                    <div class="item-meta">
-                        <span>💬 Keywords: ${(a.trigger?.keywords || []).join(', ')}</span>
-                        <span>📊 Triggered: ${a.triggerCount || 0} times</span>
-                        <span style="margin-left: 10px; color: #aaa;">Action: ${a.replyStyleMode === 'FOLLOW_GATE' ? '⚡ Follow-Gate Mode' : '📝 Direct Message'}</span>
-                    </div>
-                </div>
-                <div class="item-actions">
-                    <span style="font-size: 12px; color: var(--success); background: rgba(16,185,129,0.1); padding: 4px 8px; border-radius: 4px;">${a.isActive ? 'Active' : 'Paused'}</span>
-                </div>
+        list.innerHTML = `
+            <div style="overflow-x: auto; background: var(--bg-alt); border-radius: 12px; border: 1px solid var(--border);">
+                <table style="width: 100%; text-align: left; border-collapse: collapse; min-width: 600px;">
+                    <thead>
+                        <tr style="border-bottom: 1px solid var(--border); color: var(--text-muted); font-size: 12px; text-transform: uppercase;">
+                            <th style="padding: 16px; font-weight: 600;">Keyword</th>
+                            <th style="padding: 16px; font-weight: 600;">DM Reply</th>
+                            <th style="padding: 16px; font-weight: 600;">Triggers</th>
+                            <th style="padding: 16px; font-weight: 600;">Status</th>
+                            <th style="padding: 16px; font-weight: 600;">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${autos.map(auto => {
+                            const isChecked = auto.isActive ? 'checked' : '';
+                            const keywordText = (auto.trigger?.keywords || []).join(', ') || 'ANY_COMMENT';
+                            const replyMsg = auto.replyStyleMode === 'FOLLOW_GATE' ? '⚡ Viral Follow-Gate' : (auto.privateMessageText || 'Direct Message');
+                            return `
+                                <tr style="border-bottom: 1px solid var(--border); transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.02)'" onmouseout="this.style.background='transparent'">
+                                    <td style="padding: 16px; color: var(--text-primary); font-family: monospace; font-weight: 500;">#${escHtml(keywordText)}</td>
+                                    <td style="padding: 16px; color: var(--text-secondary); max-width: 250px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escHtml(replyMsg)}</td>
+                                    <td style="padding: 16px; color: var(--success); font-weight: bold;">${auto.triggerCount || 0} hits</td>
+                                    <td style="padding: 16px;">
+                                        <label style="position: relative; display: inline-flex; align-items: center; cursor: pointer;">
+                                            <input type="checkbox" ${isChecked} style="opacity: 0; position: absolute; width: 0; height: 0;" onchange="window.toggleAutomationState('${auto._id}', this.checked)">
+                                            <div style="width: 44px; height: 24px; background: ${auto.isActive ? '#4F46E5' : '#374151'}; border-radius: 9999px; position: relative; transition: background 0.3s;">
+                                                <div style="width: 20px; height: 20px; background: white; border-radius: 50%; position: absolute; top: 2px; left: ${auto.isActive ? '22px' : '2px'}; transition: left 0.3s; box-shadow: 0 2px 4px rgba(0,0,0,0.2);"></div>
+                                            </div>
+                                        </label>
+                                    </td>
+                                    <td style="padding: 16px;">
+                                        <button onclick="window.deleteAutomationRecord('${auto._id}')" style="background: rgba(239, 68, 68, 0.1); color: #EF4444; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='rgba(239, 68, 68, 0.2)'" onmouseout="this.style.background='rgba(239, 68, 68, 0.1)'">
+                                            🗑️ Delete
+                                        </button>
+                                    </td>
+                                </tr>
+                            `;
+                        }).join('')}
+                    </tbody>
+                </table>
             </div>
-        `).join('');
+        `;
     } catch (e) { list.innerHTML = '<div class="empty-state">Failed to load automations.</div>'; }
 }
+
+window.toggleAutomationState = async function(id, isActive) {
+    const status = isActive ? 'active' : 'paused';
+    try {
+        const res = await request('/api/automations/toggle', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ automationId: id, status })
+        });
+        if (res && res.success) {
+            console.log(`[DMOrbit Sync] Trigger ${id} set to ${status}`);
+            loadAutomations();
+            loadOverview();
+        } else {
+            alert("Failed to change status");
+        }
+    } catch(err) { alert("Failed to change status"); }
+};
+
+window.deleteAutomationRecord = async function(id) {
+    if(!confirm("Are you sure you want to delete this automation?")) return;
+    try {
+        const res = await request('/api/automations/delete', {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ automationId: id })
+        });
+        if (res && res.success) {
+            console.log(`[DMOrbit Sync] Automation ${id} deleted.`);
+            loadAutomations();
+            loadOverview();
+        } else {
+            alert("Failed to delete automation");
+        }
+    } catch(err) { alert("Failed to delete automation"); }
+};
 
 async function loadLogs() {
     const container = document.getElementById('logs-timeline');
