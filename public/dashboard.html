@@ -155,11 +155,29 @@
                     <button class="btn btn-primary" onclick="document.getElementById('open-wizard-btn').click()">+ Create Automation</button>
                 </div>
                 <div id="automations-list" class="data-list">
-                    <div class="empty-state">
-                        <div class="empty-icon">⚡</div>
-                        <div class="empty-title">No automations yet</div>
-                        <div class="empty-desc">Create your first automation to start replying to comments instantly.</div>
-                        <button class="btn btn-secondary" onclick="document.getElementById('open-wizard-btn').click()">Create Now</button>
+                    <div class="mt-8 bg-gray-900/50 border border-gray-800 rounded-xl p-6 backdrop-blur-sm">
+                        <div class="sm:flex sm:items-center justify-between mb-4">
+                            <div>
+                                <h3 class="text-lg font-bold text-white">Your Live Automations</h3>
+                                <p class="text-sm text-gray-400 mt-1">Manage, Pause, or Delete your Instagram trigger keywords live.</p>
+                            </div>
+                        </div>
+                        <div class="mt-4 overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-800 text-left text-sm text-gray-300">
+                                <thead class="bg-gray-950/80 text-gray-400 uppercase text-xs font-semibold tracking-wider">
+                                    <tr>
+                                        <th class="p-4">Trigger Keyword</th>
+                                        <th class="p-4">Reply Message</th>
+                                        <th class="p-4">Analytics</th>
+                                        <th class="p-4">Status</th>
+                                        <th class="p-4">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="automationsTableBody" class="divide-y divide-gray-800 bg-gray-900/20">
+                                    <!-- Populated by JS -->
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </div>
