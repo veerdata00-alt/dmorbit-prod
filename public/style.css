@@ -158,6 +158,22 @@ p {
     border-color: var(--border-hover);
 }
 
+.btn-glass {
+    background: rgba(255, 255, 255, 0.05);
+    color: #fff;
+    font-weight: 500;
+    font-size: 15px;
+    border: 1px solid var(--border-light);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    backdrop-filter: blur(8px);
+}
+.btn-glass:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.2);
+    box-shadow: 0 0 15px rgba(255, 255, 255, 0.05);
+}
+
 /* Auth Overlay & Card - Preserved but restyled */
 .auth-overlay {
     position: fixed; inset: 0;
