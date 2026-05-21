@@ -208,29 +208,19 @@ window.toggleAutomationState = async function(id, isActive) {
 window.deleteAutomationRecord = async function(id) {
     if(!confirm("Are you sure you want to delete this automation?")) return;
     try {
-        const res = await request('/api/automations/delete', {
-            method: 'DELETE',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ automationId: id })
+        const res = await request(`/api/automations/${id}`, {
+            method: 'DELETE'
         });
-        if (res && res.success) {
+        // Route returns { message: 'Automation deleted' } on success
+        if (res && (res.success || res.message)) {
             console.log(`[DMOrbit Sync] Automation ${id} deleted.`);
             loadAutomations();
             loadOverview();
         } else {
-            alert("Failed to delete automation");
+            alert(res?.error || "Failed to delete automation");
         }
     } catch(err) { 
-        try {
-            const res2 = await request(`/api/automations/delete?automationId=${id}`, { method: 'DELETE' });
-            if (res2 && res2.success) {
-                console.log(`[DMOrbit Sync] Automation ${id} deleted.`);
-                loadAutomations();
-                loadOverview();
-            } else {
-                alert("Failed to delete automation");
-            }
-        } catch(e) { alert("Failed to delete automation"); }
+        alert("Failed to delete automation. Please try again.");
     }
 };
 
