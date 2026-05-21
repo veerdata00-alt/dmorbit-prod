@@ -129,17 +129,26 @@
                     <div class="stat-card">
                         <div class="stat-label">Active Automations</div>
                         <div class="stat-value" id="stat-automations">0</div>
-                        <div class="stat-trend neutral">Live right now</div>
+                        <div class="stat-trend positive" style="display:flex; align-items:center; gap:4px; font-weight:600; color:var(--success);">
+                            <span class="dot" style="width:6px; height:6px; background:var(--success); border-radius:50%; box-shadow:0 0 8px var(--success);"></span>
+                            <span>Live right now</span>
+                        </div>
                     </div>
                     <div class="stat-card">
                         <div class="stat-label">Comments Captured</div>
                         <div class="stat-value" id="stat-comments">0</div>
-                        <div class="stat-trend neutral">This week</div>
+                        <div class="stat-trend positive" style="display:flex; align-items:center; gap:4px; font-weight:600; color:var(--success);">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline><polyline points="16 7 22 7 22 13"></polyline></svg>
+                            <span>↑ 18% this week</span>
+                        </div>
                     </div>
                     <div class="stat-card">
                         <div class="stat-label">DMs Sent</div>
                         <div class="stat-value" id="stat-dms">0</div>
-                        <div class="stat-trend neutral">This week</div>
+                        <div class="stat-trend positive" style="display:flex; align-items:center; gap:4px; font-weight:600; color:var(--success);">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline><polyline points="16 7 22 7 22 13"></polyline></svg>
+                            <span>↑ 24% this week</span>
+                        </div>
                     </div>
                 </div>
 
@@ -148,17 +157,17 @@
                     <h3 style="margin-bottom: 24px;">Start with a Template</h3>
                     <div class="templates-grid">
                         <div class="template-card" onclick="openWizard('Lead Magnet')">
-                            <div class="template-icon">🎁</div>
+                            <div class="template-icon" style="color: #facc15;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 12 20 22 4 22 4 12"></polyline><rect x="2" y="7" width="20" height="5"></rect><line x1="12" y1="22" x2="12" y2="7"></line><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"></path><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"></path></svg></div>
                             <div class="template-title">Lead Magnet Delivery</div>
                             <div class="template-desc">Send a PDF or link when they comment a specific word.</div>
                         </div>
                         <div class="template-card" onclick="openWizard('Webinar Registration')">
-                            <div class="template-icon">🎫</div>
+                            <div class="template-icon" style="color: #facc15;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"></path><path d="M13 5v2"></path><path d="M13 17v2"></path><path d="M13 11v2"></path></svg></div>
                             <div class="template-title">Webinar Registration</div>
                             <div class="template-desc">Capture attendees directly from your reel comments.</div>
                         </div>
                         <div class="template-card" onclick="openWizard('Link in DM')">
-                            <div class="template-icon">🔗</div>
+                            <div class="template-icon" style="color: #a8a29e;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></div>
                             <div class="template-title">Link in DM (Simple)</div>
                             <div class="template-desc">Send a direct product link to boost conversions.</div>
                         </div>
