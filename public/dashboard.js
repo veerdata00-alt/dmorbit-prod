@@ -66,6 +66,7 @@ async function init() {
         }
 
         // Resiliency: Inject JWT token into OAuth links in case cookies are blocked
+        const token = document.cookie.split('; ').find(row => row.startsWith('token='))?.split('=')[1] || '';
         document.querySelectorAll('a[href="/auth/instagram"]').forEach(el => {
             el.href = `/auth/instagram?token=${token}`;
         });
