@@ -256,6 +256,12 @@ p { color: var(--text-secondary); }
 .stat-value { font-size: 32px; font-weight: 700; color: var(--text-primary); line-height: 1; }
 .stat-trend { font-size: 13px; color: var(--success); display: flex; align-items: center; gap: 6px; font-weight: 500; }
 .stat-trend.neutral { color: var(--text-muted); }
+.stat-trend .dot { animation: pulse-dot 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+
+@keyframes pulse-dot {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: .5; transform: scale(1.2); }
+}
 
 /* === TEMPLATES GRID === */
 .templates-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: var(--sp-3); margin-bottom: var(--sp-4); }
