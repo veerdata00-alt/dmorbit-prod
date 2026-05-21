@@ -2570,7 +2570,7 @@ app.put('/api/v2/automations/:id', authenticateToken, async (req, res) => {
 
 app.get('/api/dashboard/stats', authenticateToken, async (req, res) => {
     try {
-        const userId = req.user.userId;
+        const userId = req.user.userId.toString();
         const now = new Date();
         const dayAgo = new Date(now - 86400000);
         const weekAgo = new Date(now - 7 * 86400000);
@@ -2580,7 +2580,7 @@ app.get('/api/dashboard/stats', authenticateToken, async (req, res) => {
             totalJobs, pendingJobs, completedJobs, failedJobs,
             totalFlows, activeFlowStates,
             logsToday, logsThisWeek,
-            igAccount
+            igAccount, userDoc
         ] = await Promise.all([
             Automation.countDocuments({ userId }),
             Automation.countDocuments({ userId, isActive: true }),
@@ -2658,7 +2658,8 @@ app.get('/api/webhook-logs', authenticateToken, async (req, res) => {
 
 app.get('/api/account/status', authenticateToken, async (req, res) => {
     try {
-        const igAccount = await InstagramAccount.findOne({ userId: req.user.userId });
+        const userId = req.user.userId.toString();
+        const igAccount = await InstagramAccount.findOne({ userId });
         const automationCount = await Automation.countDocuments({ userId: req.user.userId });
         const flowCount = await Flow.countDocuments({ userId: req.user.userId });
         const user = await User.findById(req.user.userId).select('-password');
