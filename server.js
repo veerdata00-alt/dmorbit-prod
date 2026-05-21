@@ -2736,6 +2736,27 @@ app.post('/api/engagement/portal', authenticateToken, async (req, res) => {
     }
 });
 
+// --- DMOrbit Automation Status & Deletion Controls ---
+app.post('/api/automations/toggle', authenticateToken, async (req, res) => {
+    const { automationId, status } = req.body; 
+    try {
+        const auto = await Automation.findOne({ _id: automationId, userId: req.user.userId });
+        if (!auto) return res.status(404).json({ error: 'Automation not found' });
+        auto.isActive = (status === 'active');
+        await auto.save();
+        res.json({ success: true, message: `Automation status updated to ${status}` });
+    } catch (err) { res.status(500).json({ success: false, error: err.message }); }
+});
+
+app.delete('/api/automations/delete', authenticateToken, async (req, res) => {
+    const { automationId } = req.body;
+    try {
+        const result = await Automation.deleteOne({ _id: automationId, userId: req.user.userId });
+        if (result.deletedCount === 0) return res.status(404).json({ error: 'Automation not found' });
+        res.json({ success: true, message: "Automation deleted successfully" });
+    } catch (err) { res.status(500).json({ success: false, error: err.message }); }
+});
+
 server.listen(PORT, () => {
     console.log(`Server and WS Portal running on port ${PORT}`);
     console.log("Webhook URL ready");
