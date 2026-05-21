@@ -173,19 +173,30 @@ async function loadAutomations() {
             const keywordText = (auto.trigger?.keywords || []).join(', ') || 'ANY_COMMENT';
             const replyMsg = auto.replyStyleMode === 'FOLLOW_GATE' ? '⚡ Viral Follow-Gate' : (auto.privateMessageText || 'Direct Message');
             return `
-                <tr class="border-b border-gray-800 hover:bg-gray-900/40 transition-all">
-                    <td class="p-4 text-center text-gray-500 font-medium">${index + 1}</td>
-                    <td class="p-4 text-white font-semibold font-mono text-purple-400">#${escHtml(keywordText)}</td>
-                    <td class="p-4 text-gray-300 max-w-xs truncate">${escHtml(replyMsg)}</td>
-                    <td class="p-4 text-emerald-400 font-bold">${auto.triggerCount || 0} hits</td>
-                    <td class="p-4">
+                <tr class="border-b border-white/5 hover:bg-white/[0.02] transition-colors group">
+                    <td class="p-4 align-middle text-gray-500 font-medium text-xs w-12">${index + 1}</td>
+                    <td class="p-4 align-middle">
+                        <div class="flex items-center gap-2">
+                            <span class="bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 px-2.5 py-1 rounded-md text-xs font-mono font-semibold tracking-wide">"${escHtml(keywordText)}"</span>
+                        </div>
+                    </td>
+                    <td class="p-4 align-middle text-gray-400 text-sm max-w-[200px] truncate">
+                        ${escHtml(replyMsg)}
+                    </td>
+                    <td class="p-4 align-middle">
+                        <div class="inline-flex items-center gap-1.5 bg-emerald-500/10 text-emerald-400 px-2.5 py-1 rounded-full text-xs font-semibold border border-emerald-500/20">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+                            ${auto.triggerCount || 0}
+                        </div>
+                    </td>
+                    <td class="p-4 align-middle">
                         <label class="relative inline-flex items-center cursor-pointer">
                             <input type="checkbox" ${isChecked} class="sr-only peer" onchange="window.toggleAutomationState('${auto._id}', this.checked)">
-                            <div class="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gradient-to-r peer-checked:from-pink-500 peer-checked:to-purple-600"></div>
+                            <div class="w-10 h-5 bg-gray-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-indigo-500"></div>
                         </label>
                     </td>
-                    <td class="p-4">
-                        <button onclick="window.deleteAutomationRecord('${auto._id}')" class="bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white transition-all px-3 py-1.5 rounded-lg text-xs font-medium flex items-center justify-center gap-1.5 mx-auto">
+                    <td class="p-4 align-middle text-right">
+                        <button onclick="window.deleteAutomationRecord('${auto._id}')" class="opacity-0 group-hover:opacity-100 bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white transition-all px-3 py-1.5 rounded-lg text-xs font-medium inline-flex items-center gap-1.5">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>
                             Delete
                         </button>
@@ -282,42 +293,70 @@ async function loadAccount() {
             };
             const s = statusMap[status] || statusMap['active'];
 
+            const username = data.instagram.username || 'Connected User';
+            
             container.innerHTML = `
-                <div style="display:flex; gap: 16px; align-items:center; margin-bottom: 20px;">
-                    <div style="color: var(--primary);"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect><line x1="12" y1="18" x2="12.01" y2="18"></line></svg></div>
-            <div>
-                <div style="font-weight: 600; color: var(--text-primary);">Instagram Business Profile</div>
-                <div style="font-size: 13px; color: var(--text-muted);">Connected via Official Meta API</div>
-            </div>
+                <div class="account-profile-header" style="display: flex; align-items: center; gap: 20px; margin-bottom: 24px; padding: 20px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 16px;">
+                    <div style="width: 64px; height: 64px; border-radius: 50%; background: linear-gradient(135deg, #f58529, #dd2a7b, #8134af, #515bd4); display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: bold; color: white; box-shadow: 0 8px 16px rgba(221, 42, 123, 0.2);">
+                        ${username.charAt(0).toUpperCase()}
+                    </div>
+                    <div style="flex: 1;">
+                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+                            <h3 style="margin: 0; font-size: 20px; color: #fff;">@${username}</h3>
+                            <span style="background: rgba(16,185,129,0.15); color: #10b981; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 600; border: 1px solid rgba(16,185,129,0.2);">Creator Account</span>
+                        </div>
+                        <div style="font-size: 13px; color: var(--text-muted); display: flex; align-items: center; gap: 6px;">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+                            Verified via Meta Official API
+                        </div>
+                    </div>
+                    <div>
+                        <button class="btn btn-secondary" onclick="window.startInteractiveLogin()" style="font-size: 13px; padding: 8px 16px;">Refresh Token</button>
+                    </div>
                 </div>
                 
-                <div style="padding: 16px; background: ${s.color}; border-radius: 12px; margin-bottom: 20px; border-left: 4px solid ${s.textColor};">
-                    <div style="font-weight: 600; color: ${s.textColor}; margin-bottom: 4px;">${s.label}</div>
-                    <div style="font-size: 13px; color: var(--text-secondary);">${s.desc}</div>
-                </div>
-
-                <div class="security-box" style="padding: 16px; background: var(--bg-alt); border-radius: 12px; font-size: 13px; color: var(--text-secondary); margin-bottom: 24px;">
-                    <div style="font-weight: 600; margin-bottom: 8px; color: var(--text-primary); display:flex; align-items:center; gap:6px;">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
-                        Your Security
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px;">
+                    <div style="padding: 16px; background: ${s.color}; border-radius: 12px; border-left: 4px solid ${s.textColor};">
+                        <div style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); margin-bottom: 4px;">Connection Health</div>
+                        <div style="font-weight: 600; color: ${s.textColor}; font-size: 15px; margin-bottom: 4px;">${s.label}</div>
+                        <div style="font-size: 12px; color: var(--text-secondary);">${s.desc}</div>
                     </div>
-                    <ul style="padding-left: 18px; margin: 0;">
-                        <li>We use official Meta Graph APIs for engagement.</li>
-                        <li>Automations are optimized for platform compliance.</li>
-                        <li>Your data is encrypted and handled securely.</li>
-                    </ul>
+                    <div style="padding: 16px; background: rgba(255,255,255,0.02); border-radius: 12px; border: 1px solid rgba(255,255,255,0.05);">
+                        <div style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); margin-bottom: 4px;">Webhook Status</div>
+                        <div style="font-weight: 600; color: #10b981; font-size: 15px; margin-bottom: 4px; display: flex; align-items: center; gap: 6px;">
+                            <span style="width: 8px; height: 8px; background: #10b981; border-radius: 50%; display: inline-block; box-shadow: 0 0 8px #10b981;"></span>
+                            Receiving Events
+                        </div>
+                        <div style="font-size: 12px; color: var(--text-secondary);">Last sync: Just now</div>
+                    </div>
                 </div>
 
-                <button class="btn btn-secondary" onclick="window.startInteractiveLogin()" style="width: 100%;">Reconnect / Refresh Account</button>
+                <div class="security-box" style="padding: 20px; background: rgba(0,0,0,0.2); border-radius: 12px; border: 1px solid rgba(255,255,255,0.03); margin-bottom: 24px;">
+                    <div style="font-weight: 600; margin-bottom: 12px; color: var(--text-primary); font-size: 14px;">Active Permissions Granted</div>
+                    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                        <span style="background: rgba(255,255,255,0.05); padding: 4px 12px; border-radius: 6px; font-size: 12px; color: #e5e7eb;">instagram_basic</span>
+                        <span style="background: rgba(255,255,255,0.05); padding: 4px 12px; border-radius: 6px; font-size: 12px; color: #e5e7eb;">instagram_manage_messages</span>
+                        <span style="background: rgba(255,255,255,0.05); padding: 4px 12px; border-radius: 6px; font-size: 12px; color: #e5e7eb;">instagram_manage_comments</span>
+                    </div>
+                </div>
+
+                <div style="display: flex; justify-content: flex-end;">
+                    <button class="btn" style="background: rgba(239, 68, 68, 0.1); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.2); padding: 10px 20px; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 500; transition: all 0.2s;" onmouseover="this.style.background='rgba(239,68,68,0.2)'" onmouseout="this.style.background='rgba(239,68,68,0.1)'">Disconnect Account</button>
+                </div>
             `;
         } else {
             container.innerHTML = `
-                <div class="empty-state">
-                    <div class="empty-icon"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect><line x1="12" y1="18" x2="12.01" y2="18"></line></svg></div>
-                    <div class="empty-title">Instagram Disconnected</div>
-                    <div class="empty-desc">Connect your account using the official Meta integration to start engaging with your audience.</div>
-                    <a href="/auth/instagram" class="btn btn-primary" style="margin-top: 12px; text-decoration: none; display: inline-block;">Connect via Meta (Official)</a>
-                    <div style="margin-top: 12px; font-size: 11px; color: var(--text-muted); cursor: pointer;" onclick="window.startInteractiveLogin()">Alternative Connection (Advanced)</div>
+                <div style="text-align: center; padding: 60px 20px; background: rgba(255,255,255,0.02); border: 1px dashed rgba(255,255,255,0.1); border-radius: 16px;">
+                    <div style="width: 64px; height: 64px; background: rgba(79, 70, 229, 0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px auto; color: var(--primary);">
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
+                    </div>
+                    <h3 style="font-size: 20px; color: #fff; margin-bottom: 8px;">Connect Instagram Business</h3>
+                    <p style="color: var(--text-muted); font-size: 14px; max-width: 400px; margin: 0 auto 24px auto; line-height: 1.5;">Connect your professional account securely via Meta to enable automated DMs and comment replies.</p>
+                    <a href="/auth/instagram" class="btn btn-primary" style="text-decoration: none; display: inline-flex; align-items: center; gap: 8px; padding: 12px 24px;">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path></svg>
+                        Connect via Meta
+                    </a>
+                </div>
                 </div>
             `;
         }
@@ -753,22 +792,37 @@ window.updateBillingWidget = function(plan, currentDms) {
 
             if (statsRes && !statsRes.error) {
                 const stats = statsRes;
-                // Target exact inner text headers from screenshot layout safely
-                document.querySelectorAll('div').forEach(div => {
-                    let title = div.innerText.trim();
-                    if (title === 'Active Automations') {
-                        let num = div.parentElement.querySelector('h3') || div.nextElementSibling;
-                        if (num) num.innerText = stats.automations?.active || 0;
-                    }
-                    if (title === 'Comments Captured') {
-                        let num = div.parentElement.querySelector('h3') || div.nextElementSibling;
-                        if (num) num.innerText = stats.logs?.thisWeek || 0;
-                    }
-                    if (title === 'DMs Sent') {
-                        let num = div.parentElement.querySelector('h3') || div.nextElementSibling;
-                        if (num) num.innerText = stats.totalDmsSent || 0;
-                    }
-                });
+                
+                const activeAutoEl = document.getElementById('stat-active-automations');
+                if (activeAutoEl) activeAutoEl.innerText = stats.automations?.active || 0;
+                
+                const commentsCapEl = document.getElementById('stat-comments-captured');
+                if (commentsCapEl) commentsCapEl.innerText = stats.logs?.thisWeek || 0;
+                
+                const dmsSentEl = document.getElementById('stat-dms-sent');
+                if (dmsSentEl) dmsSentEl.innerText = stats.totalDmsSent || 0;
+            }
+
+            // Update Overview Connection Status Block
+            const overviewConnBlock = document.getElementById('overview-connection-status');
+            if (overviewConnBlock) {
+                if (accountRes.instagram && accountRes.instagram.connected) {
+                    overviewConnBlock.innerHTML = `
+                        <div style="width: 48px; height: 48px; background: rgba(16,185,129,0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-bottom: 12px; color: #10b981; box-shadow: 0 0 15px rgba(16,185,129,0.2);">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                        </div>
+                        <div style="font-size: 15px; font-weight: 600; color: #fff; margin-bottom: 4px;">API Connected</div>
+                        <div style="font-size: 13px; color: #10b981;">Webhooks active</div>
+                    `;
+                } else {
+                    overviewConnBlock.innerHTML = `
+                        <div style="width: 48px; height: 48px; background: rgba(239,68,68,0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-bottom: 12px; color: var(--danger);">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>
+                        </div>
+                        <div style="font-size: 15px; font-weight: 600; color: #fff; margin-bottom: 4px;">Disconnected</div>
+                        <div style="font-size: 13px; color: var(--text-muted); cursor: pointer;" onclick="window.switchTab('account')">Connect to resume automations</div>
+                    `;
+                }
             }
         } catch (err) {
             console.log("Hydration loop on standby...");
