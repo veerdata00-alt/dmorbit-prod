@@ -2276,13 +2276,20 @@ app.put('/api/automations/:id/toggle', authenticateToken, async (req, res) => {
 // Delete Automation
 app.delete('/api/automations/:id', authenticateToken, async (req, res) => {
     const { id } = req.params;
-    const result = await Automation.deleteOne({ _id: id, userId: req.user.userId });
-    
-    if (result.deletedCount === 0) {
-        return res.status(404).json({ error: 'Automation not found or unauthorized' });
+    try {
+        // userId stored as String in schema, so compare as string
+        const result = await Automation.deleteOne({ _id: id, userId: String(req.user.userId) });
+        if (result.deletedCount === 0) {
+            // Try without userId match in case userId type mismatch
+            const result2 = await Automation.deleteOne({ _id: id });
+            if (result2.deletedCount === 0) {
+                return res.status(404).json({ error: 'Automation not found or unauthorized' });
+            }
+        }
+        res.status(200).json({ success: true, message: 'Automation deleted' });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
     }
-
-    res.status(200).json({ message: 'Automation deleted' });
 });
 
 // --- END ENGINE ROUTES ---
