@@ -67,7 +67,7 @@
 
         <!-- Dashboard Preview -->
         <section class="animate-fade-in delay-300" style="margin-bottom: 120px; position: relative; z-index: 10;">
-            <div style="background: rgba(24, 24, 27, 0.8); border: 1px solid var(--border-light); border-radius: 24px; padding: 12px; backdrop-filter: blur(20px); box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); position: relative; overflow: hidden;">
+            <div class="hero-mockup-wrapper" style="background: rgba(24, 24, 27, 0.8); border: 1px solid var(--border-light); border-radius: 24px; padding: 12px; backdrop-filter: blur(20px); box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); position: relative; overflow: hidden; width: 100%;">
                 <!-- Faux Window Controls -->
                 <div style="display: flex; gap: 8px; padding: 12px 16px; border-bottom: 1px solid var(--border-light);">
                     <div style="width: 12px; height: 12px; border-radius: 50%; background: #ef4444;"></div>
@@ -75,9 +75,9 @@
                     <div style="width: 12px; height: 12px; border-radius: 50%; background: #10b981;"></div>
                 </div>
                 <!-- Mockup Content -->
-                <div style="display: flex; gap: 24px; padding: 24px; min-height: 400px; background: #09090b; border-radius: 0 0 16px 16px;">
+                <div class="hero-mockup-container" style="display: flex; gap: 24px; padding: 24px; min-height: 400px; background: #09090b; border-radius: 0 0 16px 16px;">
                     <!-- Sidebar Mock -->
-                    <div style="width: 220px; border-right: 1px solid rgba(255,255,255,0.05); display: flex; flex-direction: column; gap: 8px; padding-right: 16px;">
+                    <div class="hero-sidebar" style="width: 220px; border-right: 1px solid rgba(255,255,255,0.05); display: flex; flex-direction: column; gap: 8px; padding-right: 16px;">
                         <div style="display: flex; align-items: center; gap: 12px; padding: 10px 12px; background: rgba(79, 70, 229, 0.15); color: #818cf8; border-radius: 8px; font-weight: 500; font-size: 14px; border: 1px solid rgba(79, 70, 229, 0.2);">
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
                             Dashboard
@@ -100,8 +100,8 @@
                     </div>
 
                     <!-- Main Mock -->
-                    <div style="flex: 1; display: flex; flex-direction: column; gap: 20px;">
-                        <div style="display: flex; gap: 16px;">
+                    <div class="hero-main-content" style="flex: 1; display: flex; flex-direction: column; gap: 20px;">
+                        <div class="hero-stats-row" style="display: flex; gap: 16px;">
                             <!-- Card 1 -->
                             <div style="flex: 1; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 16px; position: relative; overflow: hidden;">
                                 <div style="position: absolute; top: 0; right: 0; width: 60px; height: 60px; background: radial-gradient(circle, rgba(79,70,229,0.2) 0%, transparent 70%);"></div>
@@ -132,7 +132,7 @@
                             </div>
                         </div>
                         
-                        <div style="display: flex; gap: 20px; flex: 1;">
+                        <div class="hero-flow-row" style="display: flex; gap: 20px; flex: 1;">
                             <!-- Active Automation Box -->
                             <div style="flex: 1; background: linear-gradient(180deg, rgba(255,255,255,0.03) 0%, transparent 100%); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 20px;">
                                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
