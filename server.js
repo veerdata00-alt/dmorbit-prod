@@ -2844,12 +2844,9 @@ app.get('/bio/:username', async (req, res) => {
     try {
         const username = req.params.username.trim().toLowerCase();
         
-        // Find user by username inside smartBio profile
+        // Find user by username inside smartBio profile case-insensitively
         const user = await User.findOne({
-            $or: [
-                { "smartBio.title": `@${username}` },
-                { "smartBio.title": username }
-            ]
+            "smartBio.title": { $regex: new RegExp(`^@?${username}$`, 'i') }
         });
         
         if (!user || !user.smartBio || !user.smartBio.title) {
