@@ -133,25 +133,31 @@ function loadPage(page) {
 async function loadOverview() {
     try {
         const stats = await API.stats();
-        document.getElementById('stat-automations').textContent = stats.automations?.active ?? 0;
-        document.getElementById('stat-comments').textContent = stats.logs?.thisWeek || 0; // Using weekly total logs for better visibility
-        document.getElementById('stat-dms').textContent = stats.totalDmsSent || 0;
+        const activeAutosEl = document.getElementById('stat-active-automations');
+        if (activeAutosEl) activeAutosEl.textContent = stats.automations?.active ?? 0;
+        
+        const commentsCapturedEl = document.getElementById('stat-comments-captured');
+        if (commentsCapturedEl) commentsCapturedEl.textContent = stats.logs?.thisWeek || 0;
+        
+        const dmsSentEl = document.getElementById('stat-dms-sent');
+        if (dmsSentEl) dmsSentEl.textContent = stats.totalDmsSent || 0;
 
         const health = await API.accountHealth();
-        const igCard = document.getElementById('ig-connection-card');
+        const igCard = document.querySelector('.ig-connection-card') || document.getElementById('ig-connection-card');
+        const statusDot = document.getElementById('topbar-status-dot');
         
         if (stats.instagramConnected) {
-            igCard.style.setProperty('display', 'none', 'important'); // Absolute Fail-Safe
-            document.getElementById('topbar-status-dot').style.background = 'var(--success)';
+            if (igCard) igCard.style.setProperty('display', 'none', 'important'); // Absolute Fail-Safe
+            if (statusDot) statusDot.style.background = 'var(--success)';
             
             // Additional delayed fail-safe to combat CSS race conditions
             setTimeout(() => {
-                const box = document.getElementById('ig-connection-card');
+                const box = document.querySelector('.ig-connection-card') || document.getElementById('ig-connection-card');
                 if (box) box.style.setProperty('display', 'none', 'important');
             }, 1000);
         } else {
-            igCard.style.display = 'flex';
-            document.getElementById('topbar-status-dot').style.background = 'var(--warning)';
+            if (igCard) igCard.style.display = 'flex';
+            if (statusDot) statusDot.style.background = 'var(--warning)';
         }
     } catch (e) { console.error(e); }
 }
