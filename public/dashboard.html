@@ -378,29 +378,97 @@
                     <!-- Action Container (Upgrade or Top-Up) -->
                     <div id="billing-action-container">
                         <!-- Default Upgrade Prompt (Shown to Free Users) -->
-                        <div id="upgrade-prompt" style="background: linear-gradient(180deg, rgba(79,70,229,0.1) 0%, rgba(255,255,255,0.02) 100%); border: 1px solid rgba(79,70,229,0.2); border-radius: 16px; padding: 24px; display: block;">
-                            <div style="width: 48px; height: 48px; background: rgba(79,70,229,0.2); color: var(--primary); border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-bottom: 16px;">
-                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+                        <div id="upgrade-prompt" style="display: block;">
+                            <h3 style="font-size: 20px; font-weight: 700; color: #fff; margin-bottom: 16px;">Upgrade Your Plan</h3>
+                            <div style="display: flex; flex-direction: column; gap: 20px;">
+                                <!-- Creator Card -->
+                                <div style="background: linear-gradient(180deg, rgba(79,70,229,0.08) 0%, rgba(255,255,255,0.01) 100%); border: 1px solid rgba(79,70,229,0.3); border-radius: 16px; padding: 24px; display: flex; flex-direction: column; justify-content: space-between;">
+                                    <div>
+                                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                                            <h4 style="font-size: 18px; font-weight: 700; color: #fff;">Creator</h4>
+                                            <span style="font-size: 14px; font-weight: 700; color: #818cf8;">₹499/mo</span>
+                                        </div>
+                                        <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 16px; line-height: 1.4;">Perfect for growing creators and viral reels.</p>
+                                        <ul style="list-style: none; padding: 0; margin: 0 0 20px 0; display: flex; flex-direction: column; gap: 8px;">
+                                            <li style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: #e5e7eb;">
+                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                                2 Instagram Accounts
+                                            </li>
+                                            <li style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: #e5e7eb;">
+                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                                25,000 DMs / Month
+                                            </li>
+                                            <li style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: #e5e7eb;">
+                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                                Unlimited automations
+                                            </li>
+                                            <li style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: #e5e7eb;">
+                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                                Smart Bio Link Page
+                                            </li>
+                                            <li style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: #e5e7eb;">
+                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                                Rollover unused credits
+                                            </li>
+                                            <li style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: #e5e7eb;">
+                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                                Priority Support (Faster response)
+                                            </li>
+                                        </ul>
+                                    </div>
+                                    <button class="btn btn-primary" style="width: 100%;" onclick="window.upgradePlan('CREATOR')">Upgrade to Creator</button>
+                                </div>
+
+                                <!-- Pro Card -->
+                                <div style="background: linear-gradient(180deg, rgba(16,185,129,0.05) 0%, rgba(255,255,255,0.01) 100%); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 24px; display: flex; flex-direction: column; justify-content: space-between;">
+                                    <div>
+                                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                                            <h4 style="font-size: 18px; font-weight: 700; color: #fff;">Pro</h4>
+                                            <span style="font-size: 14px; font-weight: 700; color: #10b981;">₹1299/mo</span>
+                                        </div>
+                                        <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 16px; line-height: 1.4;">For brands, agencies, and serious creators.</p>
+                                        <ul style="list-style: none; padding: 0; margin: 0 0 20px 0; display: flex; flex-direction: column; gap: 8px;">
+                                            <li style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: #e5e7eb;">
+                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                                5 Instagram Accounts
+                                            </li>
+                                            <li style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: #e5e7eb;">
+                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                                100,000 DMs / Month
+                                            </li>
+                                            <li style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: #e5e7eb;">
+                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                                Unlimited automations
+                                            </li>
+                                            <li style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: #e5e7eb;">
+                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                                Rollover unused credits
+                                            </li>
+                                            <li style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: #e5e7eb;">
+                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                                Priority Processing
+                                            </li>
+                                            <li style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: #e5e7eb;">
+                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                                Premium Support (Highest priority)
+                                            </li>
+                                            <li style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: #e5e7eb;">
+                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                                Advanced Analytics & Controls
+                                            </li>
+                                            <li style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: #e5e7eb;">
+                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                                Advanced Automation Controls
+                                            </li>
+                                            <li style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: #e5e7eb;">
+                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                                Team Support & sharing
+                                            </li>
+                                        </ul>
+                                    </div>
+                                    <button class="btn btn-secondary" style="width: 100%; border: 1px solid rgba(255,255,255,0.1);" onclick="window.upgradePlan('PRO')">Upgrade to Pro</button>
+                                </div>
                             </div>
-                            <h3 style="font-size: 18px; font-weight: 700; color: #fff; margin-bottom: 8px;">Unlock Creator Features</h3>
-                            <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 24px; line-height: 1.5;">Scale your automation with unlimited triggers, Smart Bio, and 25k DM limits.</p>
-                            
-                            <ul style="list-style: none; padding: 0; margin: 0 0 24px 0; display: flex; flex-direction: column; gap: 12px;">
-                                <li style="display: flex; align-items: center; gap: 12px; font-size: 14px; color: #e5e7eb;">
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                                    25,000 DMs per month
-                                </li>
-                                <li style="display: flex; align-items: center; gap: 12px; font-size: 14px; color: #e5e7eb;">
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                                    Unlimited Active Automations
-                                </li>
-                                <li style="display: flex; align-items: center; gap: 12px; font-size: 14px; color: #e5e7eb;">
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                                    Smart Bio Link Page
-                                </li>
-                            </ul>
-                            
-                            <button class="btn btn-primary" style="width: 100%;" onclick="alert('Stripe checkout integration pending.')">Upgrade to Creator</button>
                         </div>
 
                         <!-- Top-Up Credits Prompt (Shown to Paid Users) -->
@@ -409,7 +477,7 @@
                                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
                             </div>
                             <h3 style="font-size: 18px; font-weight: 700; color: #fff; margin-bottom: 8px;">Need more DMs?</h3>
-                            <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 24px; line-height: 1.5;">Your current plan covers your base limit. Purchase extra DM credits that roll over and never expire while your plan is active.</p>
+                            <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 24px; line-height: 1.5;">Your current plan covers your base limit. Purchase extra DM credits that roll over while your plan is active. Credits expire after 90 days to maintain optimum performance.</p>
                             
                             <button class="btn btn-secondary" style="width: 100%; margin-bottom: 12px;" onclick="window.purchaseTopUp(10000)">+ 10,000 DMs (₹199)</button>
                             <button class="btn btn-primary" style="width: 100%;" onclick="window.purchaseTopUp(50000)">+ 50,000 DMs (₹799)</button>
