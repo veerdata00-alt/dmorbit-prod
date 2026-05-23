@@ -22,6 +22,7 @@
             </div>
             <div style="display: flex; gap: 16px; align-items: center;">
                 <a href="#features" style="color: var(--text-muted); text-decoration: none; font-weight: 500; font-size: 14px; transition: color 0.2s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='var(--text-muted)'">Features</a>
+                <a href="#pricing" style="color: var(--text-muted); text-decoration: none; font-weight: 500; font-size: 14px; transition: color 0.2s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='var(--text-muted)'">Pricing</a>
                 <button class="btn-secondary" id="open-auth" style="padding: 8px 16px; font-size: 14px;">Sign In</button>
             </div>
         </nav>
@@ -317,8 +318,105 @@
                     <div style="margin-bottom: 20px; color: #fff;">
                         <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
                     </div>
-                    <h3 style="font-size: 18px; margin-bottom: 12px;">Multi-Account Support</h3>
-                    <p style="color: var(--text-muted); font-size: 14px; line-height: 1.6;">Manage multiple Instagram profiles from a single centralized dashboard.</p>
+            </div>
+        </section>
+
+        <!-- Pricing Section -->
+        <section id="pricing" style="margin-bottom: 120px; padding-top: 40px;">
+            <div style="text-align: center; margin-bottom: 60px;">
+                <h2 style="font-size: 36px; margin-bottom: 16px;">Simple, Transparent Pricing</h2>
+                <p style="color: var(--text-muted); font-size: 16px; max-width: 500px; margin: 0 auto;">No hidden fees. Upgrade when you scale.</p>
+            </div>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px; max-width: 1100px; margin: 0 auto; padding: 0 20px;">
+                <!-- Free Plan -->
+                <div class="glass-panel" style="padding: 40px 32px; display: flex; flex-direction: column;">
+                    <h3 style="font-size: 24px; font-weight: 600; margin-bottom: 8px;">Free</h3>
+                    <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 24px;">Perfect for testing out DM automations.</p>
+                    <div style="font-size: 48px; font-weight: 800; margin-bottom: 32px;">₹0<span style="font-size: 16px; font-weight: 500; color: var(--text-muted);">/mo</span></div>
+                    
+                    <ul style="list-style: none; padding: 0; margin: 0 0 32px 0; display: flex; flex-direction: column; gap: 16px; flex: 1;">
+                        <li style="display: flex; align-items: center; gap: 12px; font-size: 14px; color: #e5e7eb;">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                            1 Instagram account
+                        </li>
+                        <li style="display: flex; align-items: center; gap: 12px; font-size: 14px; color: #e5e7eb;">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                            1,000 DMs / month
+                        </li>
+                        <li style="display: flex; align-items: center; gap: 12px; font-size: 14px; color: #e5e7eb;">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                            3 automations max
+                        </li>
+                        <li style="display: flex; align-items: center; gap: 12px; font-size: 14px; color: #e5e7eb;">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                            Basic analytics
+                        </li>
+                    </ul>
+                    
+                    <button class="btn-secondary" style="width: 100%; padding: 14px; border-radius: 12px;" onclick="document.getElementById('open-auth').click()">Start Free</button>
+                </div>
+
+                <!-- Creator Plan (Recommended) -->
+                <div class="glass-panel" style="padding: 40px 32px; display: flex; flex-direction: column; border: 1px solid rgba(79, 70, 229, 0.4); position: relative; transform: scale(1.02); z-index: 2; box-shadow: 0 20px 40px -10px rgba(79, 70, 229, 0.2);">
+                    <div style="position: absolute; top: -14px; left: 50%; transform: translateX(-50%); background: linear-gradient(90deg, #4f46e5, #818cf8); color: #fff; padding: 4px 16px; border-radius: 20px; font-size: 12px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase;">Most Popular</div>
+                    
+                    <h3 style="font-size: 24px; font-weight: 600; margin-bottom: 8px; color: #fff;">Creator</h3>
+                    <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 24px;">Ideal for growing creators and viral reels.</p>
+                    <div style="font-size: 48px; font-weight: 800; margin-bottom: 32px; color: #fff;">₹499<span style="font-size: 16px; font-weight: 500; color: var(--text-muted);">/mo</span></div>
+                    
+                    <ul style="list-style: none; padding: 0; margin: 0 0 32px 0; display: flex; flex-direction: column; gap: 16px; flex: 1;">
+                        <li style="display: flex; align-items: center; gap: 12px; font-size: 14px; color: #fff;">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#818cf8" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                            2 Instagram accounts
+                        </li>
+                        <li style="display: flex; align-items: center; gap: 12px; font-size: 14px; color: #fff;">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#818cf8" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                            25,000 DMs / month
+                        </li>
+                        <li style="display: flex; align-items: center; gap: 12px; font-size: 14px; color: #fff;">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#818cf8" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                            Unlimited automations
+                        </li>
+                        <li style="display: flex; align-items: center; gap: 12px; font-size: 14px; color: #fff;">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#818cf8" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                            Smart Bio link page
+                        </li>
+                        <li style="display: flex; align-items: center; gap: 12px; font-size: 14px; color: #fff;">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#818cf8" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                            Rollover unused credits
+                        </li>
+                    </ul>
+                    
+                    <button class="btn-primary" style="width: 100%; padding: 14px; border-radius: 12px;" onclick="document.getElementById('open-auth').click()">Get Creator Plan</button>
+                </div>
+
+                <!-- Pro Plan -->
+                <div class="glass-panel" style="padding: 40px 32px; display: flex; flex-direction: column;">
+                    <h3 style="font-size: 24px; font-weight: 600; margin-bottom: 8px;">Pro</h3>
+                    <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 24px;">For brands, agencies, and serious creators.</p>
+                    <div style="font-size: 48px; font-weight: 800; margin-bottom: 32px;">₹1299<span style="font-size: 16px; font-weight: 500; color: var(--text-muted);">/mo</span></div>
+                    
+                    <ul style="list-style: none; padding: 0; margin: 0 0 32px 0; display: flex; flex-direction: column; gap: 16px; flex: 1;">
+                        <li style="display: flex; align-items: center; gap: 12px; font-size: 14px; color: #e5e7eb;">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                            5 Instagram accounts
+                        </li>
+                        <li style="display: flex; align-items: center; gap: 12px; font-size: 14px; color: #e5e7eb;">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                            100,000 DMs / month
+                        </li>
+                        <li style="display: flex; align-items: center; gap: 12px; font-size: 14px; color: #e5e7eb;">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                            Advanced AI tools ready
+                        </li>
+                        <li style="display: flex; align-items: center; gap: 12px; font-size: 14px; color: #e5e7eb;">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                            Team support
+                        </li>
+                    </ul>
+                    
+                    <button class="btn-secondary" style="width: 100%; padding: 14px; border-radius: 12px;" onclick="document.getElementById('open-auth').click()">Go Pro</button>
                 </div>
             </div>
         </section>
