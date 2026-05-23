@@ -27,12 +27,8 @@ async function checkPlanLimits(req, res, next) {
         const user = await User.findById(userId);
         if (!user) return next();
         
-        let limit = 50; // default fallback
-        if (user.currentPlan === 'Free') limit = 500;
-        if (user.currentPlan === 'Creator Basic') limit = 10000;
-        if (user.currentPlan === 'Ultimate Pro') limit = Infinity;
-
-        if (user.dmCountThisMonth >= limit) {
+        const limitStatus = await checkAutomationLimits(user);
+        if (!limitStatus.allowed) {
             return res.status(403).json({ success: false, message: "Monthly DM limit reached for your plan." });
         }
         next();
@@ -247,9 +243,19 @@ const userSchema = new mongoose.Schema({
     profilePicture: String,
     name: { type: String },
     role: { type: String, default: 'user' },
-    plan: { type: String, enum: ['FREE', 'BASIC', 'PRO', 'free', 'pro'], default: 'FREE' },
+    plan: { type: String, enum: ['FREE', 'BASIC', 'PRO', 'CREATOR', 'free', 'basic', 'pro', 'creator'], default: 'FREE' },
     dmCountThisMonth: { type: Number, default: 0 },
+    rolloverDms: { type: Number, default: 0 },
     instagramConnected: { type: Boolean, default: false },
+    smartBio: {
+        profileImg: { type: String, default: '' },
+        title: { type: String, default: '' },
+        description: { type: String, default: '' },
+        links: [{
+            title: String,
+            url: String
+        }]
+    },
     createdAt: { type: Date, default: Date.now }
 });
 const User = mongoose.model('User', userSchema);
@@ -1695,27 +1701,19 @@ function extractUrl(text) {
 async function checkAutomationLimits(user) {
     const currentPlan = (user.plan || 'FREE').toUpperCase();
     const currentDmCount = user.dmCountThisMonth || 0;
+    const rolloverDms = user.rolloverDms || 0;
 
-    // Fetch user's current active automations count
-    const activeAutomationsCount = await Automation.countDocuments({ 
-        userId: user._id, 
-        isActive: true 
-    });
+    let baseLimit = 1000;
+    if (currentPlan === 'CREATOR') baseLimit = 25000;
+    else if (currentPlan === 'PRO') baseLimit = 100000;
 
-    console.log(`[DMOrbit Billing] Checking limits for User: ${user.email} | Plan: ${currentPlan} | DMs: ${currentDmCount}`);
+    const totalLimit = baseLimit + rolloverDms;
 
-    if (currentPlan === 'FREE') {
-        if (currentDmCount >= 50) {
-            console.log("❌ Limit Exceeded: FREE Plan user reached 50 DMs limit.");
-            return { allowed: false, reason: "FREE_DM_LIMIT_EXCEEDED" };
-        }
-    } 
-    
-    if (currentPlan === 'BASIC') {
-        if (currentDmCount >= 1000) {
-            console.log("❌ Limit Exceeded: BASIC Plan user reached 1000 DMs limit.");
-            return { allowed: false, reason: "BASIC_DM_LIMIT_EXCEEDED" };
-        }
+    console.log(`[DMOrbit Billing] Checking limits for User: ${user.email} | Plan: ${currentPlan} | DMs: ${currentDmCount} | Max: ${totalLimit}`);
+
+    if (currentDmCount >= totalLimit) {
+        console.log(`❌ Limit Exceeded: User reached total limit of ${totalLimit} DMs.`);
+        return { allowed: false, reason: "DM_LIMIT_EXCEEDED" };
     }
 
     return { allowed: true };
@@ -2764,6 +2762,325 @@ app.delete('/api/automations/delete', authenticateToken, async (req, res) => {
         if (result.deletedCount === 0) return res.status(404).json({ error: 'Automation not found' });
         res.json({ success: true, message: "Automation deleted successfully" });
     } catch (err) { res.status(500).json({ success: false, error: err.message }); }
+});
+
+// --- Smart Bio Creators Funnel Endpoints ---
+app.get('/api/smartbio', authenticateToken, async (req, res) => {
+    try {
+        const user = await User.findById(req.user.userId);
+        if (!user) return res.status(404).json({ error: 'User not found' });
+        res.json({ success: true, smartBio: user.smartBio || {} });
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+app.post('/api/smartbio', authenticateToken, async (req, res) => {
+    try {
+        const { profileImg, title, description, links } = req.body;
+        const user = await User.findById(req.user.userId);
+        if (!user) return res.status(404).json({ error: 'User not found' });
+        
+        user.smartBio = {
+            profileImg: profileImg || '',
+            title: title || '',
+            description: description || '',
+            links: links || []
+        };
+        await user.save();
+        
+        const cleanTitle = (title || '').replace('@', '').trim();
+        const bioUrl = cleanTitle ? `${req.protocol}://${req.get('host')}/bio/${cleanTitle}` : null;
+        
+        res.json({ success: true, smartBio: user.smartBio, bioUrl });
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+// --- Mock Billing / Subscription Upgrades & Top-Ups ---
+app.post('/api/billing/topup', authenticateToken, async (req, res) => {
+    try {
+        const { credits } = req.body;
+        if (!credits || isNaN(credits) || credits <= 0) {
+            return res.status(400).json({ error: 'Invalid top-up credits quantity.' });
+        }
+        
+        const user = await User.findById(req.user.userId);
+        if (!user) return res.status(404).json({ error: 'User not found' });
+        
+        user.rolloverDms = (user.rolloverDms || 0) + Number(credits);
+        await user.save();
+        
+        res.json({ success: true, rolloverDms: user.rolloverDms });
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+app.post('/api/billing/upgrade', authenticateToken, async (req, res) => {
+    try {
+        const { plan } = req.body;
+        const allowedPlans = ['FREE', 'BASIC', 'PRO', 'CREATOR'];
+        if (!plan || !allowedPlans.includes(plan.toUpperCase())) {
+            return res.status(400).json({ error: 'Invalid plan selected.' });
+        }
+        
+        const user = await User.findById(req.user.userId);
+        if (!user) return res.status(404).json({ error: 'User not found' });
+        
+        user.plan = plan.toUpperCase();
+        user.dmCountThisMonth = 0; // Reset DMs on upgrading
+        await user.save();
+        
+        res.json({ success: true, plan: user.plan });
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+// --- Beautiful dynamic public Smart Bio renderer ---
+app.get('/bio/:username', async (req, res) => {
+    try {
+        const username = req.params.username.trim().toLowerCase();
+        
+        // Find user by username inside smartBio profile
+        const user = await User.findOne({
+            $or: [
+                { "smartBio.title": `@${username}` },
+                { "smartBio.title": username }
+            ]
+        });
+        
+        if (!user || !user.smartBio || !user.smartBio.title) {
+            return res.status(404).send(`
+                <!DOCTYPE html>
+                <html lang="en">
+                <head>
+                    <meta charset="UTF-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <title>Profile Not Found — DMOrbit</title>
+                    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
+                    <style>
+                        body {
+                            background-color: #09090b;
+                            color: #f4f4f5;
+                            font-family: 'Outfit', sans-serif;
+                            display: flex;
+                            justify-content: center;
+                            align-items: center;
+                            height: 100vh;
+                            margin: 0;
+                            text-align: center;
+                        }
+                        .container {
+                            max-width: 400px;
+                            padding: 24px;
+                            border: 1px solid rgba(255,255,255,0.05);
+                            background: rgba(255,255,255,0.02);
+                            border-radius: 24px;
+                        }
+                        h1 { font-size: 24px; margin-bottom: 8px; font-weight: 600; }
+                        p { font-size: 14px; color: #a1a1aa; line-height: 1.5; margin-bottom: 24px; }
+                        a { color: #4f46e5; text-decoration: none; font-weight: 600; font-size: 14px; }
+                    </style>
+                </head>
+                <body>
+                    <div class="container">
+                        <h1>Profile Not Found</h1>
+                        <p>The Smart Bio link you are trying to visit does not exist or has been disabled.</p>
+                        <a href="/">Go to DMOrbit</a>
+                    </div>
+                </body>
+                </html>
+            `);
+        }
+        
+        function esc(str) {
+            return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+        }
+        
+        const html = `
+            <!DOCTYPE html>
+            <html lang="en">
+            <head>
+                <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <title>${esc(user.smartBio.title)} — Links</title>
+                <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+                <style>
+                    :root {
+                        --bg: #09090b;
+                        --card: rgba(255, 255, 255, 0.03);
+                        --border: rgba(255, 255, 255, 0.08);
+                        --text: #f4f4f5;
+                        --text-muted: #a1a1aa;
+                        --primary: #4f46e5;
+                        --primary-glow: rgba(79, 70, 229, 0.15);
+                    }
+                    * {
+                        box-sizing: border-box;
+                        margin: 0;
+                        padding: 0;
+                    }
+                    body {
+                        font-family: 'Outfit', sans-serif;
+                        background-color: var(--bg);
+                        color: var(--text);
+                        display: flex;
+                        justify-content: center;
+                        align-items: flex-start;
+                        min-height: 100vh;
+                        padding: 60px 20px 40px;
+                        overflow-x: hidden;
+                    }
+                    body::before {
+                        content: '';
+                        position: fixed;
+                        top: 0;
+                        left: 0;
+                        width: 100vw;
+                        height: 100vh;
+                        background: radial-gradient(circle at 50% -20%, rgba(79, 70, 229, 0.18) 0%, transparent 60%),
+                                    radial-gradient(circle at 10% 80%, rgba(236, 72, 153, 0.05) 0%, transparent 40%);
+                        z-index: -1;
+                        pointer-events: none;
+                    }
+                    .container {
+                        width: 100%;
+                        max-width: 480px;
+                        display: flex;
+                        flex-direction: column;
+                        align-items: center;
+                        text-align: center;
+                        animation: fadeIn 0.8s ease-out;
+                    }
+                    @keyframes fadeIn {
+                        from { opacity: 0; transform: translateY(20px); }
+                        to { opacity: 1; transform: translateY(0); }
+                    }
+                    .profile-img {
+                        width: 96px;
+                        height: 96px;
+                        border-radius: 50%;
+                        object-fit: cover;
+                        border: 2px solid var(--border);
+                        margin-bottom: 20px;
+                        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+                        background: rgba(255, 255, 255, 0.05);
+                        transition: transform 0.3s ease;
+                    }
+                    .profile-img:hover {
+                        transform: scale(1.05);
+                    }
+                    h1 {
+                        font-size: 20px;
+                        font-weight: 700;
+                        margin-bottom: 8px;
+                        letter-spacing: -0.02em;
+                        background: linear-gradient(135deg, #ffffff 0%, #e2e8f0 100%);
+                        -webkit-background-clip: text;
+                        -webkit-text-fill-color: transparent;
+                    }
+                    .bio-desc {
+                        font-size: 14px;
+                        color: var(--text-muted);
+                        line-height: 1.5;
+                        margin-bottom: 32px;
+                        max-width: 380px;
+                    }
+                    .links-wrapper {
+                        width: 100%;
+                        display: flex;
+                        flex-direction: column;
+                        gap: 16px;
+                        margin-bottom: 40px;
+                    }
+                    .bio-link-btn {
+                        display: block;
+                        width: 100%;
+                        padding: 16px 24px;
+                        background: var(--card);
+                        border: 1px solid var(--border);
+                        border-radius: 16px;
+                        color: var(--text);
+                        text-decoration: none;
+                        font-size: 15px;
+                        font-weight: 600;
+                        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                        backdrop-filter: blur(8px);
+                        position: relative;
+                        overflow: hidden;
+                    }
+                    .bio-link-btn::before {
+                        content: '';
+                        position: absolute;
+                        top: 0;
+                        left: 0;
+                        width: 100%;
+                        height: 100%;
+                        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.03), transparent);
+                        transform: translateX(-100%);
+                        transition: transform 0.5s ease;
+                    }
+                    .bio-link-btn:hover {
+                        background: rgba(255, 255, 255, 0.08);
+                        border-color: rgba(255, 255, 255, 0.2);
+                        transform: translateY(-2px);
+                        box-shadow: 0 12px 24px -10px rgba(0, 0, 0, 0.3);
+                    }
+                    .bio-link-btn:hover::before {
+                        transform: translateX(100%);
+                    }
+                    .bio-link-btn:active {
+                        transform: translateY(1px);
+                    }
+                    .footer {
+                        margin-top: auto;
+                        font-size: 11px;
+                        color: var(--text-muted);
+                        letter-spacing: 0.05em;
+                        text-transform: uppercase;
+                        display: flex;
+                        align-items: center;
+                        gap: 6px;
+                        opacity: 0.7;
+                    }
+                    .footer svg {
+                        color: var(--primary);
+                    }
+                </style>
+            </head>
+            <body>
+                <div class="container">
+                    ${user.smartBio.profileImg ? `<img class="profile-img" src="${esc(user.smartBio.profileImg)}" alt="Profile Image">` : ''}
+                    <h1>${esc(user.smartBio.title || '@username')}</h1>
+                    <p class="bio-desc">${esc(user.smartBio.description || 'Welcome to my links page!')}</p>
+                    
+                    <div class="links-wrapper">
+                        ${user.smartBio.links.map(link => `
+                            <a href="${esc(link.url)}" target="_blank" rel="noopener noreferrer" class="bio-link-btn">
+                                ${esc(link.title)}
+                            </a>
+                        `).join('')}
+                    </div>
+                    
+                    <footer class="footer">
+                        Powered by 
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                        </svg>
+                        <strong>DMOrbit</strong>
+                    </footer>
+                </div>
+            </body>
+            </html>
+        `;
+        
+        res.send(html);
+    } catch (err) {
+        res.status(500).send("Internal Server Error");
+    }
 });
 
 server.listen(PORT, () => {
