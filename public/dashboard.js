@@ -67,6 +67,7 @@ async function init() {
 
         setupNav();
         setupWizard();
+        setupSmartBioListeners();
         loadPage('overview');
         
         // Update Billing Widget
@@ -123,6 +124,7 @@ function loadPage(page) {
     else if (page === 'automations') loadAutomations();
     else if (page === 'logs') loadLogs();
     else if (page === 'account') loadAccount();
+    else if (page === 'smartbio') loadSmartBio();
     else if (page === 'billing') {
         if (window.updateBillingWidget && currentUser) {
             window.updateBillingWidget(currentUser.plan || 'FREE', currentUser.dmCountThisMonth || 0);
@@ -776,22 +778,266 @@ window.initiateCheckout = async function(planType) {
 // Function to dynamically update Usage Bars on dashboard load
 window.updateBillingWidget = function(plan, currentDms) {
     plan = (plan || 'FREE').toUpperCase();
-    const maxDms = plan === 'FREE' ? 50 : (plan === 'BASIC' ? 1000 : Infinity);
+    let maxDms = 1000;
+    if (plan === 'CREATOR') maxDms = 25000;
+    else if (plan === 'PRO') maxDms = 100000;
+    
     const badge = document.getElementById('currentPlanBadge');
     if (badge) badge.innerText = plan;
     
     const usageText = document.getElementById('dmUsageText');
     const progressBar = document.getElementById('usageProgressBar');
     
-    if (maxDms === Infinity) {
-        if (usageText) usageText.innerText = `${currentDms || 0} / Unlimited DMs`;
-        if (progressBar) progressBar.style.width = '100%';
+    if (usageText) usageText.innerText = `${(currentDms || 0).toLocaleString()} / ${maxDms.toLocaleString()} DMs Used`;
+    const percentage = Math.min(((currentDms || 0) / maxDms) * 100, 100);
+    if (progressBar) progressBar.style.width = `${percentage}%`;
+    
+    const upgradePrompt = document.getElementById('upgrade-prompt');
+    const topupPrompt = document.getElementById('topup-prompt');
+    if (plan !== 'FREE') {
+        if (upgradePrompt) upgradePrompt.style.display = 'none';
+        if (topupPrompt) topupPrompt.style.display = 'block';
     } else {
-        if (usageText) usageText.innerText = `${currentDms || 0} / ${maxDms} DMs Used`;
-        const percentage = Math.min(((currentDms || 0) / maxDms) * 100, 100);
-        if (progressBar) progressBar.style.width = `${percentage}%`;
+        if (upgradePrompt) upgradePrompt.style.display = 'block';
+        if (topupPrompt) topupPrompt.style.display = 'none';
     }
 };
+
+// Purchase Top-Up Credits
+window.purchaseTopUp = async function(credits) {
+    if (!confirm(`Are you sure you want to purchase a top-up of ${credits.toLocaleString()} DMs?`)) return;
+    
+    try {
+        const res = await request('/api/billing/topup', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ credits })
+        });
+        
+        if (res && res.success) {
+            alert(`Successfully topped up ${credits.toLocaleString()} DMs!`);
+            // Reload user state
+            const data = await API.me();
+            if (data.user) {
+                currentUser = data.user;
+                if (window.updateBillingWidget) {
+                    window.updateBillingWidget(currentUser.plan || 'FREE', currentUser.dmCountThisMonth || 0);
+                }
+            }
+        } else {
+            alert(res?.error || 'Failed to complete top-up purchase.');
+        }
+    } catch (e) {
+        console.error(e);
+        alert('An error occurred during top-up purchase.');
+    }
+};
+
+// Upgrade User Plan (Interactive Mock for Testing)
+window.upgradePlan = async function(plan) {
+    if (!confirm(`Are you sure you want to upgrade to the ${plan} Plan?`)) return;
+    
+    try {
+        const res = await request('/api/billing/upgrade', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ plan })
+        });
+        
+        if (res && res.success) {
+            alert(`Successfully upgraded to the ${plan} Plan!`);
+            // Reload user state
+            const data = await API.me();
+            if (data.user) {
+                currentUser = data.user;
+                
+                // Update plan labels in UI
+                const sidebarPlanEl = document.getElementById('sidebar-user-plan');
+                if (sidebarPlanEl) sidebarPlanEl.textContent = `${(currentUser.plan || 'free').toUpperCase()} PLAN`;
+                
+                if (window.updateBillingWidget) {
+                    window.updateBillingWidget(currentUser.plan || 'FREE', currentUser.dmCountThisMonth || 0);
+                }
+            }
+        } else {
+            alert(res?.error || 'Failed to upgrade plan.');
+        }
+    } catch (e) {
+        console.error(e);
+        alert('An error occurred while upgrading.');
+    }
+};
+
+// --- Smart Bio Creators Funnel Logic ---
+async function loadSmartBio() {
+    const profileImgInput = document.getElementById('bio-profile-img');
+    const titleInput = document.getElementById('bio-title');
+    const descInput = document.getElementById('bio-desc');
+    const container = document.getElementById('bio-links-container');
+    
+    if (!profileImgInput || !titleInput || !descInput || !container) return;
+    
+    container.innerHTML = '<div style="color: var(--text-muted); font-size: 14px; text-align: center; padding: 20px;">Loading profile...</div>';
+    
+    try {
+        const res = await request('/api/smartbio');
+        if (res && res.success) {
+            const sb = res.smartBio || {};
+            profileImgInput.value = sb.profileImg || '';
+            titleInput.value = sb.title || '';
+            descInput.value = sb.description || '';
+            
+            container.innerHTML = '';
+            const links = sb.links || [];
+            if (links.length === 0) {
+                container.innerHTML = '<div id="no-links-msg" style="color: var(--text-muted); font-size: 13px; text-align: center; padding: 20px; border: 1px dashed rgba(255,255,255,0.05); border-radius: 8px;">No link buttons added yet. Click "+ Add Link" to get started.</div>';
+            } else {
+                links.forEach(link => {
+                    addLinkToEditor(link.title, link.url);
+                });
+            }
+            updateLivePreview();
+        } else {
+            container.innerHTML = '<div style="color: var(--danger); font-size: 14px; text-align: center; padding: 20px;">Failed to load Smart Bio details.</div>';
+        }
+    } catch (e) {
+        console.error(e);
+        container.innerHTML = '<div style="color: var(--danger); font-size: 14px; text-align: center; padding: 20px;">Failed to load Smart Bio details.</div>';
+    }
+}
+
+function addLinkToEditor(title = '', url = '') {
+    const container = document.getElementById('bio-links-container');
+    const noLinksMsg = document.getElementById('no-links-msg');
+    if (noLinksMsg) noLinksMsg.remove();
+    
+    const div = document.createElement('div');
+    div.className = 'bio-link-item';
+    div.style.cssText = 'background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); padding: 16px; border-radius: 12px; display: flex; flex-direction: column; gap: 8px; position: relative;';
+    
+    div.innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 12px; font-weight: 600; color: var(--text-muted); display: flex; align-items: center; gap: 6px;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="cursor: grab;"><line x1="9" y1="5" x2="15" y2="5"></line><line x1="9" y1="12" x2="15" y2="12"></line><line x1="9" y1="19" x2="15" y2="19"></line></svg>
+                Link Button
+            </span>
+            <button class="btn-remove-link" style="background: transparent; border: none; color: var(--danger); cursor: pointer; font-size: 12px; font-weight: 500;">Remove</button>
+        </div>
+        <input type="text" class="form-input link-title-input" placeholder="Button Text (e.g. Visit My Shop)" value="${escHtml(title)}" style="font-size: 13px; padding: 8px 12px; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.05); color: #fff; border-radius: 8px;">
+        <input type="text" class="form-input link-url-input" placeholder="Destination URL (https://...)" value="${escHtml(url)}" style="font-size: 13px; padding: 8px 12px; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.05); color: #fff; border-radius: 8px;">
+    `;
+    
+    // Add event listeners to input fields to update preview instantly
+    div.querySelector('.link-title-input').addEventListener('input', updateLivePreview);
+    div.querySelector('.link-url-input').addEventListener('input', updateLivePreview);
+    
+    div.querySelector('.btn-remove-link').addEventListener('click', () => {
+        div.remove();
+        if (container.children.length === 0) {
+            container.innerHTML = '<div id="no-links-msg" style="color: var(--text-muted); font-size: 13px; text-align: center; padding: 20px; border: 1px dashed rgba(255,255,255,0.05); border-radius: 8px;">No link buttons added yet. Click "+ Add Link" to get started.</div>';
+        }
+        updateLivePreview();
+    });
+    
+    container.appendChild(div);
+    updateLivePreview();
+}
+
+function updateLivePreview() {
+    const profileImg = document.getElementById('bio-profile-img')?.value || '';
+    const title = document.getElementById('bio-title')?.value || '@username';
+    const desc = document.getElementById('bio-desc')?.value || '';
+    
+    const previewImg = document.getElementById('preview-bio-img');
+    const previewTitle = document.getElementById('preview-bio-title');
+    const previewDesc = document.getElementById('preview-bio-desc');
+    const previewLinks = document.getElementById('preview-bio-links');
+    
+    if (previewImg) {
+        if (profileImg) {
+            previewImg.src = profileImg;
+            previewImg.style.display = 'block';
+        } else {
+            previewImg.style.display = 'none';
+        }
+    }
+    
+    if (previewTitle) previewTitle.textContent = title;
+    if (previewDesc) previewDesc.textContent = desc;
+    
+    if (previewLinks) {
+        previewLinks.innerHTML = '';
+        const items = document.querySelectorAll('#bio-links-container .bio-link-item');
+        items.forEach(item => {
+            const linkTitle = item.querySelector('.link-title-input')?.value || 'Button Link';
+            
+            const div = document.createElement('div');
+            div.style.cssText = 'padding: 14px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; color: #fff; font-size: 14px; font-weight: 500; cursor: pointer; text-align: center; transition: all 0.2s;';
+            div.textContent = linkTitle;
+            
+            // Hover states (visually simulated inside the iframe-like phone)
+            div.onmouseover = () => { div.style.background = 'rgba(255,255,255,0.1)'; };
+            div.onmouseout = () => { div.style.background = 'rgba(255,255,255,0.05)'; };
+            
+            previewLinks.appendChild(div);
+        });
+    }
+}
+
+function setupSmartBioListeners() {
+    const addBtn = document.getElementById('add-bio-link-btn');
+    if (addBtn) {
+        addBtn.addEventListener('click', () => {
+            addLinkToEditor('', '');
+        });
+    }
+    
+    document.getElementById('bio-profile-img')?.addEventListener('input', updateLivePreview);
+    document.getElementById('bio-title')?.addEventListener('input', updateLivePreview);
+    document.getElementById('bio-desc')?.addEventListener('input', updateLivePreview);
+    
+    const saveBtn = document.getElementById('save-smartbio-btn');
+    if (saveBtn) {
+        saveBtn.addEventListener('click', async () => {
+            saveBtn.textContent = 'Saving...';
+            saveBtn.disabled = true;
+            
+            const profileImg = document.getElementById('bio-profile-img')?.value || '';
+            const title = document.getElementById('bio-title')?.value || '';
+            const description = document.getElementById('bio-desc')?.value || '';
+            
+            const links = [];
+            const items = document.querySelectorAll('#bio-links-container .bio-link-item');
+            items.forEach(item => {
+                const linkTitle = item.querySelector('.link-title-input')?.value || '';
+                const linkUrl = item.querySelector('.link-url-input')?.value || '';
+                if (linkTitle || linkUrl) {
+                    links.push({ title: linkTitle, url: linkUrl });
+                }
+            });
+            
+            try {
+                const res = await request('/api/smartbio', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ profileImg, title, description, links })
+                });
+                
+                if (res && res.success) {
+                    alert('Smart Bio details saved successfully!');
+                } else {
+                    alert(res?.error || 'Failed to save Smart Bio details.');
+                }
+            } catch (e) {
+                console.error(e);
+                alert('An error occurred while saving details.');
+            } finally {
+                saveBtn.textContent = 'Save Changes';
+                saveBtn.disabled = false;
+            }
+        });
+    }
+}
 
     // --- Unified Live Counters & Instagram State Binding ---
     async function hydrateDashboardLiveView() {
