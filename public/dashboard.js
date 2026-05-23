@@ -779,11 +779,33 @@ window.initiateCheckout = async function(planType) {
 window.updateBillingWidget = function(plan, currentDms) {
     plan = (plan || 'FREE').toUpperCase();
     let maxDms = 1000;
-    if (plan === 'CREATOR') maxDms = 25000;
-    else if (plan === 'PRO') maxDms = 100000;
+    let planName = 'Starter Plan';
+    let planDesc = 'Perfect for testing out DM automations.';
+    let planPrice = '₹0';
+    
+    if (plan === 'CREATOR') {
+        maxDms = 25000;
+        planName = 'Creator Plan';
+        planDesc = 'Ideal for growing creators and viral reels.';
+        planPrice = '₹499';
+    } else if (plan === 'PRO') {
+        maxDms = 100000;
+        planName = 'Pro Plan';
+        planDesc = 'For brands, agencies, and serious creators.';
+        planPrice = '₹1299';
+    }
     
     const badge = document.getElementById('currentPlanBadge');
     if (badge) badge.innerText = plan;
+    
+    const nameEl = document.getElementById('currentPlanName');
+    if (nameEl) nameEl.innerText = planName;
+    
+    const descEl = document.getElementById('currentPlanDesc');
+    if (descEl) descEl.innerText = planDesc;
+    
+    const priceEl = document.getElementById('currentPlanPrice');
+    if (priceEl) priceEl.innerText = planPrice;
     
     const usageText = document.getElementById('dmUsageText');
     const progressBar = document.getElementById('usageProgressBar');
