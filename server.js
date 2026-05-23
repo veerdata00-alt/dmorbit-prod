@@ -246,6 +246,10 @@ const userSchema = new mongoose.Schema({
     plan: { type: String, enum: ['FREE', 'BASIC', 'PRO', 'CREATOR', 'free', 'basic', 'pro', 'creator'], default: 'FREE' },
     dmCountThisMonth: { type: Number, default: 0 },
     rolloverDms: { type: Number, default: 0 },
+    topups: [{
+        credits: { type: Number, required: true },
+        purchasedAt: { type: Date, default: Date.now }
+    }],
     instagramConnected: { type: Boolean, default: false },
     smartBio: {
         profileImg: { type: String, default: '' },
@@ -1697,19 +1701,22 @@ function extractUrl(text) {
     return match ? match[0] : "https://web-production-dd826.up.railway.app";
 }
 
-// --- DMOrbit 3-Tier Pricing & Limitation Checker ---
 async function checkAutomationLimits(user) {
     const currentPlan = (user.plan || 'FREE').toUpperCase();
     const currentDmCount = user.dmCountThisMonth || 0;
-    const rolloverDms = user.rolloverDms || 0;
 
     let baseLimit = 1000;
     if (currentPlan === 'CREATOR') baseLimit = 25000;
     else if (currentPlan === 'PRO') baseLimit = 100000;
 
-    const totalLimit = baseLimit + rolloverDms;
+    // Dynamically calculate valid unexpired top-ups (valid for 90 days)
+    const ninetyDaysAgo = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000);
+    const activeTopups = (user.topups || []).filter(t => new Date(t.purchasedAt) >= ninetyDaysAgo);
+    const activeTopupDms = activeTopups.reduce((sum, t) => sum + Number(t.credits || 0), 0);
 
-    console.log(`[DMOrbit Billing] Checking limits for User: ${user.email} | Plan: ${currentPlan} | DMs: ${currentDmCount} | Max: ${totalLimit}`);
+    const totalLimit = baseLimit + activeTopupDms;
+
+    console.log(`[DMOrbit Billing] Checking limits for User: ${user.email} | Plan: ${currentPlan} | DMs: ${currentDmCount} | Max: ${totalLimit} (Base: ${baseLimit}, Active Top-ups: ${activeTopupDms})`);
 
     if (currentDmCount >= totalLimit) {
         console.log(`❌ Limit Exceeded: User reached total limit of ${totalLimit} DMs.`);
@@ -2809,7 +2816,25 @@ app.post('/api/billing/topup', authenticateToken, async (req, res) => {
         const user = await User.findById(req.user.userId);
         if (!user) return res.status(404).json({ error: 'User not found' });
         
-        user.rolloverDms = (user.rolloverDms || 0) + Number(credits);
+        // Enforce paid-only topups rule
+        const currentPlan = (user.plan || 'FREE').toUpperCase();
+        if (currentPlan === 'FREE') {
+            return res.status(403).json({ error: 'Top-ups are only available on paid plans (Creator or Pro). Please upgrade your plan first.' });
+        }
+        
+        // Push top-up transaction
+        if (!user.topups) user.topups = [];
+        user.topups.push({
+            credits: Number(credits),
+            purchasedAt: new Date()
+        });
+        
+        // Dynamically compute rolloverDms based on active 90-day topups
+        const ninetyDaysAgo = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000);
+        user.rolloverDms = user.topups
+            .filter(t => new Date(t.purchasedAt) >= ninetyDaysAgo)
+            .reduce((sum, t) => sum + Number(t.credits || 0), 0);
+            
         await user.save();
         
         res.json({ success: true, rolloverDms: user.rolloverDms });
