@@ -40,6 +40,12 @@
                     </span>
                     <span>Templates</span>
                 </a>
+                <a href="#" class="nav-item" data-page="smartbio">
+                    <span class="nav-icon">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
+                    </span>
+                    <span>Smart Bio</span>
+                </a>
                 <a href="#" class="nav-item" data-page="logs">
                     <span class="nav-icon">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
@@ -253,6 +259,63 @@
                 </div>
             </div>
 
+            <!-- SMART BIO PAGE -->
+            <div class="page" id="page-smartbio">
+                <div class="hero-section" style="margin-bottom: 24px;">
+                    <div class="hero-content">
+                        <h2>Smart Bio Link</h2>
+                        <p>Your ultimate creator funnel infrastructure.</p>
+                    </div>
+                    <button class="btn btn-primary" id="save-smartbio-btn">Save Changes</button>
+                </div>
+                
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <!-- Left: Form -->
+                    <div class="card">
+                        <h3 style="margin-bottom: 20px;">Profile Details</h3>
+                        <div class="form-group">
+                            <label class="form-label">Profile Image URL</label>
+                            <input type="text" id="bio-profile-img" class="form-input" placeholder="https://...">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Page Title (Username)</label>
+                            <input type="text" id="bio-title" class="form-input" placeholder="@yourhandle">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Bio Description</label>
+                            <textarea id="bio-desc" class="form-textarea" placeholder="Welcome to my links!"></textarea>
+                        </div>
+                        
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin: 32px 0 16px;">
+                            <h3 style="margin: 0;">Link Buttons</h3>
+                            <button class="btn btn-secondary btn-sm" id="add-bio-link-btn">+ Add Link</button>
+                        </div>
+                        
+                        <div id="bio-links-container" style="display: flex; flex-direction: column; gap: 16px;">
+                            <!-- Link items inserted here -->
+                        </div>
+                    </div>
+
+                    <!-- Right: Mobile Preview -->
+                    <div style="display: flex; justify-content: center; align-items: flex-start; position: sticky; top: 100px;">
+                        <div class="phone-preview" style="width: 320px; height: 600px; transform: scale(0.9); transform-origin: top center; background: #09090b; border: 4px solid #27272a; border-radius: 36px; overflow: hidden; position: relative; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);">
+                            <div class="phone-notch" style="position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 120px; height: 24px; background: #27272a; border-bottom-left-radius: 12px; border-bottom-right-radius: 12px; z-index: 10;"></div>
+                            <div id="live-bio-preview" style="display: flex; flex-direction: column; align-items: center; padding: 48px 24px 24px; text-align: center; height: 100%; overflow-y: auto;">
+                                <img id="preview-bio-img" src="" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; margin-bottom: 16px; background: rgba(255,255,255,0.1); display: none;">
+                                <h4 id="preview-bio-title" style="font-size: 18px; font-weight: 700; color: #fff; margin-bottom: 8px;">@username</h4>
+                                <p id="preview-bio-desc" style="font-size: 14px; color: var(--text-muted); margin-bottom: 24px;">Your bio description here</p>
+                                
+                                <div id="preview-bio-links" style="width: 100%; display: flex; flex-direction: column; gap: 12px;">
+                                    <!-- Preview links -->
+                                    <div style="padding: 14px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; color: #fff; font-size: 14px; font-weight: 500;">Sample Link 1</div>
+                                    <div style="padding: 14px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; color: #fff; font-size: 14px; font-weight: 500;">Sample Link 2</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- ACCOUNT PAGE -->
             <div class="page" id="page-account">
                 <div class="hero-section">
@@ -306,26 +369,26 @@
                         </div>
 
                         <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 16px; padding: 24px;">
-                            <h4 style="font-size: 16px; font-weight: 600; color: #fff; margin-bottom: 16px;">Billing History</h4>
                             <div style="padding: 32px 0; text-align: center; color: var(--text-muted); font-size: 14px; border: 1px dashed rgba(255,255,255,0.1); border-radius: 8px;">
                                 No past invoices found.
                             </div>
                         </div>
                     </div>
 
-                    <!-- Upgrade Prompt -->
-                    <div>
-                        <div style="background: linear-gradient(180deg, rgba(79,70,229,0.1) 0%, rgba(255,255,255,0.02) 100%); border: 1px solid rgba(79,70,229,0.2); border-radius: 16px; padding: 24px;">
+                    <!-- Action Container (Upgrade or Top-Up) -->
+                    <div id="billing-action-container">
+                        <!-- Default Upgrade Prompt (Shown to Free Users) -->
+                        <div id="upgrade-prompt" style="background: linear-gradient(180deg, rgba(79,70,229,0.1) 0%, rgba(255,255,255,0.02) 100%); border: 1px solid rgba(79,70,229,0.2); border-radius: 16px; padding: 24px; display: block;">
                             <div style="width: 48px; height: 48px; background: rgba(79,70,229,0.2); color: var(--primary); border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-bottom: 16px;">
                                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
                             </div>
-                            <h3 style="font-size: 18px; font-weight: 700; color: #fff; margin-bottom: 8px;">Unlock Pro Features</h3>
-                            <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 24px; line-height: 1.5;">Scale your automation with unlimited triggers and increased DM limits.</p>
+                            <h3 style="font-size: 18px; font-weight: 700; color: #fff; margin-bottom: 8px;">Unlock Creator Features</h3>
+                            <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 24px; line-height: 1.5;">Scale your automation with unlimited triggers, Smart Bio, and 25k DM limits.</p>
                             
                             <ul style="list-style: none; padding: 0; margin: 0 0 24px 0; display: flex; flex-direction: column; gap: 12px;">
                                 <li style="display: flex; align-items: center; gap: 12px; font-size: 14px; color: #e5e7eb;">
                                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                                    10,000 DMs per month
+                                    25,000 DMs per month
                                 </li>
                                 <li style="display: flex; align-items: center; gap: 12px; font-size: 14px; color: #e5e7eb;">
                                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
@@ -333,11 +396,23 @@
                                 </li>
                                 <li style="display: flex; align-items: center; gap: 12px; font-size: 14px; color: #e5e7eb;">
                                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                                    Priority Support
+                                    Smart Bio Link Page
                                 </li>
                             </ul>
                             
-                            <button class="btn btn-primary" style="width: 100%;" onclick="alert('Stripe checkout integration pending.')">Upgrade to Pro</button>
+                            <button class="btn btn-primary" style="width: 100%;" onclick="alert('Stripe checkout integration pending.')">Upgrade to Creator</button>
+                        </div>
+
+                        <!-- Top-Up Credits Prompt (Shown to Paid Users) -->
+                        <div id="topup-prompt" style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 16px; padding: 24px; display: none;">
+                            <div style="width: 48px; height: 48px; background: rgba(16,185,129,0.1); color: #10b981; border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-bottom: 16px;">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+                            </div>
+                            <h3 style="font-size: 18px; font-weight: 700; color: #fff; margin-bottom: 8px;">Need more DMs?</h3>
+                            <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 24px; line-height: 1.5;">Your current plan covers your base limit. Purchase extra DM credits that roll over and never expire while your plan is active.</p>
+                            
+                            <button class="btn btn-secondary" style="width: 100%; margin-bottom: 12px;" onclick="window.purchaseTopUp(10000)">+ 10,000 DMs (₹199)</button>
+                            <button class="btn btn-primary" style="width: 100%;" onclick="window.purchaseTopUp(50000)">+ 50,000 DMs (₹799)</button>
                         </div>
                     </div>
                 </div>
