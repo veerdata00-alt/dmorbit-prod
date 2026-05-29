@@ -358,20 +358,93 @@ p { color: var(--text-secondary); }
 .empty-title { font-size: 18px; font-weight: 600; color: var(--text-primary); margin-bottom: 8px; }
 .empty-desc { font-size: 15px; color: var(--text-secondary); max-width: 400px; margin: 0 auto; }
 
-/* === RESPONSIVE === */
+/* === RESPONSIVE & MOBILE SAAS SYSTEM === */
 @media (max-width: 1024px) {
     .sidebar { transform: translateX(-100%); }
     .sidebar.open { transform: translateX(0); }
     .main-content { margin-left: 0; }
     .menu-toggle { display: block; }
     .page { padding: var(--sp-3); }
+    
+    /* Wizard responsives */
     .wizard-modal { width: 95%; height: 90vh; }
     .wizard-preview { display: none; }
+    
+    /* Attribute-level Grid Stacker */
+    #page-overview div[style*="grid-template-columns: 1fr 1fr"],
+    #page-overview div[style*="grid-template-columns: 1fr 1fr;"] {
+        grid-template-columns: 1fr !important;
+        gap: 16px !important;
+    }
+    
+    .overview-details-grid {
+        grid-template-columns: 1fr !important;
+        gap: 20px !important;
+    }
+    
+    /* Phone preview responsive scale inside Smart Bio */
+    .phone-preview {
+        transform: scale(0.85) !important;
+        transform-origin: top center !important;
+        margin-bottom: -60px;
+    }
 }
+
 @media (max-width: 768px) {
     .stats-grid { grid-template-columns: 1fr; }
-    .hero-section { flex-direction: column; align-items: flex-start; gap: var(--sp-3); }
+    .hero-section { flex-direction: column; align-items: flex-start; gap: var(--sp-2); }
+    
+    /* Smart bio details form stacking */
+    #page-smartbio .grid {
+        grid-template-columns: 1fr !important;
+        gap: 24px !important;
+    }
+    
+    .phone-preview {
+        transform: scale(0.75) !important;
+        margin-bottom: -120px;
+        margin-top: 16px;
+        align-self: center;
+    }
+    
+    /* Responsive details card stack spacing */
+    .card {
+        padding: var(--sp-2) !important;
+    }
+    
+    /* Responsive Table overflow helpers */
+    table {
+        min-width: 600px;
+    }
+    
+    /* Compact layout adjustments */
+    h1 { font-size: 26px; }
+    h2 { font-size: 20px; }
+    h3 { font-size: 16px; }
 }
+
+@media (max-width: 480px) {
+    .phone-preview {
+        transform: scale(0.65) !important;
+        margin-bottom: -180px;
+    }
+}
+
+/* Premium Glassmorphic Empty States */
+.empty-state {
+    background: rgba(255, 255, 255, 0.015) !important;
+    border: 1px dashed rgba(255, 255, 255, 0.08) !important;
+    border-radius: var(--radius-lg);
+    padding: 48px 24px !important;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+}
+.empty-icon {
+    background: linear-gradient(135deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.01) 100%) !important;
+    border: 1px solid rgba(255,255,255,0.05) !important;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.3) !important;
+}
+
 
 /* === SMART BIO STYLES === */
 .bio-link-item {
@@ -408,4 +481,51 @@ p { color: var(--text-secondary); }
 }
 .bio-link-delete:hover {
     background: rgba(239, 68, 68, 0.1);
+}
+
+/* === FORM STYLING (GLASSMORPHISM / DARK SaaS) === */
+.form-group {
+    margin-bottom: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.form-label {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-secondary);
+}
+.form-input, .form-textarea {
+    width: 100%;
+    background: rgba(0, 0, 0, 0.25) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: var(--radius-sm);
+    padding: 10px 14px;
+    color: var(--text-primary) !important;
+    font-family: inherit;
+    font-size: 14px;
+    outline: none;
+    transition: all 0.2s ease;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
+}
+.form-input::placeholder, .form-textarea::placeholder {
+    color: var(--text-muted) !important;
+    opacity: 0.6;
+}
+.form-input:focus, .form-textarea:focus {
+    border-color: var(--primary) !important;
+    background: rgba(0, 0, 0, 0.4) !important;
+    box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.15), inset 0 2px 4px rgba(0,0,0,0.3);
+}
+
+/* Autofill overrides and Focus highlights */
+.form-input:-webkit-autofill,
+.form-textarea:-webkit-autofill {
+    -webkit-text-fill-color: var(--text-primary) !important;
+    -webkit-box-shadow: 0 0 0px 1000px rgba(9, 9, 11, 0.9) inset !important;
+    transition: background-color 5000s ease-in-out 0s;
+}
+.form-textarea {
+    resize: vertical;
+    min-height: 80px;
 }
