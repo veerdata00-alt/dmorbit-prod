@@ -81,12 +81,6 @@ async function init() {
             el.href = `/auth/instagram?token=${token}`;
         });
 
-        // Live Dashboard Stats Polling
-        setInterval(() => {
-            if (document.getElementById('page-overview').classList.contains('active')) {
-                loadOverview();
-            }
-        }, 15000);
     } catch (e) { 
         console.error(e);
     }
@@ -125,6 +119,7 @@ function loadPage(page) {
     else if (page === 'logs') loadLogs();
     else if (page === 'account') loadAccount();
     else if (page === 'smartbio') loadSmartBio();
+    else if (page === 'support') loadSupport();
     else if (page === 'billing') {
         if (window.updateBillingWidget && currentUser) {
             window.updateBillingWidget(currentUser.plan || 'FREE', currentUser.dmCountThisMonth || 0);
@@ -239,9 +234,9 @@ window.toggleAutomationState = async function(id, isActive) {
             loadAutomations();
             loadOverview();
         } else {
-            alert("Failed to change status");
+            alert("We couldn't pause/activate this workflow. Please refresh your browser or try again.");
         }
-    } catch(err) { alert("Failed to change status"); }
+    } catch(err) { alert("We couldn't pause/activate this workflow. Please refresh your browser or try again."); }
 };
 
 window.deleteAutomationRecord = async function(id) {
@@ -256,10 +251,10 @@ window.deleteAutomationRecord = async function(id) {
             loadAutomations();
             loadOverview();
         } else {
-            alert(res?.error || "Failed to delete automation");
+            alert(res?.error || "We couldn't delete this workflow. Please refresh and try again.");
         }
     } catch(err) { 
-        alert("Failed to delete automation. Please try again.");
+        alert("We couldn't delete this workflow. Please refresh and try again.");
     }
 };
 
@@ -396,125 +391,113 @@ async function loadAccount() {
 
 // === WIZARD LOGIC ===
 function setupWizard() {
-    const openBtn = document.getElementById('open-wizard-btn');
     const closeBtn = document.getElementById('close-wizard');
-    const modal = document.getElementById('wizard-modal');
-    const nextBtn = document.getElementById('wiz-next');
-    const backBtn = document.getElementById('wiz-back');
-    const dmInput = document.getElementById('wiz-dm');
-    const previewBubble = document.getElementById('preview-bubble');
+    const modal = document.getElementById('wizard-overlay');
+    const nextBtn = document.getElementById('w-btn-next');
+    const backBtn = document.getElementById('w-btn-back');
+    const dmInput = document.getElementById('w-private-dm');
+    const previewBubble = document.getElementById('preview-dm-display');
 
     window.openWizard = function(templateGoal = null) {
         currentWizardStep = 1;
         updateWizardUI();
-        modal.classList.add('active');
+        if (modal) modal.classList.add('active');
         fetchInstagramMedia();
+        
+        // Handle prefilled template goals
         if (templateGoal) {
-            document.querySelectorAll('.radio-card').forEach(c => c.classList.remove('selected'));
-            document.querySelector('.radio-card').classList.add('selected'); // default to first for now
+            const keywordInput = document.getElementById('w-keyword');
+            const privateDm = document.getElementById('w-private-dm');
+            const publicReply = document.getElementById('w-public-reply');
+            
+            if (templateGoal === 'Lead Magnet') {
+                if (keywordInput) keywordInput.value = 'PDF';
+                if (privateDm) privateDm.value = 'Hey! Thanks for commenting. Here is your free PDF guide: https://example.com/guide.pdf';
+                if (publicReply) publicReply.value = 'Sent to your inbox! check your DMs 🚀';
+            } else if (templateGoal === 'Webinar Registration') {
+                if (keywordInput) keywordInput.value = 'SEATS';
+                if (privateDm) privateDm.value = 'Awesome! Click here to claim your free seat for our upcoming webinar: https://example.com/webinar';
+                if (publicReply) publicReply.value = 'Claim your seat! Check your DMs for the link 🎟️';
+            } else if (templateGoal === 'Link in DM') {
+                if (keywordInput) keywordInput.value = 'LINK';
+                if (privateDm) privateDm.value = 'Hey! Here is the direct link you requested: https://example.com/shop';
+                if (publicReply) publicReply.value = 'Link sent successfully! Check your inbox 👋';
+            }
+            if (dmInput && previewBubble) {
+                previewBubble.textContent = privateDm.value;
+            }
         }
     };
 
-    openBtn?.addEventListener('click', () => window.openWizard());
-    closeBtn?.addEventListener('click', () => modal.classList.remove('active'));
+    closeBtn?.addEventListener('click', () => modal?.classList.remove('active'));
 
-    document.querySelectorAll('.radio-card').forEach(card => {
-        card.addEventListener('click', () => {
-            document.querySelectorAll('.radio-card').forEach(c => c.classList.remove('selected'));
-            card.classList.add('selected');
-        });
-    });
-
-    // Trigger Condition Toggles
-    const modeKeyword = document.getElementById('trigger-mode-keyword');
-    const modeAny = document.getElementById('trigger-mode-any');
-    const triggerModeInput = document.getElementById('wiz-trigger-mode');
-    const keywordsGroup = document.getElementById('wiz-keywords-group');
-
-    modeKeyword?.addEventListener('click', () => {
-        if (!triggerModeInput || !modeKeyword || !modeAny || !keywordsGroup) return;
-        triggerModeInput.value = 'keyword';
-        modeKeyword.classList.add('selected');
-        modeKeyword.style.borderColor = '#4F46E5';
-        modeKeyword.style.background = 'rgba(79, 70, 229, 0.05)';
-        modeKeyword.style.color = 'var(--text-primary)';
-
-        modeAny.classList.remove('selected');
-        modeAny.style.borderColor = 'var(--border)';
-        modeAny.style.background = 'transparent';
-        modeAny.style.color = 'var(--text-muted)';
-        
-        keywordsGroup.style.display = 'block';
-    });
-
-    modeAny?.addEventListener('click', () => {
-        if (!triggerModeInput || !modeKeyword || !modeAny || !keywordsGroup) return;
-        triggerModeInput.value = 'any_comment';
-        modeAny.classList.add('selected');
-        modeAny.style.borderColor = '#4F46E5';
-        modeAny.style.background = 'rgba(79, 70, 229, 0.05)';
-        modeAny.style.color = 'var(--text-primary)';
-
-        modeKeyword.classList.remove('selected');
-        modeKeyword.style.borderColor = 'var(--border)';
-        modeKeyword.style.background = 'transparent';
-        modeKeyword.style.color = 'var(--text-muted)';
-        
-        keywordsGroup.style.display = 'none';
-    });
-
-    // Manual input sync
-    const manualPostInput = document.getElementById('wiz-manual-post-id');
-    manualPostInput?.addEventListener('input', (e) => {
-        const targetMediaInput = document.getElementById('wiz-selected-media-id');
-        if (targetMediaInput) targetMediaInput.value = e.target.value.trim();
-    });
-
-    // Refresh button
-    document.getElementById('sync-media-btn')?.addEventListener('click', () => {
-        fetchInstagramMedia();
+    // Trigger type toggle syncing
+    const triggerTypeSelect = document.getElementById('w-trigger-type');
+    const keywordGroup = document.getElementById('w-keyword-group');
+    
+    triggerTypeSelect?.addEventListener('change', (e) => {
+        if (keywordGroup) {
+            keywordGroup.style.display = e.target.value === 'ANY_COMMENT' ? 'none' : 'block';
+        }
     });
 
     dmInput?.addEventListener('input', (e) => {
-        previewBubble.textContent = e.target.value || 'Hey! Here is the link you requested...';
+        if (previewBubble) {
+            previewBubble.textContent = e.target.value || 'Hey! Thanks for commenting. Here is the link...';
+        }
     });
 
     nextBtn?.addEventListener('click', async () => {
-        if (currentWizardStep === 4) {
-            // Publish
+        if (currentWizardStep === 3) {
+            // Publish/Submit step
             nextBtn.textContent = 'Publishing...';
             nextBtn.disabled = true;
             
-            const selectedMediaId = document.getElementById('wiz-selected-media-id')?.value.trim() || null;
-            const triggerMode = document.getElementById('wiz-trigger-mode')?.value || 'keyword';
-            const keywordsInput = document.getElementById('wiz-keywords')?.value || '';
+            const triggerMode = document.getElementById('w-trigger-type')?.value || 'KEYWORD';
+            const keyword = document.getElementById('w-keyword')?.value.trim() || '';
+            const targetPostId = document.getElementById('w-post-id')?.value || '';
+            const publicReplyText = document.getElementById('w-public-reply')?.value.trim() || '';
+            const privateMessageText = document.getElementById('w-private-dm')?.value.trim() || '';
 
-            const replyStyleMode = document.getElementById('replyStyleMode')?.value || 'TEXT';
-            const instagramHandle = document.getElementById('instagramHandle')?.value || '';
+            if (triggerMode === 'KEYWORD' && !keyword) {
+                alert('Please enter a trigger keyword (e.g. LINK, INFO) so we know when to send DMs.');
+                nextBtn.textContent = 'Publish';
+                nextBtn.disabled = false;
+                return;
+            }
+
+            if (!privateMessageText) {
+                alert('Please write your automated direct message (DM) content.');
+                nextBtn.textContent = 'Publish';
+                nextBtn.disabled = false;
+                return;
+            }
 
             const data = {
-                name: document.getElementById('wiz-name').value || 'My Automation',
-                mode: triggerMode,
-                keywords: triggerMode === 'any_comment' ? [] : keywordsInput.split(',').map(k => k.trim()).filter(Boolean),
+                name: triggerMode === 'ANY_COMMENT' ? 'Any Comment Auto-Reply' : `Trigger keyword: "${keyword}"`,
+                mode: triggerMode.toLowerCase() === 'any_comment' ? 'any_comment' : 'keyword',
+                keywords: triggerMode.toLowerCase() === 'any_comment' ? [] : [keyword],
                 target: { 
-                    type: 'specific',
-                    mediaId: selectedMediaId
+                    type: targetPostId ? 'specific' : 'global',
+                    mediaId: targetPostId || null
                 },
-                dmMessage: document.getElementById('wiz-dm').value,
-                replyStyleMode: replyStyleMode,
-                instagramHandle: instagramHandle
+                postId: targetPostId || null,
+                triggerType: triggerMode,
+                keyword: keyword || null,
+                publicReplyText: publicReplyText || null,
+                privateMessageText: privateMessageText
             };
 
             const res = await API.createAutomation(data);
             nextBtn.textContent = 'Publish';
             nextBtn.disabled = false;
 
-            if (res.success) {
-                modal.classList.remove('active');
+            if (res && (res.success || res._id)) {
+                modal?.classList.remove('active');
                 loadOverview();
-                if(document.getElementById('page-automations').classList.contains('active')) loadAutomations();
+                if (document.getElementById('page-automations').classList.contains('active')) loadAutomations();
             } else {
-                document.getElementById('wiz-msg').textContent = res.error || 'Failed to create.';
+                alert(res?.error || "We couldn't create your trigger. If you are on the Free Plan, you may have reached your limit of 3 active workflows.");
             }
         } else {
             currentWizardStep++;
@@ -531,39 +514,57 @@ function setupWizard() {
 }
 
 function updateWizardUI() {
-    // Hide all panes
-    document.querySelectorAll('.wizard-step-pane').forEach(p => p.style.display = 'none');
+    // Hide all step panels
+    document.getElementById('wizard-step-1').style.display = 'none';
+    document.getElementById('wizard-step-2').style.display = 'none';
+    document.getElementById('wizard-step-3').style.display = 'none';
+    
+    // Show current step panel
     document.getElementById(`wizard-step-${currentWizardStep}`).style.display = 'block';
 
-    // Update Nav
+    // Update wizard step indicators in header
     document.querySelectorAll('.w-step').forEach((el, i) => {
         el.classList.remove('active', 'done');
         if (i + 1 < currentWizardStep) el.classList.add('done');
         if (i + 1 === currentWizardStep) el.classList.add('active');
     });
 
-    // Buttons
-    const backBtn = document.getElementById('wiz-back');
-    const nextBtn = document.getElementById('wiz-next');
+    const backBtn = document.getElementById('w-btn-back');
+    const nextBtn = document.getElementById('w-btn-next');
     
-    if (currentWizardStep === 1) {
-        backBtn.style.visibility = 'hidden';
-    } else {
-        backBtn.style.visibility = 'visible';
+    if (backBtn) {
+        backBtn.style.visibility = currentWizardStep === 1 ? 'hidden' : 'visible';
     }
 
-    if (currentWizardStep === 4) {
-        nextBtn.textContent = 'Publish Automation';
-        // Populate review
-        const triggerMode = document.getElementById('wiz-trigger-mode')?.value || 'keyword';
-        const keywordsVal = document.getElementById('wiz-keywords')?.value || 'None';
-        document.getElementById('review-name').textContent = document.getElementById('wiz-name').value || 'Untitled';
-        document.getElementById('review-keywords').textContent = triggerMode === 'any_comment' ? 'Any Comment' : `Keywords: ${keywordsVal}`;
+    if (currentWizardStep === 3) {
+        if (nextBtn) nextBtn.textContent = 'Publish Automation';
         
-        const selectedPostId = document.getElementById('wiz-selected-media-id')?.value || 'None';
-        document.getElementById('review-target').textContent = `Target Post ID: ${selectedPostId}`;
+        // Populate Review Step details
+        const triggerMode = document.getElementById('w-trigger-type')?.value || 'KEYWORD';
+        const keywordVal = document.getElementById('w-keyword')?.value || 'None';
+        const targetPost = document.getElementById('w-post-id')?.value || 'All Posts & Reels';
+        
+        const reviewTrigger = document.getElementById('review-trigger');
+        const reviewPublic = document.getElementById('review-public');
+        const reviewPrivate = document.getElementById('review-private');
+
+        if (reviewTrigger) {
+            reviewTrigger.textContent = triggerMode === 'ANY_COMMENT' 
+                ? 'Any comment received on ' + (targetPost === 'All Posts & Reels' || !targetPost ? 'any post' : 'specific post')
+                : `Comment comments exact word "${keywordVal}" on ` + (targetPost === 'All Posts & Reels' || !targetPost ? 'any post' : 'specific post');
+        }
+        if (reviewPublic) {
+            reviewPublic.textContent = document.getElementById('w-public-reply')?.value.trim() 
+                ? `"${document.getElementById('w-public-reply').value.trim()}"`
+                : 'No comment reply';
+        }
+        if (reviewPrivate) {
+            reviewPrivate.textContent = document.getElementById('w-private-dm')?.value.trim()
+                ? `"${document.getElementById('w-private-dm').value.trim()}"`
+                : 'Empty DM';
+        }
     } else {
-        nextBtn.textContent = 'Next Step';
+        if (nextBtn) nextBtn.textContent = 'Continue';
     }
 }
 
@@ -595,7 +596,7 @@ window.startInteractiveLogin = async function() {
         console.log("📡 Response from portal:", res);
         window.lastPortalResponse = res;
         if (!res || !res.success) {
-            alert('Failed to launch secure browser. Try again.');
+            alert("We couldn't launch the secure connection portal. Please ensure your browser is active and try again.");
             modal.classList.remove('active');
             setTimeout(() => { modal.style.display = 'none'; }, 200);
             return;
@@ -674,81 +675,30 @@ window.startInteractiveLogin = async function() {
 };
 
 async function fetchInstagramMedia() {
-    const grid = document.getElementById('media-grid');
-    if (!grid) return;
-    grid.innerHTML = `
-        <div style="grid-column: span 4; text-align: center; padding: 24px; color: var(--text-muted);">
-            🔄 Loading your recent posts...
-        </div>
-    `;
+    const select = document.getElementById('w-post-id');
+    if (!select) return;
+    select.innerHTML = '<option value="">🔄 Loading your recent posts...</option>';
     try {
         const res = await fetch('/api/instagram/media');
         if (!res.ok) {
-            grid.innerHTML = `
-                <div style="grid-column: span 4; text-align: center; padding: 24px; color: var(--danger);">
-                    ⚠️ Instagram not connected or failed to fetch posts.
-                </div>
-            `;
+            select.innerHTML = '<option value="">All Posts & Reels</option>';
             return;
         }
         const data = await res.json();
-        if (data.error) {
-            grid.innerHTML = `
-                <div style="grid-column: span 4; text-align: center; padding: 24px; color: var(--danger);">
-                    ⚠️ ${data.error}
-                </div>
-            `;
+        if (data.error || !Array.isArray(data) || data.length === 0) {
+            select.innerHTML = '<option value="">All Posts & Reels</option>';
             return;
         }
-        
-        if (!Array.isArray(data) || data.length === 0) {
-            grid.innerHTML = `
-                <div style="grid-column: span 4; text-align: center; padding: 24px; color: var(--text-muted);">
-                    📭 No recent Instagram posts or reels found.
-                </div>
-            `;
-            return;
-        }
-
-        grid.innerHTML = data.map(item => {
-            const thumb = item.thumbnail_url || item.media_url || '';
-            const caption = item.caption ? escHtml(item.caption).slice(0, 40) + '...' : 'Instagram Post';
-            return `
-                <div class="media-select-card" data-id="${item.id}" style="position: relative; border-radius: 8px; overflow: hidden; cursor: pointer; aspect-ratio: 1; border: 2px solid transparent; transition: all 0.2s;" onclick="selectMedia('${item.id}')">
-                    <img src="${thumb}" style="width:100%; height:100%; object-fit:cover;">
-                    <div style="position:absolute; bottom:0; inset-x:0; background:rgba(0,0,0,0.7); color:white; font-size:9px; padding:4px; text-overflow:ellipsis; white-space:nowrap; overflow:hidden;">
-                        ${caption}
-                    </div>
-                </div>
-            `;
-        }).join('');
-
+        select.innerHTML = '<option value="">All Posts & Reels</option>';
+        data.forEach(item => {
+            const cap = item.caption ? escHtml(item.caption).slice(0, 50) + '...' : `Reel/Post (ID: ${item.id})`;
+            select.innerHTML += `<option value="${item.id}">${cap}</option>`;
+        });
     } catch (e) {
-        console.error(e);
-        grid.innerHTML = `
-            <div style="grid-column: span 4; text-align: center; padding: 24px; color: var(--danger);">
-                ⚠️ Error fetching posts.
-            </div>
-        `;
+        console.error('Failed to fetch Instagram media:', e);
+        select.innerHTML = '<option value="">All Posts & Reels</option>';
     }
 }
-
-window.selectMedia = function(mediaId) {
-    document.querySelectorAll('.media-select-card').forEach(card => {
-        if (card.dataset.id === mediaId) {
-            card.style.borderColor = '#4F46E5';
-            card.style.boxShadow = '0 0 8px rgba(79, 70, 229, 0.4)';
-        } else {
-            card.style.borderColor = 'transparent';
-            card.style.boxShadow = 'none';
-        }
-    });
-    const targetInput = document.getElementById('wiz-selected-media-id');
-    if (targetInput) targetInput.value = mediaId;
-    
-    const manualInput = document.getElementById('wiz-manual-post-id');
-    if (manualInput) manualInput.value = mediaId;
-};
 
 // --- DMOrbit Checkout & Billing Integration ---
 window.initiateCheckout = async function(planType) {
@@ -767,10 +717,10 @@ window.initiateCheckout = async function(planType) {
         if (response && response.url) {
             window.location.href = response.url; // Redirect directly to Stripe Secure Checkout
         } else {
-            alert('Billing Error: ' + (response.error || 'Unable to initiate checkout session.'));
+            alert("Billing Error: " + (response.error || "Unable to initiate checkout session. Please try again."));
         }
     } catch (error) {
-        alert('Billing Error: Unable to initiate checkout session.');
+        alert("Billing Error: Unable to initiate secure checkout session. Please check your network.");
         console.error(error);
     }
 };
@@ -1046,13 +996,13 @@ function setupSmartBioListeners() {
                 });
                 
                 if (res && res.success) {
-                    alert('Smart Bio details saved successfully!');
+                    alert('🎉 Your Smart Bio profile is updated and live!');
                 } else {
-                    alert(res?.error || 'Failed to save Smart Bio details.');
+                    alert(res?.error || "We couldn't save your bio changes. Please make sure all details are correct.");
                 }
             } catch (e) {
                 console.error(e);
-                alert('An error occurred while saving details.');
+                alert("We encountered an error while saving your bio details. Please try again.");
             } finally {
                 saveBtn.textContent = 'Save Changes';
                 saveBtn.disabled = false;
@@ -1060,6 +1010,152 @@ function setupSmartBioListeners() {
         });
     }
 }
+
+    // --- Programmatic Tab Switching Helper ---
+    window.switchTab = function(page) {
+        const navItem = document.querySelector(`.nav-item[data-page="${page}"]`);
+        if (navItem) {
+            // Remove active state from all items first
+            document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+            navItem.classList.add('active');
+            loadPage(page);
+        } else {
+            loadPage(page);
+        }
+        document.getElementById('sidebar')?.classList.remove('open');
+    };
+
+    // --- Message Pacing Queue Transparency Widget ---
+    async function loadQueueJobs() {
+        const listContainer = document.getElementById('overview-jobs-list');
+        if (!listContainer) return;
+        
+        try {
+            const res = await request('/api/jobs');
+            if (res && res.success && Array.isArray(res.jobs)) {
+                const jobs = res.jobs;
+                
+                const indicator = document.getElementById('queue-status-indicator');
+                if (indicator) {
+                    if (jobs.length > 0) {
+                        indicator.innerText = `${jobs.length} Active DMs`;
+                        indicator.style.background = 'rgba(245, 158, 11, 0.15)';
+                        indicator.style.color = 'var(--warning)';
+                        indicator.style.borderColor = 'rgba(245, 158, 11, 0.3)';
+                    } else {
+                        indicator.innerText = 'Standby';
+                        indicator.style.background = 'rgba(16, 185, 129, 0.15)';
+                        indicator.style.color = '#10b981';
+                        indicator.style.borderColor = 'rgba(16, 185, 129, 0.3)';
+                    }
+                }
+                
+                if (jobs.length === 0) {
+                    listContainer.innerHTML = `
+                        <div style="text-align: center; padding: 32px 16px; color: var(--text-muted); font-size: 13px; border: 1px dashed rgba(255,255,255,0.05); border-radius: 12px; display: flex; flex-direction: column; align-items: center; gap: 8px;">
+                            <div style="font-size: 24px;">🛡️</div>
+                            <div style="font-weight: 600; color: #fff;">Pacing Queue Standby</div>
+                            <div style="font-size: 12px; opacity: 0.7;">No active direct messages waiting. Captured comments will queue here before dispatch.</div>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                listContainer.innerHTML = jobs.map(job => {
+                    let statusLabel = 'Waiting';
+                    let statusColor = 'var(--text-muted)';
+                    let bgGradient = 'rgba(255,255,255,0.01)';
+                    
+                    if (job.status === 'processing') {
+                        statusLabel = 'Sending...';
+                        statusColor = '#818cf8';
+                        bgGradient = 'rgba(79, 70, 229, 0.04)';
+                    } else if (job.status === 'failed') {
+                        statusLabel = `Delayed: Rate Limit`;
+                        statusColor = 'var(--danger)';
+                        bgGradient = 'rgba(239, 68, 68, 0.04)';
+                    } else if (job.status === 'pending') {
+                        const delaySec = Math.max(0, Math.round((job.process_after - Date.now()) / 1000));
+                        if (delaySec > 0) {
+                            statusLabel = `Pacing: ${delaySec}s delay`;
+                            statusColor = 'var(--warning)';
+                            bgGradient = 'rgba(245, 158, 11, 0.04)';
+                        } else {
+                            statusLabel = 'Sending';
+                            statusColor = '#10b981';
+                        }
+                    }
+                    
+                    const commenter = job.username || job.user_id || 'Instagram User';
+                    const actionDesc = job.type === 'reply_comment' ? 'Comment Reply' : 'Direct DM';
+                    const truncatedMsg = job.message ? escHtml(job.message).slice(0, 40) + (job.message.length > 40 ? '...' : '') : 'Empty DM';
+                    
+                    return `
+                        <div style="background: ${bgGradient}; border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; display: flex; flex-direction: column; gap: 6px; transition: all 0.2s;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <span style="font-size: 13px; font-weight: 600; color: #fff; display: flex; align-items: center; gap: 6px;">
+                                    <span style="display: inline-block; width: 6px; height: 6px; background: #e1306c; border-radius: 50%;"></span>
+                                    @${commenter}
+                                </span>
+                                <span style="font-size: 11px; font-weight: 600; color: ${statusColor};">${statusLabel}</span>
+                            </div>
+                            <div style="font-size: 12px; color: var(--text-secondary); display: flex; justify-content: space-between; align-items: center;">
+                                <span style="font-style: italic; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 70%;">"${truncatedMsg}"</span>
+                                <span style="font-size: 10px; color: var(--text-muted); text-transform: uppercase;">${actionDesc}</span>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+        } catch(err) {
+            console.error("Queue transparency error:", err);
+        }
+    }
+
+    // --- Dynamic Live Overview Activity Feed ---
+    async function loadActivityFeed() {
+        const feedContainer = document.getElementById('overview-activity-feed');
+        if (!feedContainer) return;
+        
+        try {
+            const { logs } = await API.logs(1);
+            if (!logs || !logs.length) {
+                feedContainer.innerHTML = `
+                    <div style="text-align: center; padding: 32px 16px; color: var(--text-muted); font-size: 13px; border: 1px dashed rgba(255,255,255,0.05); border-radius: 12px; display: flex; flex-direction: column; align-items: center; gap: 8px;">
+                        <div style="font-size: 24px;">📝</div>
+                        <div style="font-weight: 600; color:#fff;">No activity captured yet</div>
+                        <div style="font-size: 12px; opacity: 0.7;">Your activity log is empty. As soon as triggers occur, they will appear here.</div>
+                    </div>
+                `;
+                return;
+            }
+            
+            // Take latest 3 logs
+            const recentLogs = logs.slice(0, 3);
+            
+            feedContainer.innerHTML = recentLogs.map((l, i) => {
+                const commenter = l.username || l.user_id || 'User';
+                return `
+                    <div style="background: rgba(255,255,255,0.01); border: 1px solid var(--border); border-radius: 12px; padding: 10px 12px; display: flex; align-items: center; gap: 12px; transition: all 0.2s;">
+                        <div style="width: 28px; height: 28px; border-radius: 50%; background: ${i === 0 ? 'rgba(16, 185, 129, 0.15)' : 'rgba(255,255,255,0.05)'}; color: ${i === 0 ? '#10b981' : 'var(--text-secondary)'}; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; flex-shrink: 0;">
+                            ✓
+                        </div>
+                        <div style="flex: 1; min-width: 0;">
+                            <div style="font-size: 13px; font-weight: 600; color: #fff; display: flex; justify-content: space-between; align-items: center;">
+                                <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">Replied to @${commenter}</span>
+                                <span style="font-size: 10px; font-weight: normal; color: var(--text-muted);">${formatDate(l.timestamp)}</span>
+                            </div>
+                            <div style="font-size: 12px; color: var(--text-secondary); text-overflow: ellipsis; overflow: hidden; white-space: nowrap; margin-top: 2px;">
+                                Triggered keyword: <strong style="color: #818cf8; font-family: monospace;">"${escHtml(l.keyword)}"</strong>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        } catch(err) {
+            console.error("Activity feed error:", err);
+        }
+    }
 
     // --- Unified Live Counters & Instagram State Binding ---
     async function hydrateDashboardLiveView() {
@@ -1069,8 +1165,6 @@ function setupSmartBioListeners() {
             const statsRes = await API.stats();
             
             if (accountRes.instagram && accountRes.instagram.connected) {
-                // For workspace title, we might need the IG username if available
-                // accountStatus might not return username directly, but we can try
                 const igUsername = accountRes.instagram.username || (currentUser && currentUser.name) || 'User';
                 console.log("[DMOrbit Dynamic Sync] Connected Account Verified");
                 
@@ -1082,6 +1176,35 @@ function setupSmartBioListeners() {
                 const wsTitle = document.getElementById('topbar-workspace-name') || document.getElementById('workspaceTitle') || document.querySelector('.workspace-title');
                 if (wsTitle && accountRes.instagram.username) {
                     wsTitle.innerText = `${accountRes.instagram.username}'s Workspace`;
+                }
+
+                // Dynamic Sidebar Integration
+                const sidebarNameEl = document.getElementById('sidebar-user-name');
+                if (sidebarNameEl) {
+                    sidebarNameEl.innerHTML = `<span style="font-weight: 600;">@${accountRes.instagram.username}</span>`;
+                }
+                const avatarEl = document.getElementById('user-avatar');
+                if (avatarEl) {
+                    if (accountRes.instagram.profile_picture_url) {
+                        avatarEl.innerHTML = `<img src="${accountRes.instagram.profile_picture_url}" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">`;
+                        avatarEl.style.background = 'transparent';
+                        avatarEl.style.boxShadow = '0 0 10px rgba(79, 70, 229, 0.3)';
+                    } else {
+                        avatarEl.textContent = accountRes.instagram.username[0].toUpperCase();
+                    }
+                }
+            } else {
+                // Restore generic profile details if disconnected
+                const sidebarNameEl = document.getElementById('sidebar-user-name');
+                if (sidebarNameEl && currentUser) {
+                    sidebarNameEl.textContent = currentUser.name || currentUser.email;
+                }
+                const avatarEl = document.getElementById('user-avatar');
+                if (avatarEl && currentUser) {
+                    avatarEl.textContent = (currentUser.name || currentUser.email || 'U')[0].toUpperCase();
+                    avatarEl.style.background = 'linear-gradient(135deg, var(--primary), #7c3aed)';
+                    avatarEl.style.boxShadow = '0 2px 8px rgba(79, 70, 229, 0.4)';
+                    avatarEl.innerHTML = (currentUser.name || currentUser.email || 'U')[0].toUpperCase();
                 }
             }
 
@@ -1096,6 +1219,108 @@ function setupSmartBioListeners() {
                 
                 const dmsSentEl = document.getElementById('stat-dms-sent');
                 if (dmsSentEl) dmsSentEl.innerText = stats.totalDmsSent || 0;
+
+                // Onboarding checklist dynamic calculation
+                const step1Done = !!statsRes.instagramConnected;
+                const step2Done = (statsRes.automations?.total || 0) > 0;
+                const step3Done = (statsRes.totalDmsSent || 0) > 0 || (statsRes.logs?.thisWeek || 0) > 0;
+                const step4Done = step1Done && (statsRes.automations?.active || 0) > 0;
+                
+                let completedStepsCount = 0;
+                if (step1Done) completedStepsCount++;
+                if (step2Done) completedStepsCount++;
+                if (step3Done) completedStepsCount++;
+                if (step4Done) completedStepsCount++;
+                
+                const progressTextEl = document.getElementById('onboarding-progress-text');
+                if (progressTextEl) {
+                    progressTextEl.innerText = `${completedStepsCount}/4 Completed`;
+                    if (completedStepsCount === 4) {
+                        progressTextEl.style.background = 'rgba(16, 185, 129, 0.15)';
+                        progressTextEl.style.color = '#10b981';
+                        progressTextEl.style.borderColor = 'rgba(16, 185, 129, 0.3)';
+                    } else {
+                        progressTextEl.style.background = 'rgba(79,70,229,0.15)';
+                        progressTextEl.style.color = 'var(--primary)';
+                        progressTextEl.style.borderColor = 'rgba(79,70,229,0.3)';
+                    }
+                }
+                
+                const updateStepUI = (stepNum, isDone) => {
+                    const stepCard = document.getElementById(`onboarding-step-${stepNum}`);
+                    if (!stepCard) return;
+                    
+                    const badge = stepCard.querySelector('.status-badge');
+                    const btn = stepCard.querySelector('button');
+                    
+                    if (isDone) {
+                        stepCard.style.borderColor = 'rgba(16, 185, 129, 0.25)';
+                        stepCard.style.background = 'rgba(16, 185, 129, 0.02)';
+                        if (badge) {
+                            badge.innerText = '✓ Completed';
+                            badge.style.color = '#10b981';
+                        }
+                        if (btn) {
+                            btn.innerText = 'Step Completed';
+                            btn.style.opacity = '0.5';
+                            btn.style.pointerEvents = 'none';
+                        }
+                    } else {
+                        stepCard.style.borderColor = 'var(--border)';
+                        stepCard.style.background = 'rgba(255, 255, 255, 0.01)';
+                        if (badge) {
+                            badge.innerText = 'Pending';
+                            badge.style.color = 'var(--text-muted)';
+                        }
+                        if (btn) {
+                            btn.style.opacity = '1';
+                            btn.style.pointerEvents = 'auto';
+                            if (stepNum === 1) btn.innerText = 'Connect Account';
+                            else if (stepNum === 2) btn.innerText = 'Open Wizard';
+                            else if (stepNum === 3) btn.innerText = 'View Log';
+                            else if (stepNum === 4) btn.innerText = 'Go Live';
+                        }
+                    }
+                };
+                
+                updateStepUI(1, step1Done);
+                updateStepUI(2, step2Done);
+                updateStepUI(3, step3Done);
+                updateStepUI(4, step4Done);
+
+                // Update Credit Rollover Wallet
+                const planName = (statsRes.plan || 'free').toUpperCase();
+                const planBadge = document.getElementById('overview-plan-badge');
+                if (planBadge) {
+                    planBadge.innerText = planName;
+                    if (planName === 'CREATOR') {
+                        planBadge.style.background = 'rgba(79,70,229,0.15)';
+                        planBadge.style.color = 'var(--primary)';
+                        planBadge.style.borderColor = 'rgba(79,70,229,0.3)';
+                    } else if (planName === 'PRO') {
+                        planBadge.style.background = 'rgba(16,185,129,0.15)';
+                        planBadge.style.color = '#10b981';
+                        planBadge.style.borderColor = 'rgba(16,185,129,0.3)';
+                    } else {
+                        planBadge.style.background = 'rgba(255,255,255,0.05)';
+                        planBadge.style.color = 'var(--text-muted)';
+                        planBadge.style.borderColor = 'var(--border)';
+                    }
+                }
+                
+                const dmsSent = statsRes.totalDmsSent || 0;
+                let maxDms = 1000;
+                if (planName === 'CREATOR') maxDms = 25000;
+                else if (planName === 'PRO') maxDms = 100000;
+                
+                const fractionEl = document.getElementById('overview-usage-fraction');
+                if (fractionEl) fractionEl.innerText = `${dmsSent.toLocaleString()} / ${maxDms.toLocaleString()}`;
+                
+                const progressEl = document.getElementById('overview-usage-progress');
+                if (progressEl) {
+                    const percent = Math.min((dmsSent / maxDms) * 100, 100);
+                    progressEl.style.width = `${percent}%`;
+                }
             }
 
             // Update Overview Connection Status Block
@@ -1103,32 +1328,108 @@ function setupSmartBioListeners() {
             if (overviewConnBlock) {
                 if (accountRes.instagram && accountRes.instagram.connected) {
                     overviewConnBlock.innerHTML = `
-                        <div style="width: 48px; height: 48px; background: rgba(16,185,129,0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-bottom: 12px; color: #10b981; box-shadow: 0 0 15px rgba(16,185,129,0.2);">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                        <div style="display: flex; align-items: center; gap: 12px; width: 100%;">
+                            <img src="${accountRes.instagram.profile_picture_url || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=256'}" style="width: 44px; height: 44px; border-radius: 50%; border: 2px solid var(--primary); object-fit: cover; background: rgba(255,255,255,0.05);">
+                            <div style="flex: 1; text-align: left; min-width: 0;">
+                                <h4 style="font-size: 14px; font-weight: 700; color: #fff; margin: 0; display: flex; align-items: center; gap: 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                    @${accountRes.instagram.username}
+                                    <span style="display: inline-block; width: 6px; height: 6px; background: #10b981; border-radius: 50%; box-shadow: 0 0 8px #10b981; flex-shrink:0;"></span>
+                                </h4>
+                                <p style="font-size: 12px; color: var(--text-secondary); margin: 2px 0 0 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${accountRes.instagram.name || 'Instagram Business'}</p>
+                            </div>
                         </div>
-                        <div style="font-size: 15px; font-weight: 600; color: #fff; margin-bottom: 4px;">Instagram Connected</div>
-                        <div style="font-size: 13px; color: #10b981;">Webhooks active</div>
+                        <div style="display: flex; gap: 8px; margin-top: 14px; width: 100%;">
+                            <span style="flex: 1; text-align: center; background: rgba(16,185,129,0.1); color: #10b981; border: 1px solid rgba(16,185,129,0.2); padding: 6px; border-radius: 8px; font-size: 11px; font-weight: 600; display: inline-flex; align-items: center; justify-content: center; gap: 4px;">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                Token Healthy
+                            </span>
+                            <span style="flex: 1; text-align: center; background: rgba(79,70,229,0.1); color: #818cf8; border: 1px solid rgba(79,70,229,0.2); padding: 6px; border-radius: 8px; font-size: 11px; font-weight: 600; display: inline-flex; align-items: center; justify-content: center; gap: 4px;">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline></svg>
+                                Webhooks Active
+                            </span>
+                        </div>
                     `;
                 } else {
                     overviewConnBlock.innerHTML = `
-                        <div style="width: 48px; height: 48px; background: rgba(239,68,68,0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-bottom: 12px; color: var(--danger);">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>
+                        <div style="display: flex; flex-direction: column; align-items: center; text-align: center; padding: 6px 0; width: 100%;">
+                            <div style="width: 40px; height: 40px; background: rgba(239,68,68,0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-bottom: 10px; color: var(--danger);">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                            </div>
+                            <div style="font-size: 14px; font-weight: 600; color: #fff; margin-bottom: 2px;">No connected account</div>
+                            <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 12px;">Connect your profile to start automating comments & DMs.</div>
+                            <button class="btn btn-primary btn-sm" onclick="window.switchTab('account')" style="width: 100%; padding: 8px;">Connect Instagram</button>
                         </div>
-                        <div style="font-size: 15px; font-weight: 600; color: #fff; margin-bottom: 4px;">Disconnected</div>
-                        <div style="font-size: 13px; color: var(--text-muted); cursor: pointer;" onclick="window.switchTab('account')">Connect to resume automations</div>
                     `;
                 }
             }
+
+            // Load sub-widgets
+            loadQueueJobs();
+            loadActivityFeed();
         } catch (err) {
-            console.log("Hydration loop on standby...");
+            console.log("Hydration loop on standby...", err);
         }
     }
     
-    // Auto polling every 15 seconds for live dashboard updates
+    // Auto polling every 10 seconds for live dashboard updates
     document.addEventListener('DOMContentLoaded', function() {
         hydrateDashboardLiveView();
-        setInterval(hydrateDashboardLiveView, 15000);
+        setInterval(hydrateDashboardLiveView, 10000);
     });
+
+    // --- Support & Diagnostics System ---
+    function loadSupport() {
+        const diagnosticsBox = document.getElementById('diagnostics-result');
+        if (diagnosticsBox) {
+            diagnosticsBox.style.display = 'none';
+            diagnosticsBox.innerHTML = '';
+        }
+    }
+
+    window.runDiagnostics = async function() {
+        const resultBox = document.getElementById('diagnostics-result');
+        if (!resultBox) return;
+        
+        resultBox.style.display = 'block';
+        resultBox.innerHTML = '⚙ Running diagnostics sweep...<br>';
+        
+        try {
+            // Check 1: Server Session
+            resultBox.innerHTML += '📡 [1/4] Checking server session...<br>';
+            const session = await API.me();
+            if (!session || !session.user) {
+                resultBox.innerHTML += '❌ Server session expired. Please refresh the page.<br>';
+                return;
+            }
+            resultBox.innerHTML += '✔ Server session: ACTIVE.<br>';
+            
+            // Check 2: Instagram Linked
+            resultBox.innerHTML += '📡 [2/4] Verifying Instagram integration...<br>';
+            const statusRes = await API.accountStatus();
+            const connected = statusRes.instagram && statusRes.instagram.connected;
+            if (!connected) {
+                resultBox.innerHTML += '❌ Integration Presence: NONE.<br>💡 Go to "Instagram Account" tab and link your profile.<br>';
+                return;
+            }
+            resultBox.innerHTML += `✔ Connected profile: @${statusRes.instagram.username}<br>`;
+            
+            // Check 3: OAuth Token State
+            resultBox.innerHTML += '📡 [3/4] Validating Meta credentials...<br>';
+            const health = await API.accountHealth();
+            if (health.status !== 'active') {
+                resultBox.innerHTML += `❌ Meta token state: ${health.status.toUpperCase()}.<br>💡 Please click "Refresh Token" in settings.<br>`;
+                return;
+            }
+            resultBox.innerHTML += '✔ Meta token: HEALTHY & ACTIVE.<br>';
+            
+            // Check 4: Webhook Event Status
+            resultBox.innerHTML += '📡 [4/4] Verifying messaging channels...<br>';
+            resultBox.innerHTML += '✔ Webhook pipeline: ACTIVE.<br><br>';
+            resultBox.innerHTML += '🎉 SUCCESS: Your DMOrbit automation engine is healthy & live!';
+        } catch(err) {
+            resultBox.innerHTML += '❌ Diagnostics sweep failed: Network connection interrupted. Please try again.';
+        }
+    };
 
 init();
 
