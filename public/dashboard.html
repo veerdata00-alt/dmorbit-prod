@@ -66,6 +66,12 @@
                     </span>
                     <span>Billing & Plan</span>
                 </a>
+                <a href="#" class="nav-item" data-page="support">
+                    <span class="nav-icon">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line><circle cx="12" cy="12" r="10"></circle></svg>
+                    </span>
+                    <span>Help & Support</span>
+                </a>
             </nav>
 
             <div class="sidebar-footer">
@@ -133,48 +139,166 @@
                     </div>
                 </div>
 
-                <!-- Secondary Grid -->
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    
-                    <!-- Getting Started / Quick Actions -->
-                    <div class="lg:col-span-2" style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 16px; padding: 24px;">
-                        <h3 style="font-size: 16px; font-weight: 600; color: #fff; margin-bottom: 20px; display: flex; align-items: center; gap: 8px;">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--primary);"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
-                            Quick Start Templates
-                        </h3>
-                        <div style="display: flex; flex-direction: column; gap: 12px;">
-                            <div class="template-card" onclick="window.openWizard('Lead Magnet')" style="background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.03); border-radius: 12px; padding: 16px; display: flex; align-items: center; gap: 16px; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.03)'; this.style.borderColor='rgba(79,70,229,0.3)'" onmouseout="this.style.background='rgba(0,0,0,0.2)'; this.style.borderColor='rgba(255,255,255,0.03)'">
-                                <div style="width: 40px; height: 40px; border-radius: 10px; background: rgba(79,70,229,0.1); color: var(--primary); display: flex; align-items: center; justify-content: center;">
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                <!-- Onboarding step-by-step checklist -->
+                <div id="overview-onboarding-widget" class="card" style="margin-bottom: 32px; background: linear-gradient(180deg, rgba(79,70,229,0.05) 0%, rgba(255,255,255,0.01) 100%);">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <div>
+                            <h3 style="font-size: 16px; font-weight: 600; color: #fff; display: flex; align-items: center; gap: 8px;">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--primary);"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                                Creator Setup Checklist
+                            </h3>
+                            <p style="font-size: 13px; color: var(--text-muted); margin-top: 4px;">Complete these steps to activate your DM automation engine.</p>
+                        </div>
+                        <div style="font-size: 12px; font-weight: 600; color: var(--primary); background: rgba(79,70,229,0.15); border: 1px solid rgba(79,70,229,0.3); padding: 4px 10px; border-radius: 12px;">
+                            <span id="onboarding-progress-text">0/4 Completed</span>
+                        </div>
+                    </div>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px;">
+                        <!-- Step 1 -->
+                        <div id="onboarding-step-1" style="background: rgba(255,255,255,0.01); border: 1px solid var(--border); border-radius: 12px; padding: 16px; display: flex; flex-direction: column; justify-content: space-between; transition: all 0.2s;">
+                            <div>
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                                    <span style="font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--text-muted); tracking-wider;">Step 1</span>
+                                    <span class="status-badge" style="font-size: 11px; font-weight: 600; color: var(--text-muted);">Pending</span>
                                 </div>
-                                <div>
-                                    <div style="font-size: 14px; font-weight: 600; color: #fff;">Lead Magnet Delivery</div>
-                                    <div style="font-size: 13px; color: var(--text-muted);">Send a link or PDF automatically on comment.</div>
-                                </div>
+                                <h4 style="font-size: 14px; font-weight: 600; color: #fff; margin-bottom: 4px;">Connect Instagram</h4>
+                                <p style="font-size: 12px; color: var(--text-secondary); line-height: 1.4; margin-bottom: 16px;">Link your Instagram Business profile via Meta OAuth securely.</p>
                             </div>
-                            <div class="template-card" onclick="window.openWizard('Webinar Registration')" style="background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.03); border-radius: 12px; padding: 16px; display: flex; align-items: center; gap: 16px; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.03)'; this.style.borderColor='rgba(79,70,229,0.3)'" onmouseout="this.style.background='rgba(0,0,0,0.2)'; this.style.borderColor='rgba(255,255,255,0.03)'">
-                                <div style="width: 40px; height: 40px; border-radius: 10px; background: rgba(16,185,129,0.1); color: #10b981; display: flex; align-items: center; justify-content: center;">
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                            <button class="btn btn-primary btn-sm" onclick="window.switchTab('account')" style="width: 100%;">Connect Account</button>
+                        </div>
+                        <!-- Step 2 -->
+                        <div id="onboarding-step-2" style="background: rgba(255,255,255,0.01); border: 1px solid var(--border); border-radius: 12px; padding: 16px; display: flex; flex-direction: column; justify-content: space-between; transition: all 0.2s;">
+                            <div>
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                                    <span style="font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--text-muted); tracking-wider;">Step 2</span>
+                                    <span class="status-badge" style="font-size: 11px; font-weight: 600; color: var(--text-muted);">Pending</span>
                                 </div>
-                                <div>
-                                    <div style="font-size: 14px; font-weight: 600; color: #fff;">Webinar Registration</div>
-                                    <div style="font-size: 13px; color: var(--text-muted);">Capture event signups from reels directly.</div>
+                                <h4 style="font-size: 14px; font-weight: 600; color: #fff; margin-bottom: 4px;">Create Automation</h4>
+                                <p style="font-size: 12px; color: var(--text-secondary); line-height: 1.4; margin-bottom: 16px;">Set up your first comment-to-DM trigger keyword flow.</p>
+                            </div>
+                            <button class="btn btn-secondary btn-sm" onclick="window.openWizard()" style="width: 100%;">Open Wizard</button>
+                        </div>
+                        <!-- Step 3 -->
+                        <div id="onboarding-step-3" style="background: rgba(255,255,255,0.01); border: 1px solid var(--border); border-radius: 12px; padding: 16px; display: flex; flex-direction: column; justify-content: space-between; transition: all 0.2s;">
+                            <div>
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                                    <span style="font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--text-muted); tracking-wider;">Step 3</span>
+                                    <span class="status-badge" style="font-size: 11px; font-weight: 600; color: var(--text-muted);">Pending</span>
                                 </div>
+                                <h4 style="font-size: 14px; font-weight: 600; color: #fff; margin-bottom: 4px;">Test Trigger</h4>
+                                <p style="font-size: 12px; color: var(--text-secondary); line-height: 1.4; margin-bottom: 16px;">Write a test comment on your post with the trigger keyword.</p>
+                            </div>
+                            <button class="btn btn-secondary btn-sm" onclick="window.switchTab('logs')" style="width: 100%;">View Log</button>
+                        </div>
+                        <!-- Step 4 -->
+                        <div id="onboarding-step-4" style="background: rgba(255,255,255,0.01); border: 1px solid var(--border); border-radius: 12px; padding: 16px; display: flex; flex-direction: column; justify-content: space-between; transition: all 0.2s;">
+                            <div>
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                                    <span style="font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--text-muted); tracking-wider;">Step 4</span>
+                                    <span class="status-badge" style="font-size: 11px; font-weight: 600; color: var(--text-muted);">Pending</span>
+                                </div>
+                                <h4 style="font-size: 14px; font-weight: 600; color: #fff; margin-bottom: 4px;">Go Live & Grow</h4>
+                                <p style="font-size: 12px; color: var(--text-secondary); line-height: 1.4; margin-bottom: 16px;">Promote your keyword in Reels and watch DMs fire automatically.</p>
+                            </div>
+                            <button class="btn btn-secondary btn-sm" onclick="window.switchTab('billing')" style="width: 100%;">Check Rollover</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Secondary Grid -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 32px;" class="overview-details-grid grid grid-cols-1 lg:grid-cols-2">
+                    <!-- Left column: Message Pacing Queue -->
+                    <div class="card" style="display: flex; flex-direction: column; height: 100%;">
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px;">
+                            <div>
+                                <h3 style="font-size: 16px; font-weight: 600; color: #fff; display: flex; align-items: center; gap: 8px;">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--warning);"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                                    Meta Safe-Pacing Queue
+                                </h3>
+                                <p style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">DMs are paced dynamically (5-15s delay) to stay 100% compliant with Meta spam regulations.</p>
+                            </div>
+                            <span id="queue-status-indicator" style="font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 12px; background: rgba(255,255,255,0.05); color: var(--text-muted); border: 1px solid transparent;">
+                                Standby
+                            </span>
+                        </div>
+                        
+                        <div id="overview-jobs-list" style="flex: 1; display: flex; flex-direction: column; gap: 12px;">
+                            <!-- Queue jobs list or empty state -->
+                            <div style="text-align: center; padding: 32px 16px; color: var(--text-muted); font-size: 13px; border: 1px dashed rgba(255,255,255,0.05); border-radius: 12px; display: flex; flex-direction: column; align-items: center; gap: 8px;">
+                                <div style="font-size: 24px;">🛡️</div>
+                                <div style="font-weight: 600; color:#fff;">Pacing Queue Standby</div>
+                                <div style="font-size: 12px; opacity: 0.7;">No active direct messages waiting. Captured comments will queue here before dispatch.</div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Connection Status -->
-                    <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 16px; padding: 24px; display: flex; flex-direction: column;">
-                        <h3 style="font-size: 16px; font-weight: 600; color: #fff; margin-bottom: 20px; display: flex; align-items: center; gap: 8px;">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--text-muted);"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect><line x1="12" y1="18" x2="12.01" y2="18"></line></svg>
-                            Connection Health
-                        </h3>
-                        <div id="overview-connection-status" style="flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;">
-                            <div style="width: 48px; height: 48px; background: rgba(255,255,255,0.05); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-bottom: 12px; color: var(--text-muted);">
-                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M2.13 15.57a9 9 0 1 0 16.74-6.4M2.5 22v-6h6M21.87 8.43a9 9 0 1 0-16.74 6.4"></path></svg>
+                    <!-- Right column: Recent Activity Feed (Live Feed) -->
+                    <div class="card" style="display: flex; flex-direction: column; height: 100%;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                            <h3 style="font-size: 16px; font-weight: 600; color: #fff; display: flex; align-items: center; gap: 8px;">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--primary);"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>
+                                Live Activity Feed
+                            </h3>
+                            <button class="btn btn-secondary btn-sm" onclick="window.switchTab('logs')" style="padding: 4px 8px; font-size: 11px;">View All Logs</button>
+                        </div>
+                        
+                        <div id="overview-activity-feed" style="flex: 1; display: flex; flex-direction: column; gap: 12px;">
+                            <!-- Populated dynamically with log timelines -->
+                            <div style="text-align: center; padding: 32px 16px; color: var(--text-muted); font-size: 13px; border: 1px dashed rgba(255,255,255,0.05); border-radius: 12px; display: flex; flex-direction: column; align-items: center; gap: 8px;">
+                                <div style="font-size: 24px;">📝</div>
+                                <div style="font-weight: 600; color:#fff;">No activity captured yet</div>
+                                <div style="font-size: 12px; opacity: 0.7;">Start commenting on your posts using trigger keywords to see live events.</div>
                             </div>
-                            <div style="font-size: 14px; color: var(--text-secondary); margin-bottom: 16px;">Checking Instagram connection...</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Integration Security & Rollover credits Grid -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;" class="grid grid-cols-1 lg:grid-cols-2">
+                    <!-- Instagram Connection Card -->
+                    <div class="card" style="display: flex; flex-direction: column; justify-content: space-between;">
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px;">
+                            <div>
+                                <h3 style="font-size: 15px; font-weight: 600; color: #fff; display: flex; align-items: center; gap: 8px;">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--success);"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l-7 4a2 2 0 0 0 2 0l7-4a2 2 0 0 0 1-1.73z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+                                    Integration Security
+                                </h3>
+                                <p style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">Official Meta OAuth integration ensures 100% security. We never store or ask for your Instagram password.</p>
+                            </div>
+                        </div>
+                        <div id="overview-connection-status">
+                            <!-- Checked & Hydrated dynamically by JS -->
+                            <div style="display: flex; align-items: center; gap: 12px; padding: 12px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; justify-content: center; color: var(--text-muted); font-size: 13px;">
+                                Checking Connection Health...
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Credit Rollover card -->
+                    <div class="card" style="display: flex; flex-direction: column; justify-content: space-between;">
+                        <div>
+                            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
+                                <h3 style="font-size: 15px; font-weight: 600; color: #fff; display: flex; align-items: center; gap: 8px;">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--primary);"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+                                    Rollover Credit Wallet
+                                </h3>
+                                <span id="overview-plan-badge" style="font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 10px; background: rgba(79,70,229,0.15); color: var(--primary); border: 1px solid rgba(79,70,229,0.3); text-transform: uppercase;">FREE</span>
+                            </div>
+                            <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 16px;">Unused paid credits automatically roll over month-to-month. Restores on subscription renewal.</p>
+                        </div>
+                        
+                        <div>
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                                <span style="font-size: 13px; font-weight: 500; color: #fff;" id="overview-usage-label">Direct Messages Sent</span>
+                                <span style="font-size: 12px; font-weight: 600; color: var(--text-secondary);" id="overview-usage-fraction">0 / 50</span>
+                            </div>
+                            <div style="height: 6px; background: rgba(255,255,255,0.05); border-radius: 3px; overflow: hidden; margin-bottom: 8px;">
+                                <div id="overview-usage-progress" style="height: 100%; width: 0%; background: linear-gradient(90deg, #4f46e5, #ec4899); border-radius: 3px; transition: width 0.5s ease;"></div>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <span style="font-size: 11px; color: var(--text-muted);" id="overview-usage-reset">Resets monthly</span>
+                                <button class="btn btn-ghost btn-sm" onclick="window.switchTab('billing')" style="padding: 2px 6px; font-size: 11px; color: var(--primary); text-decoration: none; border: none; background: transparent;">Upgrade Plan →</button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -481,6 +605,82 @@
                             
                             <button class="btn btn-secondary" style="width: 100%; margin-bottom: 12px;" onclick="window.purchaseTopUp(10000)">+ 10,000 DMs (₹199)</button>
                             <button class="btn btn-primary" style="width: 100%;" onclick="window.purchaseTopUp(50000)">+ 50,000 DMs (₹799)</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- HELP & SUPPORT PAGE -->
+            <div class="page" id="page-support">
+                <div class="hero-section" style="margin-bottom: 32px;">
+                    <div class="hero-content">
+                        <h2>Help & Support Hub</h2>
+                        <p>Self-serve troubleshooting guides and direct human assistance.</p>
+                    </div>
+                    <a href="mailto:dmorbitapp@gmail.com?subject=DMOrbit Creator Support Request" class="btn btn-primary" style="text-decoration:none;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+                        Email Support
+                    </a>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 overview-details-grid" style="display: grid; grid-template-columns: 2fr 1fr; gap: 24px;">
+                    <!-- FAQ Grid -->
+                    <div class="lg:col-span-2" style="display: flex; flex-direction: column; gap: 20px;">
+                        <div class="card">
+                            <h3 style="font-size: 16px; font-weight: 600; color: #fff; margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--primary);"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+                                Frequently Asked Questions
+                            </h3>
+                            
+                            <div style="display: flex; flex-direction: column; gap: 20px;">
+                                <div>
+                                    <h4 style="font-size: 14px; font-weight: 600; color: #fff; margin-bottom: 6px;">1. Why is my keyword trigger not firing?</h4>
+                                    <p style="font-size: 13px; color: var(--text-secondary); line-height: 1.5;">
+                                        Double check that your connected Instagram account is set as a **Creator** or **Business** account (personal accounts do not support API automation). Additionally, check your **Integration Security** on the Overview tab to make sure webhooks are active.
+                                    </p>
+                                </div>
+                                <div style="border-top: 1px solid var(--border); padding-top: 16px;">
+                                    <h4 style="font-size: 14px; font-weight: 600; color: #fff; margin-bottom: 6px;">2. My comments are captured but DMs are delayed?</h4>
+                                    <p style="font-size: 13px; color: var(--text-secondary); line-height: 1.5;">
+                                        This is expected and healthy! DMOrbit utilizes a dynamic **Meta Safe-Pacing Engine** (staggering DMs by 5–15 seconds). This keeps your account completely safe from automated spam flags. You can monitor active delays in the pacing queue widget on your Overview screen.
+                                    </p>
+                                </div>
+                                <div style="border-top: 1px solid var(--border); padding-top: 16px;">
+                                    <h4 style="font-size: 14px; font-weight: 600; color: #fff; margin-bottom: 6px;">3. What does "Token Expired" mean?</h4>
+                                    <p style="font-size: 13px; color: var(--text-secondary); line-height: 1.5;">
+                                        Meta security tokens expire every 60 days or when passwords are changed. To resolve this, simply go to your **Instagram Account** page and click **Refresh Token** to safely reconnect via official OAuth. We never ask for or store your Instagram password.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Side Card: Need Help & Quick Troubleshooting -->
+                    <div style="display: flex; flex-direction: column; gap: 20px;">
+                        <div class="card" style="background: linear-gradient(180deg, rgba(79,70,229,0.05) 0%, rgba(255,255,255,0.01) 100%);">
+                            <h3 style="font-size: 15px; font-weight: 600; color: #fff; margin-bottom: 12px; display: flex; align-items: center; gap: 6px;">
+                                🛠️ Self-Diagnostics
+                            </h3>
+                            <p style="font-size: 12px; color: var(--text-secondary); line-height: 1.5; margin-bottom: 16px;">
+                                Need to troubleshoot rapidly? Run an instant integration health check.
+                            </p>
+                            <button class="btn btn-secondary btn-sm" onclick="window.runDiagnostics()" style="width: 100%; font-size: 12px; padding: 10px;">
+                                Run Diagnostics Sweep
+                            </button>
+                            <div id="diagnostics-result" style="display: none; margin-top: 12px; padding: 12px; background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-radius: 8px; font-size: 12px; text-align: left; line-height: 1.5; font-family: monospace;">
+                            </div>
+                        </div>
+
+                        <div class="card">
+                            <h3 style="font-size: 15px; font-weight: 600; color: #fff; margin-bottom: 8px;">
+                                Direct Support
+                            </h3>
+                            <p style="font-size: 12px; color: var(--text-muted); line-height: 1.5; margin-bottom: 12px;">
+                                Have a bug to report or feature request? We reply within 24 hours.
+                            </p>
+                            <div style="font-size: 13px; color: #fff; font-weight: 500; display: flex; align-items: center; gap: 6px;">
+                                📧 dmorbitapp@gmail.com
+                            </div>
                         </div>
                     </div>
                 </div>
