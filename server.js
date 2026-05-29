@@ -201,6 +201,28 @@ const flowStateSchema = new mongoose.Schema({
 });
 const FlowState = mongoose.model('FlowState', flowStateSchema);
 
+// --- NEW SAAS DATABASE DRIVEN PLAN SCHEMA ---
+const planSchema = new mongoose.Schema({
+    planId: { type: String, unique: true }, // 'FREE', 'CREATOR', 'PRO'
+    name: String,
+    monthlyDMLimit: Number,
+    rolloverRules: Boolean,
+    topupAllowed: Boolean,
+    connectedAccountLimit: Number,
+    automationLimit: Number,
+    smartBioAccess: Boolean,
+    queuePriority: { type: String, enum: ['LOW', 'MEDIUM', 'HIGH'], default: 'LOW' },
+    price: Number
+});
+const Plan = mongoose.model('Plan', planSchema);
+
+// --- NEW GLOBAL PLATFORM SETTINGS SCHEMA ---
+const globalSettingsSchema = new mongoose.Schema({
+    key: { type: String, unique: true },
+    value: mongoose.Schema.Types.Mixed
+});
+const GlobalSettings = mongoose.model('GlobalSettings', globalSettingsSchema);
+
 const automationSchema = new mongoose.Schema({
     userId: { type: String, index: true },
     name: { type: String, default: 'Untitled Automation' },
@@ -260,6 +282,9 @@ const userSchema = new mongoose.Schema({
             url: String
         }]
     },
+    suspended: { type: Boolean, default: false },
+    banned: { type: Boolean, default: false },
+    featureFlags: { type: [String], default: [] },
     createdAt: { type: Date, default: Date.now }
 });
 const User = mongoose.model('User', userSchema);
@@ -305,6 +330,9 @@ const instagramAccountSchema = new mongoose.Schema({
     page_id: String,
     instagram_id: String,
     access_token: String,
+    username: String,
+    profile_picture_url: String,
+    name: String,
     status: { type: String, enum: ['active', 'expired', 'invalid', 'reconnect_recommended', 'paused'], default: 'active' },
     safeMode: { type: Boolean, default: true }, // Default ON for Beta
     lastChecked: { type: Date, default: Date.now },
@@ -372,6 +400,7 @@ const authenticateToken = async (req, res, next) => {
     }
 
     try {
+        let decoded;
         if (firebaseAdminReady) {
             try {
                 const decodedToken = await admin.auth().verifyIdToken(token);
@@ -393,6 +422,11 @@ const authenticateToken = async (req, res, next) => {
                     await user.save();
                 }
                 
+                if (user.suspended || user.banned) {
+                    if (isHtmlRequest(req)) return res.redirect('/?error=suspended');
+                    return res.status(403).json({ error: 'Your account is suspended or banned.' });
+                }
+
                 req.user = { 
                     userId: user._id, 
                     email: email, 
@@ -407,13 +441,19 @@ const authenticateToken = async (req, res, next) => {
                 return next();
             } catch (firebaseErr) {
                 console.error("[AUTH DEBUG] Firebase token verification failed:", firebaseErr.message);
-                const user = jwt.verify(token, JWT_SECRET);
-                req.user = user;
-                return next();
+                decoded = jwt.verify(token, JWT_SECRET);
             }
         } else {
-            const user = jwt.verify(token, JWT_SECRET);
-            req.user = user;
+            decoded = jwt.verify(token, JWT_SECRET);
+        }
+
+        if (decoded) {
+            const dbUser = await User.findById(decoded.userId || decoded.id);
+            if (dbUser && (dbUser.suspended || dbUser.banned)) {
+                if (isHtmlRequest(req)) return res.redirect('/?error=suspended');
+                return res.status(403).json({ error: 'Your account is suspended or banned.' });
+            }
+            req.user = decoded;
             return next();
         }
     } catch (err) {
@@ -444,6 +484,428 @@ const authenticateAdmin = (req, res, next) => {
 
 app.get('/admin.html', authenticateToken, authenticateAdmin, (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'admin.html'));
+});
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//                  ADMIN API ROUTES
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+// 1. Admin Dashboard Statistics Widget Aggregates
+app.get('/api/admin/stats', authenticateToken, authenticateAdmin, async (req, res) => {
+    try {
+        const totalUsers = await User.countDocuments();
+        const paidUsers = await User.countDocuments({ plan: { $in: ['CREATOR', 'PRO', 'creator', 'pro', 'BASIC', 'basic'] } });
+        const totalAutomations = await Automation.countDocuments();
+        const activeAutomations = await Automation.countDocuments({ isActive: true });
+        
+        // DMs sent today
+        const startOfToday = new Date();
+        startOfToday.setHours(0,0,0,0);
+        const totalDMs = await Log.countDocuments({ dmCount: { $gt: 0 }, timestamp: { $gte: startOfToday } });
+        
+        // Failed jobs & queue metrics
+        const failedDMs = await Job.countDocuments({ status: 'failed' });
+        const queueSize = await Job.countDocuments({ status: 'pending' });
+        const delayedJobs = await Job.countDocuments({ status: 'pending', process_after: { $gt: Date.now() } });
+
+        // Meta connection token health summary
+        const accounts = await InstagramAccount.find();
+        let metaApiHealth = 'GOOD';
+        if (accounts.length > 0) {
+            const hasExpired = accounts.some(acc => acc.status === 'expired' || acc.status === 'invalid');
+            if (hasExpired) metaApiHealth = 'WARNING';
+        }
+
+        // Webhook processed health in last hour
+        const lastHour = new Date(Date.now() - 3600000);
+        const webhookEventsCount = await WebhookEvent.countDocuments({ createdAt: { $gte: lastHour } });
+        const webhookHealth = webhookEventsCount > 0 ? 'HEALTHY' : 'INACTIVE';
+
+        // Signup Trend (last 7 days)
+        const recentSignupTrend = [];
+        for (let i = 6; i >= 0; i--) {
+            const start = new Date();
+            start.setHours(0,0,0,0);
+            start.setDate(start.getDate() - i);
+            const end = new Date(start);
+            end.setDate(end.getDate() + 1);
+            
+            const count = await User.countDocuments({ createdAt: { $gte: start, $lt: end } });
+            recentSignupTrend.push({
+                date: start.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+                count
+            });
+        }
+
+        res.json({
+            totalUsers,
+            paidUsers,
+            totalAutomations,
+            activeAutomations,
+            totalDMs,
+            failedDMs,
+            queueSize,
+            delayedJobs,
+            metaApiHealth,
+            webhookHealth,
+            recentSignupTrend
+        });
+    } catch (err) {
+        logger.error("[ADMIN STATS ERROR]", err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// 2. User Management Search and Advanced Filtering
+app.get('/api/admin/users', authenticateToken, authenticateAdmin, async (req, res) => {
+    try {
+        const { search, plan, igUsername, tokenStatus } = req.query;
+        let query = {};
+        if (search) {
+            query.$or = [
+                { email: { $regex: search, $options: 'i' } },
+                { name: { $regex: search, $options: 'i' } }
+            ];
+        }
+        if (plan) {
+            query.plan = plan.toUpperCase();
+        }
+        
+        let users = await User.find(query).sort({ createdAt: -1 }).lean();
+        
+        const accounts = await InstagramAccount.find().lean();
+        const accountsMap = {};
+        accounts.forEach(acc => {
+            accountsMap[acc.userId.toString()] = acc;
+        });
+
+        let enrichedUsers = [];
+        for (let user of users) {
+            const acc = accountsMap[user._id.toString()];
+            user.instagramAccount = acc || null;
+            user.instagramUsername = acc ? acc.username : null;
+            user.tokenHealth = acc ? (acc.status === 'active' ? 'GOOD' : 'Needs Reconnect') : 'not_connected';
+            
+            user.dmUsage = user.dmCountThisMonth || 0;
+            user.rolloverBalance = user.rolloverDms || 0;
+            const ninetyDaysAgo = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000);
+            const activeTopups = (user.topups || []).filter(t => new Date(t.purchasedAt) >= ninetyDaysAgo);
+            user.topupBalance = activeTopups.reduce((sum, t) => sum + Number(t.credits || 0), 0);
+
+            user.automationCount = await Automation.countDocuments({ userId: user._id.toString() });
+            user.queueUsage = await Job.countDocuments({ userId: user._id.toString(), status: 'pending' });
+
+            enrichedUsers.push(user);
+        }
+
+        if (igUsername) {
+            enrichedUsers = enrichedUsers.filter(u => u.instagramUsername && u.instagramUsername.toLowerCase().includes(igUsername.toLowerCase()));
+        }
+        if (tokenStatus) {
+            enrichedUsers = enrichedUsers.filter(u => u.tokenHealth && u.tokenHealth.toLowerCase() === tokenStatus.toLowerCase());
+        }
+
+        res.json(enrichedUsers);
+    } catch (err) {
+        logger.error("[ADMIN USERS ERROR]", err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// 3. User Detail Fetch
+app.get('/api/admin/users/:userId', authenticateToken, authenticateAdmin, async (req, res) => {
+    try {
+        const user = await User.findById(req.params.userId).lean();
+        if (!user) return res.status(404).json({ error: 'User not found' });
+        
+        const acc = await InstagramAccount.findOne({ userId: user._id.toString() }).lean();
+        user.instagramAccount = acc || null;
+        user.instagramUsername = acc ? acc.username : null;
+        user.tokenHealth = acc ? (acc.status === 'active' ? 'GOOD' : 'Needs Reconnect') : 'not_connected';
+        user.automationCount = await Automation.countDocuments({ userId: user._id.toString() });
+        user.queueUsage = await Job.countDocuments({ userId: user._id.toString(), status: 'pending' });
+        
+        res.json(user);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// 4. Upgrade / Downgrade User Plan
+app.post('/api/admin/users/:userId/plan', authenticateToken, authenticateAdmin, async (req, res) => {
+    try {
+        const { plan } = req.body;
+        if (!['FREE', 'CREATOR', 'PRO'].includes(plan.toUpperCase())) {
+            return res.status(400).json({ error: 'Invalid plan. Must be FREE, CREATOR, or PRO.' });
+        }
+        const user = await User.findByIdAndUpdate(req.params.userId, { plan: plan.toUpperCase() }, { new: true });
+        if (!user) return res.status(404).json({ error: 'User not found' });
+        res.json({ success: true, user });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// 5. Adjust Creator Rollover & Topup Credit Balances
+app.post('/api/admin/users/:userId/credits', authenticateToken, authenticateAdmin, async (req, res) => {
+    try {
+        const { action, amount, type } = req.body; // action: 'add' | 'remove', type: 'rollover' | 'topup'
+        const val = Number(amount);
+        if (isNaN(val) || val <= 0) return res.status(400).json({ error: 'Invalid amount' });
+
+        const user = await User.findById(req.params.userId);
+        if (!user) return res.status(404).json({ error: 'User not found' });
+
+        if (type === 'rollover') {
+            if (action === 'add') {
+                user.rolloverDms = (user.rolloverDms || 0) + val;
+            } else {
+                user.rolloverDms = Math.max(0, (user.rolloverDms || 0) - val);
+            }
+        } else if (type === 'topup') {
+            if (action === 'add') {
+                user.topups.push({ credits: val, purchasedAt: new Date() });
+            } else {
+                let remainingToRemove = val;
+                for (let i = user.topups.length - 1; i >= 0; i--) {
+                    if (user.topups[i].credits > remainingToRemove) {
+                        user.topups[i].credits -= remainingToRemove;
+                        remainingToRemove = 0;
+                        break;
+                    } else {
+                        remainingToRemove -= user.topups[i].credits;
+                        user.topups.splice(i, 1);
+                    }
+                }
+            }
+        }
+        await user.save();
+        res.json({ success: true, user });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// 6. Suspend / Ban / Unsuspend User
+app.post('/api/admin/users/:userId/suspend', authenticateToken, authenticateAdmin, async (req, res) => {
+    try {
+        const { suspend, ban } = req.body;
+        const updates = {};
+        if (suspend !== undefined) updates.suspended = !!suspend;
+        if (ban !== undefined) updates.banned = !!ban;
+        
+        const user = await User.findByIdAndUpdate(req.params.userId, updates, { new: true });
+        if (!user) return res.status(404).json({ error: 'User not found' });
+        res.json({ success: true, user });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// 7. Delete Creator Profile & Associated Resources Completely
+app.delete('/api/admin/users/:userId', authenticateToken, authenticateAdmin, async (req, res) => {
+    try {
+        const userId = req.params.userId;
+        const user = await User.findById(userId);
+        if (!user) return res.status(404).json({ error: 'User not found' });
+        
+        await User.findByIdAndDelete(userId);
+        await InstagramAccount.deleteMany({ userId });
+        await Automation.deleteMany({ userId });
+        await Flow.deleteMany({ userId });
+        await Job.deleteMany({ userId });
+        await Log.deleteMany({ ownerId: userId });
+        res.json({ success: true, message: 'User and all resources cleared.' });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// 8. Secure Admin User Impersonation Token Issuer
+app.post('/api/admin/users/:userId/impersonate', authenticateToken, authenticateAdmin, async (req, res) => {
+    try {
+        const user = await User.findById(req.params.userId);
+        if (!user) return res.status(404).json({ error: 'User not found' });
+
+        const token = jwt.sign({ 
+            userId: user._id, 
+            email: user.email, 
+            role: user.role,
+            impersonatedBy: req.user.email
+        }, JWT_SECRET, { expiresIn: '1h' });
+
+        res.cookie('token', token, { 
+            httpOnly: true, 
+            secure: process.env.NODE_ENV === 'production',
+            maxAge: 60 * 60 * 1000
+        });
+
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// 9. Update Per-User Feature Access Flags
+app.post('/api/admin/users/:userId/flags', authenticateToken, authenticateAdmin, async (req, res) => {
+    try {
+        const { flags } = req.body;
+        if (!Array.isArray(flags)) return res.status(400).json({ error: 'flags must be an array of strings' });
+        
+        const user = await User.findByIdAndUpdate(req.params.userId, { featureFlags: flags }, { new: true });
+        if (!user) return res.status(404).json({ error: 'User not found' });
+        res.json({ success: true, user });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// 10. Database-Driven Plans Manager
+app.get('/api/admin/plans', authenticateToken, authenticateAdmin, async (req, res) => {
+    try {
+        const plans = await Plan.find().sort({ price: 1 });
+        res.json(plans);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.put('/api/admin/plans/:planId', authenticateToken, authenticateAdmin, async (req, res) => {
+    try {
+        const updates = req.body;
+        const plan = await Plan.findOneAndUpdate({ planId: req.params.planId.toUpperCase() }, updates, { new: true });
+        if (!plan) return res.status(404).json({ error: 'Plan not found' });
+        res.json({ success: true, plan });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// 11. Queue Pause / Resume Control
+app.post('/api/admin/queue/control', authenticateToken, authenticateAdmin, async (req, res) => {
+    try {
+        const { paused } = req.body;
+        await GlobalSettings.findOneAndUpdate(
+            { key: 'queue_paused' },
+            { key: 'queue_paused', value: !!paused },
+            { upsert: true }
+        );
+        res.json({ success: true, paused: !!paused });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// 12. Queue Bulk Retry Failed Jobs
+app.post('/api/admin/queue/retry', authenticateToken, authenticateAdmin, async (req, res) => {
+    try {
+        const result = await Job.updateMany(
+            { status: 'failed' },
+            { $set: { status: 'pending', attempts: 0, error: null } }
+        );
+        res.json({ success: true, modifiedCount: result.modifiedCount });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// 13. Queue Wipe Out Clear
+app.post('/api/admin/queue/clear', authenticateToken, authenticateAdmin, async (req, res) => {
+    try {
+        const { type } = req.body; // 'failed' | 'pending' | 'all'
+        let query = {};
+        if (type === 'failed') query.status = 'failed';
+        else if (type === 'pending') query.status = 'pending';
+        
+        const result = await Job.deleteMany(query);
+        res.json({ success: true, deletedCount: result.deletedCount });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// 14. Global settings getters and updates
+app.get('/api/admin/settings', authenticateToken, authenticateAdmin, async (req, res) => {
+    try {
+        const settingsList = await GlobalSettings.find();
+        const settings = {};
+        settingsList.forEach(s => {
+            settings[s.key] = s.value;
+        });
+        res.json(settings);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.put('/api/admin/settings', authenticateToken, authenticateAdmin, async (req, res) => {
+    try {
+        const updates = req.body;
+        for (let key of Object.keys(updates)) {
+            await GlobalSettings.findOneAndUpdate(
+                { key },
+                { key, value: updates[key] },
+                { upsert: true }
+            );
+        }
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// 15. Searchable logs timeline aggregates
+app.get('/api/admin/logs', authenticateToken, authenticateAdmin, async (req, res) => {
+    try {
+        const { type, limit } = req.query; // type: 'webhook' | 'queue' | 'meta' | 'all'
+        const maxLimit = Math.min(100, Number(limit) || 50);
+        
+        let results = [];
+        
+        if (!type || type === 'all' || type === 'webhook') {
+            const webhookLogs = await WebhookLog.find().sort({ timestamp: -1 }).limit(maxLimit).lean();
+            webhookLogs.forEach(wl => {
+                results.push({
+                    time: wl.timestamp,
+                    type: 'WEBHOOK',
+                    severity: 'INFO',
+                    message: `Webhook received from source: ${wl.source || 'unknown'}`,
+                    meta: wl.payload
+                });
+            });
+        }
+        
+        if (!type || type === 'all' || type === 'queue') {
+            const queueLogs = await Job.find({ status: { $in: ['done', 'failed', 'processing'] } }).sort({ createdAt: -1 }).limit(maxLimit).lean();
+            queueLogs.forEach(ql => {
+                results.push({
+                    time: ql.createdAt,
+                    type: 'QUEUE',
+                    severity: ql.status === 'failed' ? 'ERROR' : 'INFO',
+                    message: `Job type ${ql.type || 'send_dm'} status is '${ql.status}' for receiver ID ${ql.user_id}`,
+                    meta: { error: ql.error, attempts: ql.attempts, delivery: ql.delivery_status }
+                });
+            });
+        }
+
+        if (!type || type === 'all' || type === 'meta') {
+            const metaLogs = await Log.find().sort({ timestamp: -1 }).limit(maxLimit).lean();
+            metaLogs.forEach(ml => {
+                results.push({
+                    time: ml.timestamp,
+                    type: 'META',
+                    severity: 'INFO',
+                    message: `DM sent to ${ml.username || 'unknown'} for keyword '${ml.keyword || ''}'`,
+                    meta: ml.metadata
+                });
+            });
+        }
+
+        results.sort((a, b) => new Date(b.time) - new Date(a.time));
+        res.json(results.slice(0, maxLimit));
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
 app.get('/dashboard.html', authenticateToken, (req, res) => {
@@ -1003,6 +1465,24 @@ const updateFlowStateActivity = async (ig_user_id) => {
 // Restored as primary for Meta compliance and stability
 setInterval(async () => {
     try {
+        let isPaused = false;
+        let isMaintenance = false;
+        let pacingDelay = 10000;
+        try {
+            const pausedSetting = await GlobalSettings.findOne({ key: 'queue_paused' });
+            if (pausedSetting && pausedSetting.value === true) isPaused = true;
+            const maintSetting = await GlobalSettings.findOne({ key: 'maintenance_mode' });
+            if (maintSetting && maintSetting.value === true) isMaintenance = true;
+            const pacingSetting = await GlobalSettings.findOne({ key: 'queue_pacing' });
+            if (pacingSetting && pacingSetting.value !== undefined) pacingDelay = Number(pacingSetting.value);
+        } catch (se) {
+            console.error("[OFFICIAL WORKER] Global settings fetch error:", se.message);
+        }
+
+        if (isPaused || isMaintenance) {
+            return;
+        }
+
         const processingJobs = await Job.find({ status: "processing" });
         const maxParallel = 5;
 
@@ -1032,7 +1512,7 @@ setInterval(async () => {
                 const lastLog = await Log.findOne({ user_id: item.user_id }).sort({ timestamp: -1 });
                 if (lastLog) {
                     const lastSent = new Date(lastLog.timestamp).getTime();
-                    if (now - lastSent < 10000) continue;
+                    if (now - lastSent < pacingDelay) continue;
                 }
             }
             readyJobs.push(item);
@@ -1513,12 +1993,38 @@ app.get('/auth/callback', async (req, res) => {
             } catch(e) {}
         }
 
+        let igUsername = 'connected_user';
+        let igProfilePic = '';
+        let igName = '';
+
+        try {
+            console.log(`[OAUTH] Fetching profile details for Instagram Business Account ID: ${igAccountId}`);
+            const igUserRes = await axios.get(`https://graph.facebook.com/v19.0/${igAccountId}`, {
+                params: {
+                    fields: 'username,name,profile_picture_url',
+                    access_token: pageAccessToken
+                }
+            });
+            if (igUserRes.data) {
+                igUsername = igUserRes.data.username || 'connected_user';
+                igProfilePic = igUserRes.data.profile_picture_url || '';
+                igName = igUserRes.data.name || '';
+                console.log(`[OAUTH] Instagram username fetched: @${igUsername}`);
+            }
+        } catch (apiErr) {
+            console.error("⚠️ Failed to fetch Instagram username/details during OAuth:", apiErr.message);
+            igUsername = pageName ? pageName.replace(/\s+/g, '_').toLowerCase() : 'connected_user';
+        }
+
         await InstagramAccount.findOneAndUpdate(
             { userId },
             {
                 instagram_id: igAccountId,
                 page_id: pageId,
                 access_token: pageAccessToken, // Long-lived Page Token for webhooks/API
+                username: igUsername,
+                profile_picture_url: igProfilePic,
+                name: igName,
                 status: 'active',
                 updatedAt: new Date()
             },
@@ -1706,8 +2212,19 @@ async function checkAutomationLimits(user) {
     const currentDmCount = user.dmCountThisMonth || 0;
 
     let baseLimit = 1000;
-    if (currentPlan === 'CREATOR') baseLimit = 25000;
-    else if (currentPlan === 'PRO') baseLimit = 100000;
+    try {
+        const plan = await Plan.findOne({ planId: currentPlan });
+        if (plan) {
+            baseLimit = plan.monthlyDMLimit;
+        } else {
+            if (currentPlan === 'CREATOR') baseLimit = 25000;
+            else if (currentPlan === 'PRO') baseLimit = 100000;
+        }
+    } catch (e) {
+        console.error("Failed to query DB plan details, falling back to static limit checking:", e.message);
+        if (currentPlan === 'CREATOR') baseLimit = 25000;
+        else if (currentPlan === 'PRO') baseLimit = 100000;
+    }
 
     // Dynamically calculate valid unexpired top-ups (valid for 90 days)
     const ninetyDaysAgo = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000);
@@ -2644,6 +3161,24 @@ app.get('/api/logs', authenticateToken, async (req, res) => {
     }
 });
 
+// --- QUEUE JOBS API (Queue Transparency) ---
+app.get('/api/jobs', authenticateToken, async (req, res) => {
+    try {
+        const userId = req.user.userId.toString();
+        // Fetch active pending, processing, and recently failed jobs (limit to 10)
+        const jobs = await Job.find({ 
+            userId,
+            status: { $in: ['pending', 'processing', 'failed'] }
+        })
+        .sort({ createdAt: -1 })
+        .limit(10);
+        res.status(200).json({ success: true, jobs });
+    } catch (err) {
+        console.error('[JOBS QUEUE API ERROR]', err);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
 // --- WEBHOOK LOGS API (Admin & Dashboard) ---
 
 app.get('/api/webhook-logs', authenticateToken, async (req, res) => {
@@ -2690,6 +3225,9 @@ app.get('/api/account/status', authenticateToken, async (req, res) => {
                 connected: true,
                 instagram_id: igAccount.instagram_id,
                 page_id: igAccount.page_id,
+                username: igAccount.username || 'connected_user',
+                profile_picture_url: igAccount.profile_picture_url || '',
+                name: igAccount.name || '',
                 status: igAccount.status,
                 safeMode: igAccount.safeMode,
                 updatedAt: igAccount.updatedAt
@@ -3105,7 +3643,79 @@ app.get('/bio/:username', async (req, res) => {
     }
 });
 
-server.listen(PORT, () => {
+// --- DATABASE SEEDING ENGINE ---
+const seedDatabase = async () => {
+    try {
+        console.log("🌱 Database seeding check...");
+        
+        const planCount = await Plan.countDocuments();
+        if (planCount === 0) {
+            console.log("No plans found in database. Seeding default FREE, CREATOR, and PRO plans...");
+            await Plan.create([
+                {
+                    planId: 'FREE',
+                    name: 'Free',
+                    monthlyDMLimit: 1000,
+                    rolloverRules: false,
+                    topupAllowed: false,
+                    connectedAccountLimit: 1,
+                    automationLimit: 3,
+                    smartBioAccess: false,
+                    queuePriority: 'LOW',
+                    price: 0
+                },
+                {
+                    planId: 'CREATOR',
+                    name: 'Creator',
+                    monthlyDMLimit: 25000,
+                    rolloverRules: true,
+                    topupAllowed: true,
+                    connectedAccountLimit: 3,
+                    automationLimit: 15,
+                    smartBioAccess: true,
+                    queuePriority: 'MEDIUM',
+                    price: 499
+                },
+                {
+                    planId: 'PRO',
+                    name: 'Pro',
+                    monthlyDMLimit: 100000,
+                    rolloverRules: true,
+                    topupAllowed: true,
+                    connectedAccountLimit: 10,
+                    automationLimit: 100,
+                    smartBioAccess: true,
+                    queuePriority: 'HIGH',
+                    price: 1299
+                }
+            ]);
+            console.log("✅ Default plans seeded.");
+        }
+
+        const defaultSettings = [
+            { key: 'queue_paused', value: false },
+            { key: 'queue_pacing', value: 10000 },
+            { key: 'support_email', value: 'support@dmorbit.in' },
+            { key: 'maintenance_mode', value: false },
+            { key: 'default_limit', value: 1000 },
+            { key: 'onboarding_toggles', value: { checklist_enabled: true } }
+        ];
+
+        for (let s of defaultSettings) {
+            const exists = await GlobalSettings.findOne({ key: s.key });
+            if (!exists) {
+                await GlobalSettings.create(s);
+                console.log(`✅ Default setting seeded: ${s.key}`);
+            }
+        }
+        console.log("🌱 Database seeding check complete.");
+    } catch (err) {
+        console.error("❌ Error seeding database:", err.message);
+    }
+};
+
+server.listen(PORT, async () => {
     console.log(`Server and WS Portal running on port ${PORT}`);
     console.log("Webhook URL ready");
+    await seedDatabase();
 });
