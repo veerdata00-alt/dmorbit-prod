@@ -95,6 +95,7 @@ p { color: var(--text-secondary); }
     animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 .page.active { display: block; }
+#page-gate.active { display: flex; }
 
 @keyframes fadeIn {
     from { opacity: 0; transform: translateY(10px); }
