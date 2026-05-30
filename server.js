@@ -1129,7 +1129,11 @@ const sendInstagramDM = async (ownerId, targetId, message, igId = null) => {
     
     // 1. Fetch user specific token
     const account = await InstagramAccount.findOne({ userId: ownerId });
-    const token = account ? account.access_token : PAGE_ACCESS_TOKEN;
+    if (!account || account.status !== 'active') {
+        console.warn(`[SEND ABORTED] Instagram account is disconnected or inactive for owner: ${ownerId}`);
+        return { success: false, error: "Instagram account is disconnected or inactive." };
+    }
+    const token = account.access_token;
 
     if (!token || token === "your_token_here") {
         console.warn("[SIMULATION MODE] No token for owner. Skipping real API call.");
@@ -1178,7 +1182,11 @@ const sendInstagramPublicReply = async (ownerId, commentId, message) => {
     console.log(`[SEND] Instagram Public Reply to CommentID: ${commentId} | Owner: ${ownerId}`);
 
     const account = await InstagramAccount.findOne({ userId: ownerId });
-    const token = account ? account.access_token : PAGE_ACCESS_TOKEN;
+    if (!account || account.status !== 'active') {
+        console.warn(`[SEND ABORTED] Instagram account is disconnected or inactive for owner: ${ownerId}`);
+        return { success: false, error: "Instagram account is disconnected or inactive." };
+    }
+    const token = account.access_token;
 
     if (!token || token === "your_token_here") {
         return { success: true, status: "simulated" };
@@ -1208,7 +1216,11 @@ const sendInstagramPrivateReply = async (ownerId, commentId, message, igId = nul
 
     // 1. Fetch user specific token
     const account = await InstagramAccount.findOne({ userId: ownerId });
-    const token = account ? account.access_token : PAGE_ACCESS_TOKEN;
+    if (!account || account.status !== 'active') {
+        console.warn(`[SEND ABORTED] Instagram account is disconnected or inactive for owner: ${ownerId}`);
+        return { success: false, error: "Instagram account is disconnected or inactive." };
+    }
+    const token = account.access_token;
 
     if (!token || token === "your_token_here") {
         console.warn("[SIMULATION MODE] No token for owner. Skipping real API call.");
@@ -1589,6 +1601,15 @@ setInterval(async () => {
             if (isUserActive) continue;
 
             if (item.platform === "instagram") {
+                const ownerUser = await User.findById(item.userId);
+                const ownerAccount = await InstagramAccount.findOne({ userId: item.userId });
+                
+                if (!ownerUser || !ownerUser.instagramConnected || !ownerAccount || ownerAccount.status !== 'active') {
+                    console.warn(`[WORKER] Skipping and failing job ${item._id} due to disconnected Instagram account.`);
+                    await Job.updateOne({ _id: item._id }, { status: 'failed', error: 'Paused: Instagram disconnected' });
+                    continue; // Skip this job cleanly
+                }
+
                 // Safety delay (30s)
                 const processAfter = item.process_after || (new Date(item.createdAt).getTime() + 5000);
                 if (now < processAfter) continue;
@@ -2456,7 +2477,13 @@ app.post('/webhook', verifySignature, async (req, res) => {
                             const igAccountId = entry.id;
                             const ownerAccount = await InstagramAccount.findOne({ instagram_id: igAccountId });
                             
-                            if (ownerAccount) {
+                            if (ownerAccount && ownerAccount.status === 'active') {
+                                const ownerUser = await User.findById(ownerAccount.userId);
+                                if (!ownerUser || !ownerUser.instagramConnected) {
+                                    console.warn(`[WEBHOOK] Blocked execution: Instagram account disconnected for owner: ${ownerAccount.userId}`);
+                                    continue;
+                                }
+
                                 const ownerId = ownerAccount.userId;
                                 const normalizedDm = messageText.toLowerCase().trim();
                                 
@@ -2622,8 +2649,14 @@ app.post('/webhook', verifySignature, async (req, res) => {
                                 const igAccountId = entry.id; // This is the IG Business ID from the webhook
                                 const ownerAccount = await InstagramAccount.findOne({ instagram_id: igAccountId });
                                 
-                                if (!ownerAccount) {
-                                    console.warn(`[WEBHOOK] No linked DMOrbit account found for IG ID: ${igAccountId}. Skipping.`);
+                                if (!ownerAccount || ownerAccount.status !== 'active') {
+                                    console.warn(`[WEBHOOK] Blocked execution: Instagram account disconnected or inactive for IG ID: ${igAccountId}. Skipping.`);
+                                    continue;
+                                }
+
+                                const ownerUser = await User.findById(ownerAccount.userId);
+                                if (!ownerUser || !ownerUser.instagramConnected) {
+                                    console.warn(`[WEBHOOK] Blocked execution: User ${ownerAccount.userId} is not connected. Skipping execution.`);
                                     continue;
                                 }
 
