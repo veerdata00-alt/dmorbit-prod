@@ -1931,6 +1931,8 @@
             if (!user) return;
             
             const action = !user.suspended;
+            if (action && !confirm(`⚠️ CAUTION: Are you sure you want to suspend ${user.email}? Their automations will immediately stop.`)) return;
+
             const res = await fetchAPI(`/api/admin/users/${selectedUserId}/suspend`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -1952,6 +1954,8 @@
             if (!user) return;
 
             const action = !user.banned;
+            if (action && !confirm(`🚫 DANGER: Are you sure you want to permanently BAN ${user.email}? They will be completely locked out.`)) return;
+
             const res = await fetchAPI(`/api/admin/users/${selectedUserId}/suspend`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
