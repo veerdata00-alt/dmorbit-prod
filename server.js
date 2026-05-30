@@ -273,6 +273,7 @@ const userSchema = new mongoose.Schema({
         purchasedAt: { type: Date, default: Date.now }
     }],
     instagramConnected: { type: Boolean, default: false },
+    lastInstagramUsername: { type: String, default: null },
     smartBio: {
         profileImg: { type: String, default: '' },
         title: { type: String, default: '' },
@@ -3230,7 +3231,7 @@ app.get('/api/dashboard/stats', authenticateToken, async (req, res) => {
                 status: igAccount.status,
                 safeMode: igAccount.safeMode,
                 updatedAt: igAccount.updatedAt
-            } : { connected: false },
+            } : { connected: false, lastUsername: userDoc?.lastInstagramUsername || null },
             plan: req.user.plan || 'free',
             impersonatedBy: req.user.impersonatedBy || null,
             impersonatorId: req.user.impersonatorId || null
@@ -3344,8 +3345,15 @@ app.get('/api/account/status', authenticateToken, async (req, res) => {
 app.post('/api/instagram/disconnect', authenticateToken, async (req, res) => {
     try {
         const userId = req.user.userId.toString();
+        const existingIg = await InstagramAccount.findOne({ userId });
+        const lastUsername = existingIg?.username || null;
+        
         await InstagramAccount.deleteMany({ userId });
-        await User.findByIdAndUpdate(userId, { instagramConnected: false });
+        
+        const updateData = { instagramConnected: false };
+        if (lastUsername) updateData.lastInstagramUsername = lastUsername;
+        
+        await User.findByIdAndUpdate(userId, updateData);
         res.status(200).json({ success: true, message: 'Instagram account disconnected successfully.' });
     } catch (err) {
         console.error('[INSTAGRAM DISCONNECT ERROR]', err);
