@@ -3136,6 +3136,17 @@ app.get('/api/dashboard/stats', authenticateToken, async (req, res) => {
             totalDmsSent: userDoc?.dmCountThisMonth || 0,
             topKeyword: topAutomation?.trigger?.keywords?.[0] || null,
             instagramConnected: !!igAccount,
+            instagram: igAccount ? {
+                connected: true,
+                instagram_id: igAccount.instagram_id,
+                page_id: igAccount.page_id,
+                username: igAccount.username || 'connected_user',
+                profile_picture_url: igAccount.profile_picture_url || '',
+                name: igAccount.name || '',
+                status: igAccount.status,
+                safeMode: igAccount.safeMode,
+                updatedAt: igAccount.updatedAt
+            } : { connected: false },
             plan: req.user.plan || 'free'
         });
     } catch (err) {
@@ -3239,6 +3250,94 @@ app.get('/api/account/status', authenticateToken, async (req, res) => {
             }
         });
     } catch (err) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// --- INSTAGRAM DISCONNECT API ---
+app.post('/api/instagram/disconnect', authenticateToken, async (req, res) => {
+    try {
+        const userId = req.user.userId.toString();
+        await InstagramAccount.deleteMany({ userId });
+        await User.findByIdAndUpdate(userId, { instagramConnected: false });
+        res.status(200).json({ success: true, message: 'Instagram account disconnected successfully.' });
+    } catch (err) {
+        console.error('[INSTAGRAM DISCONNECT ERROR]', err);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// --- REFRESH INSTAGRAM PROFILE (re-fetch real username/pic from Meta API) ---
+app.post('/api/instagram/refresh-profile', authenticateToken, async (req, res) => {
+    try {
+        const userId = req.user.userId.toString();
+        const account = await InstagramAccount.findOne({ userId });
+        if (!account) return res.status(404).json({ error: 'No Instagram account connected.' });
+        if (!account.access_token) return res.status(400).json({ error: 'No access token stored.' });
+
+        let igUsername = account.username;
+        let igProfilePic = account.profile_picture_url || '';
+        let igName = account.name || '';
+        let updated = false;
+
+        // Try fetching from Instagram Business Account ID
+        if (account.instagram_id) {
+            try {
+                const igRes = await axios.get(`https://graph.facebook.com/v19.0/${account.instagram_id}`, {
+                    params: {
+                        fields: 'username,name,profile_picture_url,biography,followers_count',
+                        access_token: account.access_token
+                    }
+                });
+                if (igRes.data && igRes.data.username) {
+                    igUsername = igRes.data.username;
+                    igProfilePic = igRes.data.profile_picture_url || igProfilePic;
+                    igName = igRes.data.name || igName;
+                    updated = true;
+                    console.log(`[PROFILE REFRESH] IG username fetched: @${igUsername}`);
+                }
+            } catch (err1) {
+                console.warn('[PROFILE REFRESH] IG Account ID fetch failed:', err1.message);
+            }
+        }
+
+        // Fallback: Try fetching from Page ID using /me/instagram_accounts
+        if (!updated && account.page_id) {
+            try {
+                const pageRes = await axios.get(`https://graph.facebook.com/v19.0/${account.page_id}`, {
+                    params: {
+                        fields: 'instagram_business_account{username,name,profile_picture_url}',
+                        access_token: account.access_token
+                    }
+                });
+                const igBiz = pageRes.data?.instagram_business_account;
+                if (igBiz && igBiz.username) {
+                    igUsername = igBiz.username;
+                    igProfilePic = igBiz.profile_picture_url || igProfilePic;
+                    igName = igBiz.name || igName;
+                    updated = true;
+                    console.log(`[PROFILE REFRESH] IG username via Page: @${igUsername}`);
+                }
+            } catch (err2) {
+                console.warn('[PROFILE REFRESH] Page-level fetch failed:', err2.message);
+            }
+        }
+
+        // Save updated profile data
+        await InstagramAccount.findOneAndUpdate(
+            { userId },
+            { username: igUsername, profile_picture_url: igProfilePic, name: igName, updatedAt: new Date() }
+        );
+
+        res.status(200).json({
+            success: true,
+            updated,
+            username: igUsername,
+            profile_picture_url: igProfilePic,
+            name: igName
+        });
+    } catch (err) {
+        console.error('[INSTAGRAM REFRESH PROFILE ERROR]', err);
         res.status(500).json({ error: 'Internal Server Error' });
     }
 });
