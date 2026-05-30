@@ -1,0 +1,8 @@
+◇ injected env (19) from .env // tip: ⌁ auth for agents [www.vestauth.com]
+🚀 Server starting at: 2026-05-30T00:12:14.012Z
+Node version: v24.15.0
+Firebase Admin initialized (without service account — verifyIdToken may fail) ⚠️
+Webhook endpoint active
+🌍 MODE: 🛠️ DEVELOPMENT
+🔗 APP URL: https://web-production-dd826.up.railway.app
+Connecting to MongoDB Cluster: cluster0.loioeke.mongodb.net/?retryWrites=true&w=majority
