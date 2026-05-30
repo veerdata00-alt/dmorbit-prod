@@ -1530,15 +1530,24 @@ const processFollowups = async () => {
 
         if (pendingFollowups.length === 0) return;
 
-        console.log(`[WORKER] Processing ${pendingFollowups.length} scheduled follow-ups...`);
+        console.log(`[WORKER] Attempting to lock and process ${pendingFollowups.length} scheduled follow-ups...`);
 
         for (const fu of pendingFollowups) {
             try {
+                // DISTRIBUTED LOCKING
+                const lockedFu = await Followup.findOneAndUpdate(
+                    { _id: fu._id, status: "pending" },
+                    { $set: { status: "processing" } },
+                    { new: true }
+                );
+
+                if (!lockedFu) continue; // Another worker grabbed it
+
                 // Use the ownerId stored in the followup to fetch correct token
-                await sendDM("instagram", fu.ownerId || "admin", fu.user_id, fu.message, {}, "send_dm");
+                await sendDM("instagram", lockedFu.ownerId || "admin", lockedFu.user_id, lockedFu.message, {}, "send_dm");
                 
-                fu.status = "sent";
-                await fu.save();
+                lockedFu.status = "sent";
+                await lockedFu.save();
                 
                 console.log(`[FOLLOWUP SENT] Successfully sent to User: ${fu.user_id}`);
             } catch (err) {
@@ -1744,14 +1753,24 @@ setInterval(async () => {
         }
 
         if (readyJobs.length > 0) {
-            const jobIds = readyJobs.map(j => j._id);
-            await Job.updateMany(
-                { _id: { $in: jobIds } },
-                { $set: { status: "processing" }, $inc: { attempts: 1 } }
-            );
+            // DISTRIBUTED LOCKING: Atomically pop jobs from pending -> processing.
+            // This physically guarantees no two workers (or intervals) can execute the same job twice.
+            const lockedJobs = [];
+            for (const job of readyJobs) {
+                const locked = await Job.findOneAndUpdate(
+                    { _id: job._id, status: "pending" }, // STRICT STATE CHECK
+                    { $set: { status: "processing" }, $inc: { attempts: 1 } },
+                    { new: true }
+                );
+                if (locked) {
+                    lockedJobs.push(locked);
+                }
+            }
 
-            console.log(`[OFFICIAL WORKER] Starting ${readyJobs.length} parallel jobs...`);
-            Promise.allSettled(readyJobs.map(job => processJob(job)));
+            if (lockedJobs.length > 0) {
+                console.log(`[OFFICIAL WORKER] Successfully locked and starting ${lockedJobs.length} parallel jobs...`);
+                Promise.allSettled(lockedJobs.map(job => processJob(job)));
+            }
         }
     } catch (err) {
         console.error("[OFFICIAL WORKER ERROR]", err);
