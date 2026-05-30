@@ -337,7 +337,11 @@ async function loadAccount() {
             const profilePic = data.instagram.profile_picture_url || '';
             
             container.innerHTML = `
-                <div class="account-profile-header" style="display: flex; align-items: center; gap: 20px; margin-bottom: 24px; padding: 20px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 16px;">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px;">
+                    <h2 style="font-size: 20px; font-weight: 600; color: #fff;">Connection Health</h2>
+                </div>
+                
+                <div style="display: flex; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 24px; padding: 20px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 16px;">
                     ${profilePic ? `
                         <div style="width: 64px; height: 64px; border-radius: 50%; border: 2px solid var(--primary); overflow: hidden; display: flex; align-items: center; justify-content: center; box-shadow: 0 8px 16px rgba(79, 70, 229, 0.2);">
                             <img src="${profilePic}" style="width: 100%; height: 100%; object-fit: cover;">
@@ -347,22 +351,23 @@ async function loadAccount() {
                             ${username.charAt(0).toUpperCase()}
                         </div>
                     `}
-                    <div style="flex: 1;">
-                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
-                            <h3 style="margin: 0; font-size: 20px; color: #fff;">@${username}</h3>
-                            <span style="background: rgba(16,185,129,0.15); color: #10b981; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 600; border: 1px solid rgba(16,185,129,0.2);">Creator Account</span>
+                    <div style="flex: 1; min-width: 200px;">
+                        <div style="display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 4px;">
+                            <h3 style="margin: 0; font-size: 20px; color: #fff; word-break: break-all;">@${username}</h3>
+                            <span style="background: rgba(16,185,129,0.15); color: #10b981; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 600; border: 1px solid rgba(16,185,129,0.2); white-space: nowrap;">Creator Account</span>
                         </div>
                         <div style="font-size: 13px; color: var(--text-muted); display: flex; align-items: center; gap: 6px;">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
                             Verified via Meta Official API
                         </div>
                     </div>
-                    <div>
-                        <button class="btn btn-secondary" onclick="window.startInteractiveLogin()" style="font-size: 13px; padding: 8px 16px;">Refresh Token</button>
+                    </div>
+                    <div style="margin-top: 8px;">
+                        <button class="btn btn-secondary" onclick="window.startInteractiveLogin()" style="font-size: 13px; padding: 8px 16px; white-space: nowrap;">Refresh Token</button>
                     </div>
                 </div>
                 
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px;">
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 16px; margin-bottom: 24px;">
                     <div style="padding: 16px; background: ${s.color}; border-radius: 12px; border-left: 4px solid ${s.textColor};">
                         <div style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); margin-bottom: 4px;">Connection Health</div>
                         <div style="font-weight: 600; color: ${s.textColor}; font-size: 15px; margin-bottom: 4px;">${s.label}</div>
