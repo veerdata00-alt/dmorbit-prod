@@ -289,6 +289,16 @@ const userSchema = new mongoose.Schema({
 });
 const User = mongoose.model('User', userSchema);
 
+const auditLogSchema = new mongoose.Schema({
+    action: { type: String, required: true },
+    adminEmail: { type: String, required: true },
+    targetUserId: { type: String },
+    details: mongoose.Schema.Types.Mixed,
+    ipAddress: { type: String },
+    timestamp: { type: Date, default: Date.now, index: true }
+});
+const AuditLog = mongoose.model('AuditLog', auditLogSchema);
+
 const followupSchema = new mongoose.Schema({
     user_id: { type: String, index: true },
     ownerId: { type: String, index: true }, // The DMOrbit User ID
@@ -731,14 +741,58 @@ app.post('/api/admin/users/:userId/impersonate', authenticateToken, authenticate
             userId: user._id, 
             email: user.email, 
             role: user.role,
-            impersonatedBy: req.user.email
-        }, JWT_SECRET, { expiresIn: '1h' });
+            impersonatedBy: req.user.email,
+            impersonatorId: req.user.userId || req.user.id
+        }, JWT_SECRET, { expiresIn: '15m' });
 
         res.cookie('token', token, { 
             httpOnly: true, 
             secure: process.env.NODE_ENV === 'production',
-            maxAge: 60 * 60 * 1000
+            maxAge: 15 * 60 * 1000
         });
+
+        await AuditLog.create({
+            action: 'STARTED_IMPERSONATION',
+            adminEmail: req.user.email,
+            targetUserId: user._id.toString(),
+            ipAddress: req.headers['x-forwarded-for'] || req.socket.remoteAddress
+        }).catch(e => console.error("Audit log failed:", e.message));
+
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.post('/api/admin/impersonate/exit', authenticateToken, async (req, res) => {
+    try {
+        if (!req.user.impersonatorId) {
+            return res.status(400).json({ error: 'Not in an active impersonation session' });
+        }
+
+        const adminUser = await User.findById(req.user.impersonatorId);
+        if (!adminUser || adminUser.role !== 'admin') {
+            return res.status(403).json({ error: 'Failed to restore admin session: Invalid admin' });
+        }
+
+        const token = jwt.sign({ 
+            userId: adminUser._id, 
+            email: adminUser.email, 
+            role: 'admin' 
+        }, JWT_SECRET, { expiresIn: '24h' });
+
+        res.cookie('token', token, { 
+            httpOnly: true, 
+            secure: process.env.NODE_ENV === 'production',
+            maxAge: 24 * 60 * 60 * 1000
+        });
+
+        await AuditLog.create({
+            action: 'EXITED_IMPERSONATION',
+            adminEmail: adminUser.email,
+            targetUserId: req.user.userId,
+            ipAddress: req.headers['x-forwarded-for'] || req.socket.remoteAddress
+        }).catch(e => console.error("Audit log failed:", e.message));
 
         res.json({ success: true });
     } catch (err) {
@@ -3147,7 +3201,9 @@ app.get('/api/dashboard/stats', authenticateToken, async (req, res) => {
                 safeMode: igAccount.safeMode,
                 updatedAt: igAccount.updatedAt
             } : { connected: false },
-            plan: req.user.plan || 'free'
+            plan: req.user.plan || 'free',
+            impersonatedBy: req.user.impersonatedBy || null,
+            impersonatorId: req.user.impersonatorId || null
         });
     } catch (err) {
         console.error('[DASHBOARD STATS ERROR]', err);
