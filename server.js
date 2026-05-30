@@ -146,6 +146,7 @@ const jobSchema = new mongoose.Schema({
     type: { type: String, default: 'send_dm' }, // reply_comment | send_dm
     process_after: { type: Number, index: true },
     metadata: mongoose.Schema.Types.Mixed,
+    priority: { type: String, enum: ['high', 'low'], default: 'low', index: true },
     status: { type: String, index: true, default: 'pending' },
     delivery_status: { type: String, enum: ['sent', 'not_delivered', 'pending'], default: 'pending' },
     attempts: { type: Number, default: 0 },
@@ -1472,9 +1473,9 @@ const processJob = async (item) => {
     logger.info(`Processing Job | ID: ${jobId} | Target: ${item.user_id}`);
     
     try {
-        // Add artificial jitter (1-3s) to avoid burst detection
-        const jitter = Math.floor(Math.random() * 2000) + 1000;
-        await new Promise(r => setTimeout(r, jitter));
+        // Add artificial jitter (1-3s) to avoid burst detection, skip for high priority
+        const jitter = item.priority === 'high' ? 0 : Math.floor(Math.random() * 2000) + 1000;
+        if (jitter > 0) await new Promise(r => setTimeout(r, jitter));
 
         const result = await sendDM(
             item.platform || "telegram", 
@@ -1686,13 +1687,13 @@ setInterval(async () => {
         }
 
         const processingJobs = await Job.find({ status: "processing" });
-        const maxParallel = 5;
+        const maxParallel = 50; // Increased for scalability
 
         if (processingJobs.length >= maxParallel) return;
 
         const now = Date.now();
-        // Fetch pending jobs
-        const pendingJobs = await Job.find({ status: "pending" }).sort({ createdAt: 1 }).limit(20);
+        // Fetch pending jobs (high priority first)
+        const pendingJobs = await Job.find({ status: "pending" }).sort({ priority: 1, createdAt: 1 }).limit(50);
         
         if (pendingJobs.length === 0) return;
 
@@ -1700,10 +1701,12 @@ setInterval(async () => {
         for (const item of pendingJobs) {
             if (readyJobs.length + processingJobs.length >= maxParallel) break;
 
-            // Isolation: Only 1 active job per user
-            const isUserActive = processingJobs.some(pj => pj.user_id === item.user_id) || 
-                                 readyJobs.some(rj => rj.user_id === item.user_id);
-            if (isUserActive) continue;
+            // Isolation: Only 1 active job per user (skip for high priority to allow instant sequences)
+            if (item.priority !== 'high') {
+                const isUserActive = processingJobs.some(pj => pj.user_id === item.user_id) || 
+                                     readyJobs.some(rj => rj.user_id === item.user_id);
+                if (isUserActive) continue;
+            }
 
             if (item.platform === "instagram") {
                 const ownerUser = await User.findById(item.userId);
@@ -1715,8 +1718,8 @@ setInterval(async () => {
                     continue; // Skip this job cleanly
                 }
 
-                // Safety delay (30s)
-                const processAfter = item.process_after || (new Date(item.createdAt).getTime() + 5000);
+                // Safety delay (5s for low priority, 0s for high)
+                const processAfter = item.process_after || (new Date(item.createdAt).getTime() + (item.priority === 'high' ? 0 : 5000));
                 if (now < processAfter) continue;
 
                 // Rate Limit
@@ -1742,7 +1745,7 @@ setInterval(async () => {
     } catch (err) {
         console.error("[OFFICIAL WORKER ERROR]", err);
     }
-}, 3000);
+}, 1000);
 
 // Queue Cleanup System (MongoDB)
 setInterval(async () => {
@@ -2611,6 +2614,7 @@ app.post('/webhook', verifySignature, async (req, res) => {
                                             platform: "instagram",
                                             message: 'DM Keyword Delivery',
                                             type: 'send_dm',
+                                            priority: 'high',
                                             process_after: Date.now(),
                                             metadata: {
                                                 ig_id: entry.id,
@@ -2722,6 +2726,7 @@ app.post('/webhook', verifySignature, async (req, res) => {
                                             platform: "instagram",
                                             message: 'Follow-Gate Check',
                                             type: 'send_dm',
+                                            priority: 'high',
                                             process_after: Date.now(),
                                             metadata: {
                                                 ig_id: entry.id,
@@ -2753,6 +2758,7 @@ app.post('/webhook', verifySignature, async (req, res) => {
                                             platform: "instagram",
                                             message: 'Follow-Gate Check (Fallback)',
                                             type: 'send_dm',
+                                            priority: 'high',
                                             process_after: Date.now(),
                                             metadata: {
                                                 ig_id: entry.id,
@@ -2839,6 +2845,7 @@ app.post('/webhook', verifySignature, async (req, res) => {
                                                 platform: "instagram",
                                                 message: 'Final Delivery',
                                                 type: 'send_dm',
+                                                priority: 'high',
                                                 process_after: Date.now(),
                                                 metadata: {
                                                     ig_id: entry.id,
@@ -2867,6 +2874,7 @@ app.post('/webhook', verifySignature, async (req, res) => {
                                                 platform: "instagram",
                                                 message: 'Nice Try Check',
                                                 type: 'send_dm',
+                                                priority: 'high',
                                                 process_after: Date.now(),
                                                 metadata: {
                                                     ig_id: entry.id,
@@ -3042,6 +3050,7 @@ app.post('/webhook', verifySignature, async (req, res) => {
                                                     platform: "instagram",
                                                     message: auto.privateMessageText || 'DM Delivery',
                                                     type: 'reply_comment', 
+                                                    priority: 'high',
                                                     process_after: Date.now(),
                                                     metadata: { 
                                                         comment_id: commentId, 
@@ -3104,6 +3113,7 @@ app.post('/webhook', verifySignature, async (req, res) => {
                                                     platform: "instagram",
                                                     message: action.text,
                                                     type: 'reply_comment', 
+                                                    priority: 'high',
                                                     process_after: Date.now(),
                                                     metadata: { 
                                                         comment_id: commentId, 
