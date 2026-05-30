@@ -363,8 +363,8 @@ async function loadAccount() {
                             </div>
                         </div>
                     </div>
-                    <div class="w-full sm:w-auto mt-2 sm:mt-0">
-                        <button class="btn btn-secondary w-full sm:w-auto" onclick="window.startInteractiveLogin()" style="font-size: 13px; padding: 10px 16px; white-space: nowrap; justify-content: center;">Refresh Token</button>
+                    <div class="mt-4 sm:mt-0 sm:ml-auto flex justify-start sm:justify-end w-full sm:w-auto">
+                        <button class="btn btn-secondary" onclick="window.startInteractiveLogin()" style="font-size: 12px; padding: 6px 12px; white-space: nowrap; border-radius: 8px;">Refresh Token</button>
                     </div>
                 </div>
                 
