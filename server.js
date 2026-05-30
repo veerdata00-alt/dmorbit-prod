@@ -464,6 +464,15 @@ const authenticateToken = async (req, res, next) => {
                 return res.status(403).json({ error: 'Your account is suspended or banned.' });
             }
             req.user = decoded;
+            
+            // --- Read-Only Impersonator Block ---
+            if (req.user.impersonatorId && ['POST', 'PUT', 'DELETE', 'PATCH'].includes(req.method)) {
+                const allowedPaths = ['/api/admin/impersonate/exit', '/api/instagram/refresh-profile', '/api/logout'];
+                if (!allowedPaths.includes(req.path)) {
+                    return res.status(403).json({ error: "Read-only mode active: Modifications are disabled during impersonation." });
+                }
+            }
+
             return next();
         }
     } catch (err) {
@@ -734,6 +743,10 @@ app.delete('/api/admin/users/:userId', authenticateToken, authenticateAdmin, asy
 // 8. Secure Admin User Impersonation Token Issuer
 app.post('/api/admin/users/:userId/impersonate', authenticateToken, authenticateAdmin, async (req, res) => {
     try {
+        if (req.user.impersonatorId) {
+            return res.status(403).json({ error: 'Nested impersonation is not allowed.' });
+        }
+
         const user = await User.findById(req.params.userId);
         if (!user) return res.status(404).json({ error: 'User not found' });
 
@@ -748,6 +761,7 @@ app.post('/api/admin/users/:userId/impersonate', authenticateToken, authenticate
         res.cookie('token', token, { 
             httpOnly: true, 
             secure: process.env.NODE_ENV === 'production',
+            sameSite: 'Strict',
             maxAge: 15 * 60 * 1000
         });
 
@@ -784,6 +798,7 @@ app.post('/api/admin/impersonate/exit', authenticateToken, async (req, res) => {
         res.cookie('token', token, { 
             httpOnly: true, 
             secure: process.env.NODE_ENV === 'production',
+            sameSite: 'Strict',
             maxAge: 24 * 60 * 60 * 1000
         });
 
@@ -795,6 +810,21 @@ app.post('/api/admin/impersonate/exit', authenticateToken, async (req, res) => {
         }).catch(e => console.error("Audit log failed:", e.message));
 
         res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.get('/api/admin/audit-logs', authenticateToken, authenticateAdmin, async (req, res) => {
+    try {
+        const { adminEmail, targetUserId, action } = req.query;
+        let query = {};
+        if (adminEmail) query.adminEmail = adminEmail;
+        if (targetUserId) query.targetUserId = targetUserId;
+        if (action) query.action = action;
+
+        const logs = await AuditLog.find(query).sort({ timestamp: -1 }).limit(100);
+        res.json({ success: true, logs });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
@@ -1694,7 +1724,7 @@ app.post('/api/auth/firebase', async (req, res) => {
 });
 
 app.post('/api/logout', (req, res) => {
-    res.clearCookie('token');
+    res.clearCookie('token', { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'Strict' });
     res.status(200).json({ success: true });
 });
 
@@ -1802,7 +1832,7 @@ app.post('/api/forgot-password', async (req, res) => {
 });
 
 app.post('/api/logout', (req, res) => {
-    res.clearCookie('token');
+    res.clearCookie('token', { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'Strict' });
     res.status(200).json({ message: 'Logged out successfully' });
 });
 
