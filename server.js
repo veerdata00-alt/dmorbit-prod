@@ -201,6 +201,23 @@ const flowStateSchema = new mongoose.Schema({
 });
 const FlowState = mongoose.model('FlowState', flowStateSchema);
 
+// --- DM Session State Tracking ---
+const dmSessionSchema = new mongoose.Schema({
+    userId: { type: String, index: true },       // The DMOrbit owner
+    targetId: { type: String, index: true },     // The follower's IG ID
+    automationId: { type: String, index: true },
+    currentStep: { type: String, default: 'start' }, 
+    lastMessageType: String,
+    lastTriggeredAt: { type: Date, default: Date.now },
+    isCompleted: { type: Boolean, default: false },
+    awaitingFollowCheck: { type: Boolean, default: false },
+    cooldownUntil: Date,
+    clickCount: { type: Number, default: 0 },
+    processing: { type: Boolean, default: false },
+    processingAt: Date
+});
+const DMSession = mongoose.model('DMSession', dmSessionSchema);
+
 // --- NEW SAAS DATABASE DRIVEN PLAN SCHEMA ---
 const planSchema = new mongoose.Schema({
     planId: { type: String, unique: true }, // 'FREE', 'CREATOR', 'PRO'
@@ -1128,7 +1145,7 @@ const sendInstagramDM = async (ownerId, targetId, message, igId = null) => {
     console.log(`[SEND] Instagram Standard DM to UserID: ${targetId} | Owner: ${ownerId}`);
     
     // 1. Fetch user specific token
-    const account = await InstagramAccount.findOne({ userId: ownerId });
+    const account = await InstagramAccount.findOne({ userId: ownerId, status: 'active' }).sort({ updatedAt: -1 });
     if (!account || account.status !== 'active') {
         console.warn(`[SEND ABORTED] Instagram account is disconnected or inactive for owner: ${ownerId}`);
         return { success: false, error: "Instagram account is disconnected or inactive." };
@@ -1189,7 +1206,7 @@ const sendInstagramDM = async (ownerId, targetId, message, igId = null) => {
 const sendInstagramPublicReply = async (ownerId, commentId, message) => {
     console.log(`[SEND] Instagram Public Reply to CommentID: ${commentId} | Owner: ${ownerId}`);
 
-    const account = await InstagramAccount.findOne({ userId: ownerId });
+    const account = await InstagramAccount.findOne({ userId: ownerId, status: 'active' }).sort({ updatedAt: -1 });
     if (!account || account.status !== 'active') {
         console.warn(`[SEND ABORTED] Instagram account is disconnected or inactive for owner: ${ownerId}`);
         return { success: false, error: "Instagram account is disconnected or inactive." };
@@ -1223,7 +1240,7 @@ const sendInstagramPrivateReply = async (ownerId, commentId, message, igId = nul
     console.log(`[SEND] Instagram Private Reply to CommentID: ${commentId} | Owner: ${ownerId}`);
 
     // 1. Fetch user specific token
-    const account = await InstagramAccount.findOne({ userId: ownerId });
+    const account = await InstagramAccount.findOne({ userId: ownerId, status: 'active' }).sort({ updatedAt: -1 });
     if (!account || account.status !== 'active') {
         console.warn(`[SEND ABORTED] Instagram account is disconnected or inactive for owner: ${ownerId}`);
         return { success: false, error: "Instagram account is disconnected or inactive." };
@@ -2439,6 +2456,9 @@ app.post('/api/billing/webhook', async (req, res) => {
 // --- Unified Meta Webhook Receiver (POST /webhook) ---
 app.post('/webhook', verifySignature, async (req, res) => {
     console.log("🔥 WEBHOOK HIT 🔥");
+    // Immediately respond to Facebook to prevent retries (20 second timeout issue)
+    res.json({ received: true });
+
     const body = req.body;
     const headers = req.headers;
 
@@ -2518,8 +2538,60 @@ app.post('/webhook', verifySignature, async (req, res) => {
                                 const replyText = matched?.privateMessageText || (matched?.actions?.find(act => act.type === 'send_dm')?.text);
 
                                 if (matched && replyText) {
-                                    console.log(`[DM AUTOMATION] Matched keyword! Queuing reply...`);
+                                    console.log(`[DM AUTOMATION] Matched keyword! Checking session...`);
+                                    let session = null;
                                     try {
+                                        const now = new Date();
+                                        const lockTime = new Date(now.getTime() - 10000); 
+
+                                        session = await DMSession.findOneAndUpdate(
+                                            {
+                                                userId: ownerId,
+                                                targetId: senderId,
+                                                automationId: matched._id,
+                                                $or: [
+                                                    { processing: { $ne: true } },
+                                                    { processingAt: { $lt: lockTime } } 
+                                                ]
+                                            },
+                                            { $set: { processing: true, processingAt: now } },
+                                            { new: true }
+                                        );
+
+                                        if (!session) {
+                                            let exists = await DMSession.exists({ userId: ownerId, targetId: senderId, automationId: matched._id });
+                                            if (exists) {
+                                                console.log(`[DM AUTOMATION] Session locked for Keyword trigger from user ${senderId}. Ignoring.`);
+                                                continue;
+                                            } else {
+                                                session = await DMSession.create({
+                                                    userId: ownerId,
+                                                    targetId: senderId,
+                                                    automationId: matched._id,
+                                                    processing: true,
+                                                    processingAt: now,
+                                                    currentStep: 'initial_access',
+                                                    cooldownUntil: new Date(now.getTime() + 10 * 1000)
+                                                });
+                                            }
+                                        }
+
+                                        if (session.cooldownUntil && session.cooldownUntil > now) {
+                                            console.log(`[DM AUTOMATION] Cooldown active for user ${senderId}. Ignoring.`);
+                                            session.processing = false;
+                                            await session.save();
+                                            continue;
+                                        }
+                                        
+                                        // Reset session for a new conversation trigger
+                                        session.currentStep = 'initial_access';
+                                        session.lastTriggeredAt = now;
+                                        session.isCompleted = false;
+                                        session.clickCount = 0;
+                                        session.cooldownUntil = new Date(now.getTime() + 10 * 1000); // 10 sec burst protection
+                                        session.processing = false;
+                                        await session.save();
+
                                         // Create Job for Initial Access Card
                                         const job = await Job.create({
                                             automationId: matched._id,
@@ -2534,13 +2606,23 @@ app.post('/webhook', verifySignature, async (req, res) => {
                                                 ig_id: entry.id,
                                                 instagramAccountId: ownerAccount.instagram_id,
                                                 igUsername: ownerAccount.username,
-                                                templateType: 'initial_access'
+                                                templateType: 'initial_access',
+                                                eventId: eventId
                                             },
                                             status: "pending"
                                         });
                                         console.log(`[OFFICIAL QUEUED] DB ID: ${job._id} | Target: ${senderId}`);
                                     } catch (err) {
                                         console.error("[DM QUEUE ERROR]", err.message);
+                                        if (session) {
+                                            session.processing = false;
+                                            await session.save().catch(() => {});
+                                        }
+                                    } finally {
+                                        if (session && session.processing) {
+                                            session.processing = false;
+                                            await session.save().catch(() => {});
+                                        }
                                     }
                                 }
                             }
@@ -2565,7 +2647,37 @@ app.post('/webhook', verifySignature, async (req, res) => {
                                 const automation = await Automation.findOne({ userId: ownerAccount.userId, isActive: true }).sort({ createdAt: -1 });
 
                                 if (postbackPayload === "REQUEST_ACCESS_CLICKED") {
+                                    let session = null;
                                     try {
+                                        const now = new Date();
+                                        const lockTime = new Date(now.getTime() - 10000); 
+
+                                        session = await DMSession.findOneAndUpdate(
+                                            {
+                                                userId: ownerAccount.userId,
+                                                targetId: senderId,
+                                                automationId: automation?._id,
+                                                $or: [
+                                                    { processing: { $ne: true } },
+                                                    { processingAt: { $lt: lockTime } } 
+                                                ]
+                                            },
+                                            { $set: { processing: true, processingAt: now } },
+                                            { new: true }
+                                        );
+
+                                        if (!session) {
+                                            console.log(`[DM AUTOMATION] Session locked for REQUEST_ACCESS_CLICKED from user ${senderId}. Ignoring.`);
+                                            continue;
+                                        }
+
+                                        if (session.currentStep !== 'initial_access') {
+                                            console.log(`[DM AUTOMATION] Ignoring duplicate REQUEST_ACCESS_CLICKED from user ${senderId}`);
+                                            session.processing = false;
+                                            await session.save();
+                                            continue; 
+                                        }
+
                                         const followCheckUrl = `https://graph.facebook.com/v21.0/${senderId}?fields=is_viewer_follow_page&access_token=${pageToken}`;
                                         const followRes = await axios.get(followCheckUrl).catch(() => null);
                                         const isFollowing = followRes?.data?.is_viewer_follow_page || false;
@@ -2575,6 +2687,12 @@ app.post('/webhook', verifySignature, async (req, res) => {
 
                                         let templateType = isFollowing ? 'final_delivery' : 'follow_gate';
                                         
+                                        // Update Session
+                                        session.currentStep = 'follow_gate';
+                                        session.clickCount = 0;
+                                        session.processing = false;
+                                        await session.save();
+
                                         await Job.create({
                                             automationId: automation?._id,
                                             userId: ownerAccount.userId,
@@ -2599,6 +2717,13 @@ app.post('/webhook', verifySignature, async (req, res) => {
                                     } catch (err) {
                                         console.log("[DMOrbit Dev Mode Fallback] Follow API restricted. Forcing Follow-Gate Card for testing.");
                                         const profileUrl = `https://www.instagram.com/_u/dmorbitapp/`;
+                                        if (session) {
+                                            session.currentStep = 'follow_gate';
+                                            session.clickCount = 0;
+                                            session.processing = false;
+                                            await session.save();
+                                        }
+
                                         await Job.create({
                                             automationId: automation?._id,
                                             userId: ownerAccount.userId,
@@ -2617,59 +2742,130 @@ app.post('/webhook', verifySignature, async (req, res) => {
                                             },
                                             status: "pending"
                                         });
+                                    } finally {
+                                        if (session && session.processing) {
+                                            session.processing = false;
+                                            await session.save().catch(() => {});
+                                        }
                                     }
                                 }
 
                                 if (postbackPayload === "VERIFY_FOLLOW_CLICKED") {
-                                    console.log("[DMOrbit] First click on 'I'm following'. Triggering psychological block via queue.");
+                                    console.log("[DMOrbit] 'I'm following' clicked. Verifying status via API.");
+                                    let session = null;
                                     try {
-                                        const profileUrl = `https://www.instagram.com/_u/dmorbitapp/`;
-                                        await Job.create({
-                                            automationId: automation?._id,
-                                            userId: ownerAccount.userId,
-                                            user_id: senderId,
-                                            username: senderId,
-                                            platform: "instagram",
-                                            message: 'Nice Try Check',
-                                            type: 'send_dm',
-                                            process_after: Date.now(),
-                                            metadata: {
-                                                ig_id: entry.id,
-                                                instagramAccountId: ownerAccount.instagram_id,
-                                                igUsername: ownerAccount.username,
-                                                templateType: 'nice_try',
-                                                profileUrl: profileUrl
+                                        const now = new Date();
+                                        const lockTime = new Date(now.getTime() - 10000); // 10s auto-unlock safety
+                                        
+                                        session = await DMSession.findOneAndUpdate(
+                                            {
+                                                userId: ownerAccount.userId,
+                                                targetId: senderId,
+                                                automationId: automation?._id,
+                                                $or: [
+                                                    { processing: { $ne: true } },
+                                                    { processingAt: { $lt: lockTime } } 
+                                                ]
                                             },
-                                            status: "pending"
-                                        });
+                                            { $set: { processing: true, processingAt: now } },
+                                            { new: true }
+                                        );
+
+                                        if (!session) {
+                                            console.log(`[DM AUTOMATION] Session locked for VERIFY_FOLLOW_CLICKED from user ${senderId}. Ignoring concurrent request.`);
+                                            continue;
+                                        }
+                                        
+                                        // 1. Check strict cooldown
+                                        if (session.cooldownUntil && session.cooldownUntil > now) {
+                                            console.log(`[DM AUTOMATION] Strict cooldown active for VERIFY_FOLLOW_CLICKED from user ${senderId}. Ignoring.`);
+                                            session.processing = false;
+                                            await session.save();
+                                            continue;
+                                        }
+
+                                        // 2. Query Facebook Graph API for follow status
+                                        const followCheckUrl = `https://graph.facebook.com/v21.0/${senderId}?fields=is_viewer_follow_page&access_token=${pageToken}`;
+                                        const followRes = await axios.get(followCheckUrl).catch(() => null);
+                                        const isFollowing = followRes?.data?.is_viewer_follow_page || false;
+
+                                        const link = extractUrl(automation?.privateMessageText);
+                                        const profileUrl = `https://www.instagram.com/_u/dmorbitapp/`;
+
+                                        if (isFollowing) {
+                                            // USER IS FOLLOWING: Send final delivery
+                                            if (session.isCompleted) {
+                                                console.log(`[DM AUTOMATION] Ignoring duplicate final delivery for user ${senderId}.`);
+                                                session.processing = false;
+                                                await session.save();
+                                                continue;
+                                            }
+                                            session.isCompleted = true;
+                                            session.processing = false;
+                                            await session.save();
+
+                                            await Job.create({
+                                                automationId: automation?._id,
+                                                userId: ownerAccount.userId,
+                                                user_id: senderId,
+                                                username: senderId,
+                                                platform: "instagram",
+                                                message: 'Final Delivery',
+                                                type: 'send_dm',
+                                                process_after: Date.now(),
+                                                metadata: {
+                                                    ig_id: entry.id,
+                                                    instagramAccountId: ownerAccount.instagram_id,
+                                                    igUsername: ownerAccount.username,
+                                                    templateType: 'final_delivery',
+                                                    targetLink: link,
+                                                    fallbackText: automation?.name,
+                                                    eventId: eventId
+                                                },
+                                                status: "pending"
+                                            });
+                                        } else {
+                                            // USER IS NOT FOLLOWING: Send Nice Try & Start Cooldown
+                                            session.clickCount += 1;
+                                            session.cooldownUntil = new Date(now.getTime() + 30 * 1000); // 30 second penalty box
+                                            session.processing = false;
+                                            await session.save();
+
+                                            await Job.create({
+                                                automationId: automation?._id,
+                                                userId: ownerAccount.userId,
+                                                user_id: senderId,
+                                                username: senderId,
+                                                platform: "instagram",
+                                                message: 'Nice Try Check',
+                                                type: 'send_dm',
+                                                process_after: Date.now(),
+                                                metadata: {
+                                                    ig_id: entry.id,
+                                                    instagramAccountId: ownerAccount.instagram_id,
+                                                    igUsername: ownerAccount.username,
+                                                    templateType: 'nice_try',
+                                                    profileUrl: profileUrl,
+                                                    eventId: eventId
+                                                },
+                                                status: "pending"
+                                            });
+                                        }
                                     } catch (err) {
-                                        console.error("Error queuing 1st click response:", err.message);
+                                        console.error("Error verifying follow status:", err.message);
+                                        if (session) {
+                                            session.processing = false;
+                                            await session.save().catch(() => {});
+                                        }
+                                    } finally {
+                                        if (session && session.processing) {
+                                            session.processing = false;
+                                            await session.save().catch(() => {});
+                                        }
                                     }
                                 }
 
-                                if (postbackPayload === "FINAL_FOLLOW_CLICKED") {
-                                    console.log("[DMOrbit] Second click verified. Queuing final automation resource safely.");
-                                    const link = extractUrl(automation?.privateMessageText);
-                                    await Job.create({
-                                        automationId: automation?._id,
-                                        userId: ownerAccount.userId,
-                                        user_id: senderId,
-                                        username: senderId,
-                                        platform: "instagram",
-                                        message: 'Final Delivery',
-                                        type: 'send_dm',
-                                        process_after: Date.now(),
-                                        metadata: {
-                                            ig_id: entry.id,
-                                            instagramAccountId: ownerAccount.instagram_id,
-                                            igUsername: ownerAccount.username,
-                                            templateType: 'final_delivery',
-                                            targetLink: link,
-                                            fallbackText: automation?.name
-                                        },
-                                        status: "pending"
-                                    });
-                                }
+
                             }
                         }
                     }
@@ -2834,7 +3030,8 @@ app.post('/webhook', verifySignature, async (req, res) => {
                                                         instagramAccountId: ownerAccount.instagram_id,
                                                         igUsername: ownerAccount.username,
                                                         snapshotAt: Date.now(),
-                                                        templateType: 'initial_access'
+                                                        templateType: 'initial_access',
+                                                        eventId: eventId
                                                     },
                                                     status: "pending"
                                                 });
@@ -2893,7 +3090,8 @@ app.post('/webhook', verifySignature, async (req, res) => {
                                                         post_url: postUrl,
                                                         instagramAccountId: ownerAccount.instagram_id,
                                                         igUsername: ownerAccount.username,
-                                                        snapshotAt: Date.now()
+                                                        snapshotAt: Date.now(),
+                                                        eventId: eventId
                                                     },
                                                     status: "pending"
                                                 });
@@ -2924,12 +3122,15 @@ app.post('/webhook', verifySignature, async (req, res) => {
                     }
                 }
             }
-            return res.status(200).send('EVENT_RECEIVED');
+            return; // Headers already sent at the top
         } catch (err) {
             console.error("[WEBHOOK ERROR] Processing failed:", err);
-            return res.status(500).send('INTERNAL_SERVER_ERROR');
+            return; // Error logged, no need to send 500 since 200 was already sent
         }
     }
+    // Only send 404 if we didn't already send 200 at the top... wait, we already sent 200 at the top.
+    // So just return here.
+    return;
     return res.status(404).json({ error: "Unsupported event object", received: body.object });
 });
 
