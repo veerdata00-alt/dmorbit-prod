@@ -1326,6 +1326,50 @@ function setupSmartBioListeners() {
             if (statsRes && !statsRes.error) {
                 const stats = statsRes;
                 
+                // --- IMPERSONATION UI ---
+                if (stats.impersonatedBy && !document.getElementById('impersonation-banner')) {
+                    const banner = document.createElement('div');
+                    banner.id = 'impersonation-banner';
+                    banner.style.cssText = `
+                        position: fixed; top: 0; left: 0; width: 100%; z-index: 999999;
+                        background: linear-gradient(135deg, #b91c1c, #991b1b);
+                        color: white; padding: 12px 24px; display: flex;
+                        justify-content: space-between; align-items: center;
+                        font-family: var(--font-primary); font-size: 14px; font-weight: 600;
+                        box-shadow: 0 4px 12px rgba(220,38,38,0.3); border-bottom: 2px solid #f87171;
+                    `;
+                    banner.innerHTML = `
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <span style="font-size: 18px;">⚠️</span>
+                            <span>You are securely impersonating this workspace. Any actions taken are logged.</span>
+                        </div>
+                        <button id="exit-impersonation-btn" style="
+                            background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.4);
+                            color: white; padding: 6px 14px; border-radius: 6px; cursor: pointer;
+                            font-weight: 700; transition: all 0.2s;
+                        " onmouseover="this.style.background='white'; this.style.color='#b91c1c';"
+                           onmouseout="this.style.background='rgba(255,255,255,0.2)'; this.style.color='white';">
+                            Exit Impersonation
+                        </button>
+                    `;
+                    document.body.prepend(banner);
+                    document.body.style.paddingTop = '48px'; 
+
+                    document.getElementById('exit-impersonation-btn').addEventListener('click', async () => {
+                        try {
+                            const res = await fetch('/api/admin/impersonate/exit', { method: 'POST', headers: { 'Authorization': 'Bearer ' + API.getToken() } });
+                            if (res.ok) {
+                                window.location.href = '/admin.html';
+                            } else {
+                                alert('Failed to exit impersonation securely.');
+                            }
+                        } catch (e) {
+                            alert('Error exiting impersonation.');
+                        }
+                    });
+                }
+
+                
                 const activeAutoEl = document.getElementById('stat-active-automations');
                 if (activeAutoEl) activeAutoEl.innerText = stats.automations?.active || 0;
                 
