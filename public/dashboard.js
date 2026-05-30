@@ -200,7 +200,7 @@ async function loadAutomations() {
             const keywordText = (auto.trigger?.keywords || []).join(', ') || 'ANY_COMMENT';
             const replyMsg = auto.replyStyleMode === 'FOLLOW_GATE' ? '⚡ Viral Follow-Gate' : (auto.privateMessageText || 'Direct Message');
             return `
-                <tr class="border-b border-white/5 hover:bg-white/[0.02] transition-colors group ${isDisabled ? 'opacity-50 grayscale' : ''}">
+                <tr class="border-b border-white/5 hover:bg-white/[0.02] transition-colors group ${isDisabled ? 'opacity-80' : ''}">
                     <td class="p-4 align-middle text-gray-500 font-medium text-xs w-12">${index + 1}</td>
                     <td class="p-4 align-middle">
                         <div class="flex items-center gap-2">
@@ -234,8 +234,12 @@ async function loadAutomations() {
 
         if (window.cachedIsIgConnected === false) {
             listBody.innerHTML = `
-                <tr><td colspan="6" class="p-4 bg-red-500/10 border-b border-red-500/20 text-center">
-                    <span class="text-red-400 font-semibold text-sm">⚠️ Your automations are temporarily paused because Instagram was disconnected. Please reconnect to reactivate.</span>
+                <tr><td colspan="6" class="p-4 bg-amber-500/10 border-b border-amber-500/20 text-center relative">
+                    <span class="text-amber-400 font-semibold text-sm mr-4">ℹ️ Your automations are temporarily paused until Instagram reconnects.</span>
+                    <button onclick="window.switchTab('account')" class="bg-amber-500/20 text-amber-400 hover:bg-amber-500/30 px-3 py-1 rounded-md text-xs font-semibold inline-flex items-center gap-1.5 transition-colors shadow-sm ml-2 relative -top-0.5">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
+                        Reconnect Instagram
+                    </button>
                 </td></tr>
             ` + rowsHtml;
         } else {
@@ -1105,10 +1109,14 @@ function setupSmartBioListeners() {
                 
                 if (window.cachedIsIgConnected === false) {
                     listContainer.innerHTML = `
-                        <div style="text-align: center; padding: 32px 16px; color: var(--danger); font-size: 13px; border: 1px dashed rgba(239,68,68,0.2); border-radius: 12px; display: flex; flex-direction: column; align-items: center; gap: 8px; background: rgba(239,68,68,0.05);">
-                            <div style="font-size: 24px;">⚠️</div>
+                        <div style="text-align: center; padding: 32px 16px; color: #fbbf24; font-size: 13px; border: 1px dashed rgba(245,158,11,0.2); border-radius: 12px; display: flex; flex-direction: column; align-items: center; gap: 8px; background: rgba(245,158,11,0.05);">
+                            <div style="font-size: 24px;">ℹ️</div>
                             <div style="font-weight: 600;">Queue Paused</div>
-                            <div style="font-size: 12px; opacity: 0.8;">Waiting for Instagram Reconnection.</div>
+                            <div style="font-size: 12px; opacity: 0.9; margin-bottom: 8px; color: #fbbf24;">Waiting for Instagram Reconnection.</div>
+                            <button onclick="window.switchTab('account')" class="bg-amber-500/20 text-amber-400 hover:bg-amber-500/30 px-3 py-1.5 rounded-md text-xs font-semibold inline-flex items-center gap-1.5 transition-colors shadow-sm">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
+                                Reconnect
+                            </button>
                         </div>
                     `;
                     return;
@@ -1325,7 +1333,11 @@ function setupSmartBioListeners() {
                 // Restore generic profile details if disconnected
                 const sidebarNameEl = document.getElementById('sidebar-user-name');
                 if (sidebarNameEl && currentUser) {
-                    sidebarNameEl.textContent = currentUser.name || currentUser.email;
+                    if (stats.instagram?.lastUsername) {
+                        sidebarNameEl.innerHTML = `${currentUser.name || currentUser.email} <span style="display:block; font-size:10px; color:var(--text-muted); margin-top:2px; font-weight:normal;">Previously: @${stats.instagram.lastUsername}</span>`;
+                    } else {
+                        sidebarNameEl.textContent = currentUser.name || currentUser.email;
+                    }
                 }
                 const avatarEl = document.getElementById('user-avatar');
                 if (avatarEl && currentUser) {
