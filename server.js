@@ -1140,8 +1140,8 @@ const sendInstagramDM = async (ownerId, targetId, message, igId = null) => {
         return { success: true, message_id: "sim_" + Date.now(), status: "simulated" };
     }
 
-    // Use igId if provided, fallback to 'me'
-    const endpointId = igId || (account ? account.instagram_id : 'me');
+    // Use Page ID (page_id) or 'me' as required by Meta Send API, NOT Instagram Business Account ID (instagram_id)
+    const endpointId = (account && account.page_id) || 'me';
     const url = `https://graph.facebook.com/v19.0/${endpointId}/messages`;
     
     let messagePayload = { text: message };
@@ -1235,13 +1235,8 @@ const sendInstagramPrivateReply = async (ownerId, commentId, message, igId = nul
         return { success: true, message_id: "sim_" + Date.now(), status: "simulated" };
     }
 
-    // Use igId if provided (this should be the Instagram Business Account ID)
-    const endpointId = igId || account.instagram_id;
-    if (!endpointId) {
-        console.error("[CRITICAL ERROR] No Instagram Business ID (ig_id) found for owner.");
-        return { success: false, error: "Missing ig_id" };
-    }
-
+    // Use Page ID (page_id) or 'me' as required by Meta Send API, NOT Instagram Business Account ID (instagram_id)
+    const endpointId = (account && account.page_id) || 'me';
     const url = `https://graph.facebook.com/v19.0/${endpointId}/messages`;
     
     let messagePayload = { text: message };
@@ -2522,26 +2517,27 @@ app.post('/webhook', verifySignature, async (req, res) => {
                                 const replyText = matched?.privateMessageText || (matched?.actions?.find(act => act.type === 'send_dm')?.text);
 
                                 if (matched && replyText) {
-                                    console.log(`[DM AUTOMATION] Matched keyword "${normalizedDm}"! Sending direct reply: "${replyText}"`);
+                                    console.log(`[DM AUTOMATION] Matched keyword! Queuing reply...`);
                                     try {
-                                        // Send actual automation text directly (no template card)
+                                        // Create Job for Initial Access Card
                                         const job = await Job.create({
                                             automationId: matched._id,
                                             userId: ownerId,
                                             user_id: senderId,
                                             username: senderId,
                                             platform: "instagram",
-                                            message: replyText,
+                                            message: 'DM Keyword Delivery',
                                             type: 'send_dm',
                                             process_after: Date.now(),
                                             metadata: {
                                                 ig_id: entry.id,
                                                 instagramAccountId: ownerAccount.instagram_id,
-                                                igUsername: ownerAccount.username
+                                                igUsername: ownerAccount.username,
+                                                templateType: 'initial_access'
                                             },
                                             status: "pending"
                                         });
-                                        console.log(`[OFFICIAL QUEUED] DB ID: ${job._id} | Target: ${senderId} | Msg: "${replyText}"`);
+                                        console.log(`[OFFICIAL QUEUED] DB ID: ${job._id} | Target: ${senderId}`);
                                     } catch (err) {
                                         console.error("[DM QUEUE ERROR]", err.message);
                                     }
