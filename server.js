@@ -1143,9 +1143,17 @@ const sendInstagramDM = async (ownerId, targetId, message, igId = null) => {
     // Use igId if provided, fallback to 'me'
     const endpointId = igId || (account ? account.instagram_id : 'me');
     const url = `https://graph.facebook.com/v19.0/${endpointId}/messages`;
+    
+    let messagePayload = { text: message };
+    // We allow passing structured payload via message object if metadata is not used directly,
+    // but in DMOrbit we define the templateType in the queue job metadata.
+    if (typeof message === 'object' && message.attachment) {
+        messagePayload = message;
+    }
+
     const payload = {
         recipient: { id: targetId },
-        message: { text: message }
+        message: messagePayload
     };
 
     try {
@@ -1235,9 +1243,15 @@ const sendInstagramPrivateReply = async (ownerId, commentId, message, igId = nul
     }
 
     const url = `https://graph.facebook.com/v19.0/${endpointId}/messages`;
+    
+    let messagePayload = { text: message };
+    if (typeof message === 'object' && message.attachment) {
+        messagePayload = message;
+    }
+
     const payload = {
         recipient: { comment_id: commentId },
-        message: { text: message }
+        message: messagePayload
     };
 
     console.log(`[GRAPH API REQUEST] POST ${url}`);
@@ -1276,6 +1290,76 @@ const sendDM = async (platform, ownerId, targetId, message, metadata = {}, type 
     
     if (platform === "instagram") {
         const igId = metadata && metadata.ig_id;
+        
+        let finalMessage = message;
+        if (metadata && metadata.templateType === 'initial_access') {
+            finalMessage = {
+                attachment: {
+                    type: "template",
+                    payload: {
+                        template_type: "generic",
+                        elements: [{
+                            title: "Hey 🖐",
+                            subtitle: "Saw your interest - I've got something useful for you. Tap below and I'll send it right away",
+                            buttons: [{ type: "postback", title: "Send me the access", payload: "REQUEST_ACCESS_CLICKED" }]
+                        }]
+                    }
+                }
+            };
+        } else if (metadata && metadata.templateType === 'final_delivery') {
+            const fallbackText = metadata.fallbackText || "This is what you asked for. Try it and let me know 👍";
+            const targetLink = metadata.targetLink || "https://web-production-dd826.up.railway.app";
+            finalMessage = {
+                attachment: {
+                    type: "template",
+                    payload: {
+                        template_type: "generic",
+                        elements: [{
+                            title: "Here you go 👇",
+                            subtitle: fallbackText,
+                            buttons: [{ type: "web_url", url: targetLink, title: "Click me" }]
+                        }]
+                    }
+                }
+            };
+        } else if (metadata && metadata.templateType === 'follow_gate') {
+            const profileUrl = metadata.profileUrl || "https://www.instagram.com/_u/dmorbitapp/";
+            finalMessage = {
+                attachment: {
+                    type: "template",
+                    payload: {
+                        template_type: "generic",
+                        elements: [{
+                            title: "Looks like you're not following yet 👀",
+                            subtitle: "Follow to unlock access.",
+                            buttons: [
+                                { type: "web_url", url: profileUrl, title: "Visit Profile" },
+                                { type: "postback", title: "I'm following ✅", payload: "VERIFY_FOLLOW_CLICKED" }
+                            ]
+                        }]
+                    }
+                }
+            };
+        } else if (metadata && metadata.templateType === 'nice_try') {
+            const profileUrl = metadata.profileUrl || "https://www.instagram.com/_u/dmorbitapp/";
+            finalMessage = {
+                attachment: {
+                    type: "template",
+                    payload: {
+                        template_type: "generic",
+                        elements: [{
+                            title: "Nice try! But you're still not following yet 👀",
+                            subtitle: "Please click 'Visit Profile' and follow to instantly unlock the access.",
+                            buttons: [
+                                { type: "web_url", url: profileUrl, title: "Visit Profile" },
+                                { type: "postback", title: "I'm following ✅", payload: "VERIFY_FOLLOW_CLICKED" }
+                            ]
+                        }]
+                    }
+                }
+            };
+        }
+
         if (type === "reply_comment" || (metadata && metadata.comment_id)) {
             const commentId = metadata && metadata.comment_id;
             
@@ -1285,9 +1369,9 @@ const sendDM = async (platform, ownerId, targetId, message, metadata = {}, type 
             }
 
             // 2. Send Private Reply
-            return await sendInstagramPrivateReply(ownerId, commentId, message, igId);
+            return await sendInstagramPrivateReply(ownerId, commentId, finalMessage, igId);
         } else {
-            return await sendInstagramDM(ownerId, targetId, message, igId);
+            return await sendInstagramDM(ownerId, targetId, finalMessage, igId);
         }
     } else {
         // Default to Telegram
@@ -1310,6 +1394,9 @@ const finalizeJob = async (jobId, status, error = null, deliveryStatus = 'pendin
             if (job.automationId) {
                 await Automation.findByIdAndUpdate(job.automationId, { $inc: { triggerCount: 1 } });
             }
+
+            // Sync User DM limits and Dashboard stats atomically
+            await User.updateOne({ _id: job.userId }, { $inc: { dmCountThisMonth: 1 } });
 
             // Create Audit Log entry - Isolated by ownerId
             await Log.create({
@@ -2241,76 +2328,6 @@ app.get('/ig-profile', (req, res) => {
     `);
 });
 
-// --- DMOrbit Follow-Gate Template Engine ---
-
-async function sendInitialAccessCard(recipientId, pageToken) {
-    const url = `https://graph.facebook.com/v21.0/me/messages`;
-    const payload = {
-        recipient: { id: recipientId },
-        message: {
-            attachment: {
-                type: "template",
-                payload: {
-                    template_type: "generic",
-                    elements: [{
-                        title: "Hey 🖐",
-                        subtitle: "Saw your interest - I've got something useful for you. Tap below and I'll send it right away",
-                        buttons: [{ type: "postback", title: "Send me the access", payload: "REQUEST_ACCESS_CLICKED" }]
-                    }]
-                }
-            }
-        },
-        access_token: pageToken
-    };
-    await axios.post(url, payload);
-}
-
-async function sendFollowGateCard(recipientId, pageToken, profileUrl) {
-    const url = `https://graph.facebook.com/v21.0/me/messages`;
-    const payload = {
-        recipient: { id: recipientId },
-        message: {
-            attachment: {
-                type: "template",
-                payload: {
-                    template_type: "generic",
-                    elements: [{
-                        title: "Looks like you're not following yet 👀",
-                        subtitle: "Follow to unlock access.",
-                        buttons: [
-                            { type: "web_url", url: profileUrl || "https://instagram.com/", title: "Visit Profile" },
-                            { type: "postback", title: "I'm following ✅", payload: "VERIFY_FOLLOW_CLICKED" }
-                        ]
-                    }]
-                }
-            }
-        },
-        access_token: pageToken
-    };
-    await axios.post(url, payload);
-}
-
-async function sendFinalDeliveryCard(recipientId, pageToken, targetLink, fallbackText) {
-    const url = `https://graph.facebook.com/v21.0/me/messages`;
-    const payload = {
-        recipient: { id: recipientId },
-        message: {
-            attachment: {
-                type: "template",
-                payload: {
-                    template_type: "generic",
-                    elements: [{
-                        title: "Here you go 👇",
-                        subtitle: fallbackText || "This is what you asked for. Try it and let me know 👍",
-                        buttons: [{ type: "web_url", url: targetLink || "https://web-production-dd826.up.railway.app", title: "Click me" }]
-                    }]
-                }
-            }
-        },
-        access_token: pageToken
-    };
-    await axios.post(url, payload);
-}
 
 function extractUrl(text) {
     if(!text) return "https://web-production-dd826.up.railway.app";
@@ -2507,28 +2524,29 @@ app.post('/webhook', verifySignature, async (req, res) => {
                                 const replyText = matched?.privateMessageText || (matched?.actions?.find(act => act.type === 'send_dm')?.text);
 
                                 if (matched && replyText) {
-                                    console.log(`[DM AUTOMATION] Matched keyword! Sending reply...`);
+                                    console.log(`[DM AUTOMATION] Matched keyword! Queuing reply...`);
                                     try {
-                                        // Send Initial Access Card instead of plain text
-                                        await sendInitialAccessCard(senderId, ownerAccount.access_token);
-                                        console.log(`[DM SUCCESS] Follow-Gate Initial Card sent to user: ${senderId}`);
-                                        
-                                        // Analytics Sync: Update Dashboard Counters for DMs
-                                        await Automation.findByIdAndUpdate(matched._id, { $inc: { triggerCount: 1 } });
-                                        await User.updateOne({ _id: ownerId }, { $inc: { dmCountThisMonth: 1 } });
-                                        await Log.create({
-                                            ownerId: ownerId,
-                                            username: senderId, // Fallback since IG doesn't send username in messaging
+                                        // Create Job for Initial Access Card
+                                        const job = await Job.create({
+                                            automationId: matched._id,
+                                            userId: ownerId,
                                             user_id: senderId,
-                                            keyword: matched.keyword || (matched.trigger && matched.trigger.keywords ? matched.trigger.keywords[0] : 'DM_KEYWORD'),
-                                            dmLink: 'DM Reply',
-                                            metadata: { automationId: matched._id },
-                                            platform: 'instagram',
-                                            timestamp: new Date()
+                                            username: senderId,
+                                            platform: "instagram",
+                                            message: 'DM Keyword Delivery',
+                                            type: 'send_dm',
+                                            process_after: Date.now(),
+                                            metadata: {
+                                                ig_id: entry.id,
+                                                instagramAccountId: ownerAccount.instagram_id,
+                                                igUsername: ownerAccount.username,
+                                                templateType: 'initial_access'
+                                            },
+                                            status: "pending"
                                         });
-                                        
+                                        console.log(`[OFFICIAL QUEUED] DB ID: ${job._id} | Target: ${senderId}`);
                                     } catch (err) {
-                                        console.error("[DM ERROR]", err.response?.data || err.message);
+                                        console.error("[DM QUEUE ERROR]", err.message);
                                     }
                                 }
                             }
@@ -2560,61 +2578,102 @@ app.post('/webhook', verifySignature, async (req, res) => {
                                         const link = extractUrl(automation?.privateMessageText);
                                         const profileUrl = `https://www.instagram.com/_u/dmorbitapp/`;
 
-                                        if (isFollowing) {
-                                            await sendFinalDeliveryCard(senderId, pageToken, link, automation?.name);
-                                        } else {
-                                            // Real Flow: Send the Follow-Gate card if they don't follow
-                                            await sendFollowGateCard(senderId, pageToken, profileUrl);
-                                        }
+                                        let templateType = isFollowing ? 'final_delivery' : 'follow_gate';
+                                        
+                                        await Job.create({
+                                            automationId: automation?._id,
+                                            userId: ownerAccount.userId,
+                                            user_id: senderId,
+                                            username: senderId,
+                                            platform: "instagram",
+                                            message: 'Follow-Gate Check',
+                                            type: 'send_dm',
+                                            process_after: Date.now(),
+                                            metadata: {
+                                                ig_id: entry.id,
+                                                instagramAccountId: ownerAccount.instagram_id,
+                                                igUsername: ownerAccount.username,
+                                                templateType: templateType,
+                                                targetLink: link,
+                                                fallbackText: automation?.name,
+                                                profileUrl: profileUrl
+                                            },
+                                            status: "pending"
+                                        });
+
                                     } catch (err) {
                                         console.log("[DMOrbit Dev Mode Fallback] Follow API restricted. Forcing Follow-Gate Card for testing.");
-                                        // Dev Mode Fallback: Force the follow gate card so you can test the UI buttons!
                                         const profileUrl = `https://www.instagram.com/_u/dmorbitapp/`;
-                                        await sendFollowGateCard(senderId, pageToken, profileUrl);
+                                        await Job.create({
+                                            automationId: automation?._id,
+                                            userId: ownerAccount.userId,
+                                            user_id: senderId,
+                                            username: senderId,
+                                            platform: "instagram",
+                                            message: 'Follow-Gate Check (Fallback)',
+                                            type: 'send_dm',
+                                            process_after: Date.now(),
+                                            metadata: {
+                                                ig_id: entry.id,
+                                                instagramAccountId: ownerAccount.instagram_id,
+                                                igUsername: ownerAccount.username,
+                                                templateType: 'follow_gate',
+                                                profileUrl: profileUrl
+                                            },
+                                            status: "pending"
+                                        });
                                     }
                                 }
 
                                 if (postbackPayload === "VERIFY_FOLLOW_CLICKED") {
-                                    console.log("[DMOrbit] First click on 'I'm following'. Triggering psychological block.");
+                                    console.log("[DMOrbit] First click on 'I'm following'. Triggering psychological block via queue.");
                                     try {
-                                        const url = `https://graph.facebook.com/v21.0/me/messages`;
-                                        await axios.post(url, {
-                                            recipient: { id: senderId },
-                                            message: {
-                                                attachment: {
-                                                    type: "template",
-                                                    payload: {
-                                                        template_type: "generic",
-                                                        elements: [{
-                                                            title: "Nice try! But you're still not following yet 👀",
-                                                            subtitle: "Please click 'Visit Profile' and follow to instantly unlock the access.",
-                                                            buttons: [
-                                                                {
-                                                                    type: "web_url",
-                                                                    url: "https://www.instagram.com/_u/dmorbitapp/",
-                                                                    title: "Visit Profile"
-                                                                },
-                                                                {
-                                                                    type: "postback",
-                                                                    title: "I'm following ✅",
-                                                                    payload: "FINAL_FOLLOW_CLICKED"
-                                                                }
-                                                            ]
-                                                        }]
-                                                    }
-                                                }
+                                        const profileUrl = `https://www.instagram.com/_u/dmorbitapp/`;
+                                        await Job.create({
+                                            automationId: automation?._id,
+                                            userId: ownerAccount.userId,
+                                            user_id: senderId,
+                                            username: senderId,
+                                            platform: "instagram",
+                                            message: 'Nice Try Check',
+                                            type: 'send_dm',
+                                            process_after: Date.now(),
+                                            metadata: {
+                                                ig_id: entry.id,
+                                                instagramAccountId: ownerAccount.instagram_id,
+                                                igUsername: ownerAccount.username,
+                                                templateType: 'nice_try',
+                                                profileUrl: profileUrl
                                             },
-                                            access_token: pageToken
+                                            status: "pending"
                                         });
                                     } catch (err) {
-                                        console.error("Error sending 1st click response:", err.message);
+                                        console.error("Error queuing 1st click response:", err.message);
                                     }
                                 }
 
                                 if (postbackPayload === "FINAL_FOLLOW_CLICKED") {
-                                    console.log("[DMOrbit] Second click verified. Delivering final automation resource safely.");
+                                    console.log("[DMOrbit] Second click verified. Queuing final automation resource safely.");
                                     const link = extractUrl(automation?.privateMessageText);
-                                    await sendFinalDeliveryCard(senderId, pageToken, link, automation?.name);
+                                    await Job.create({
+                                        automationId: automation?._id,
+                                        userId: ownerAccount.userId,
+                                        user_id: senderId,
+                                        username: senderId,
+                                        platform: "instagram",
+                                        message: 'Final Delivery',
+                                        type: 'send_dm',
+                                        process_after: Date.now(),
+                                        metadata: {
+                                            ig_id: entry.id,
+                                            instagramAccountId: ownerAccount.instagram_id,
+                                            igUsername: ownerAccount.username,
+                                            templateType: 'final_delivery',
+                                            targetLink: link,
+                                            fallbackText: automation?.name
+                                        },
+                                        status: "pending"
+                                    });
                                 }
                             }
                         }
@@ -2743,7 +2802,7 @@ app.post('/webhook', verifySignature, async (req, res) => {
                                             }
                                         }
 
-                                        // --- 1. Execute direct actions for simplified compatible format ---
+                                        // --- 1. Execute direct actions (Routed to Queue) ---
                                         if (auto.publicReplyText || auto.privateMessageText) {
                                             const ownerUser = await User.findById(ownerId);
                                             if (ownerUser) {
@@ -2754,73 +2813,37 @@ app.post('/webhook', verifySignature, async (req, res) => {
                                                 }
                                             }
 
-                                            console.log(`[SIMPLIFIED ACTIONS] Executing direct API calls for automation ${auto._id}`);
+                                            console.log(`[SIMPLIFIED ACTIONS] Queuing direct API calls for automation ${auto._id}`);
                                             const pageToken = ownerAccount.access_token;
                                             
                                             if (pageToken && pageToken !== "your_token_here") {
-                                                // Action A: Public comment reply
-                                                if (auto.publicReplyText) {
-                                                    try {
-                                                        // DMOrbit Anti-Spam: Human-like Public Comment Replies Pool
-                                                        const publicReplyVariations = [
-                                                            "Check your DM 👋",
-                                                            "Kripya apna DM check karein ✨",
-                                                            "Sent! Please check your inbox 📥",
-                                                            "Aapke DM me details bhej di hain 🙌",
-                                                            "Details sent to your DMs! Check it out 🚀",
-                                                            "Inbox check kijiye, bhej diya hai 👍",
-                                                            "Check your messages, just dropped the link! 🔥",
-                                                            "Dropped a message in your DM, buddy! See you there 💥",
-                                                            "Kindly check your message requests/inbox 📩",
-                                                            "Sent! Check your primary or request folder 👋"
-                                                        ];
-
-                                                        // Pick a completely random reply from the pool to avoid robotic footprint
-                                                        const finalRandomReply = publicReplyVariations[Math.floor(Math.random() * publicReplyVariations.length)];
-                                                        
-                                                        // Use the user's custom reply if defined (and not the default), otherwise spin from the safe pool
-                                                        const messageToSend = (auto.publicReplyText && auto.publicReplyText !== 'Check your DM 👋') 
-                                                            ? auto.publicReplyText 
-                                                            : finalRandomReply;
-
-                                                        const repliesUrl = `https://graph.facebook.com/v21.0/${commentId}/replies`;
-                                                        await axios.post(repliesUrl, {
-                                                            message: messageToSend,
-                                                            access_token: pageToken
-                                                        });
-                                                        console.log(`[SIMPLIFIED SUCCESS] Public reply sent to comment: ${commentId} ("${messageToSend}")`);
-                                                    } catch (err) {
-                                                        console.error("[SIMPLIFIED ERROR] Failed public reply:", err.response?.data || err.message);
-                                                    }
-                                                }
-
-                                                // Action B: Private inbox DM
-                                                if (auto.privateMessageText && userId) {
-                                                    try {
-                                                        // Send Initial Access Card instead of plain text
-                                                        await sendInitialAccessCard(userId, pageToken);
-                                                        console.log(`[SIMPLIFIED SUCCESS] Follow-Gate Initial Card sent to user: ${userId}`);
-                                                        await User.updateOne({ _id: ownerId }, { $inc: { dmCountThisMonth: 1 } });
-                                                    } catch (err) {
-                                                        console.error("[SIMPLIFIED ERROR] Failed private DM:", err.response?.data || err.message);
-                                                    }
-                                                }
-                                            } else {
-                                                console.warn("[SIMPLIFIED SIMULATION] No valid token, skipping real API calls.");
+                                                // Create Job to centralize analytics and tracking
+                                                const job = await Job.create({
+                                                    automationId: auto._id,
+                                                    userId: auto.userId,
+                                                    user_id: userId,
+                                                    username: targetUsername || 'unknown',
+                                                    platform: "instagram",
+                                                    message: auto.privateMessageText || 'DM Delivery',
+                                                    type: 'reply_comment', 
+                                                    process_after: Date.now(),
+                                                    metadata: { 
+                                                        comment_id: commentId, 
+                                                        media_id: mediaId,
+                                                        ig_id: entry.id,
+                                                        original_text: commentText,
+                                                        public_reply: !!auto.publicReplyText,
+                                                        public_reply_text: auto.publicReplyText,
+                                                        post_url: postUrl,
+                                                        instagramAccountId: ownerAccount.instagram_id,
+                                                        igUsername: ownerAccount.username,
+                                                        snapshotAt: Date.now(),
+                                                        templateType: 'initial_access'
+                                                    },
+                                                    status: "pending"
+                                                });
+                                                console.log(`[OFFICIAL QUEUED] DB ID: ${job._id} | Target: ${targetUsername}`);
                                             }
-
-                                            // Log success triggers in DB for Dashboard metrics
-                                            await Automation.findByIdAndUpdate(auto._id, { $inc: { triggerCount: 1 } });
-                                            await Log.create({
-                                                ownerId,
-                                                username: targetUsername || 'unknown',
-                                                user_id: userId,
-                                                keyword: auto.keyword || 'ANY_COMMENT',
-                                                dmLink: 'Simplified Direct Call',
-                                                metadata: { comment_id: commentId, automationId: auto._id },
-                                                platform: 'instagram',
-                                                timestamp: new Date()
-                                            });
                                         }
 
                                         // --- 2. Start Flow if attached ---
