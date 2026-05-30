@@ -105,6 +105,18 @@
                 </div>
             </header>
 
+            <!-- IG ONBOARDING GATE -->
+            <div class="page" id="page-gate" style="display: none; height: calc(100vh - 80px); justify-content: center; align-items: center; text-align: center;">
+                <div style="max-width: 400px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); padding: 40px 24px; border-radius: 16px;">
+                    <div style="width: 64px; height: 64px; background: rgba(79,70,229,0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 24px auto;">
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
+                    </div>
+                    <h2 style="font-size: 24px; color: #fff; margin-bottom: 12px;">Instagram Not Connected</h2>
+                    <p style="color: var(--text-secondary); margin-bottom: 24px; line-height: 1.5;">Connect Instagram to create your first automation and manage your workflows.</p>
+                    <button class="btn btn-primary" onclick="window.switchTab('account')" style="width: 100%; justify-content: center;">Connect Instagram</button>
+                </div>
+            </div>
+
             <!-- OVERVIEW PAGE -->
             <div class="page active" id="page-overview">
                 
@@ -115,9 +127,9 @@
                     </div>
                     <div style="display: flex; gap: 12px;">
                         <button class="btn btn-secondary" onclick="window.switchTab('account')">Connection Status</button>
-                        <button class="btn btn-primary" onclick="window.openWizard()">
+                        <button id="primary-cta-btn" class="btn btn-primary" onclick="window.openWizard()">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-                            New Automation
+                            <span>New Automation</span>
                         </button>
                     </div>
                 </div>
