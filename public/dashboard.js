@@ -1563,7 +1563,10 @@ function setupSmartBioListeners() {
                         overviewConnBlock.innerHTML = `
                             <div style="display: flex; align-items: center; gap: 12px; width: 100%;">
                                 <div style="position: relative; flex-shrink: 0;">
-                                    <img src="${igProfilePic || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=256'}" style="width: 44px; height: 44px; border-radius: 50%; border: 2px solid var(--danger); object-fit: cover; background: rgba(255,255,255,0.05);">
+                                    ${igProfilePic 
+                                        ? `<img src="${igProfilePic}" style="width: 44px; height: 44px; border-radius: 50%; border: 2px solid var(--danger); object-fit: cover; background: rgba(255,255,255,0.05);">`
+                                        : `<div style="width: 44px; height: 44px; border-radius: 50%; border: 2px solid var(--danger); background: linear-gradient(135deg, #f58529, #dd2a7b, #8134af, #515bd4); display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: bold; color: white;">${igUsername.charAt(0).toUpperCase()}</div>`
+                                    }
                                     <span style="position: absolute; bottom: 0; right: 0; display: inline-block; width: 12px; height: 12px; background: var(--danger); border: 2px solid #09090b; border-radius: 50%;"></span>
                                 </div>
                                 <div style="flex: 1; text-align: left; min-width: 0;">
@@ -1587,7 +1590,10 @@ function setupSmartBioListeners() {
                         overviewConnBlock.innerHTML = `
                             <div style="display: flex; align-items: center; gap: 12px; width: 100%;">
                                 <div style="position: relative; flex-shrink: 0;">
-                                    <img src="${igProfilePic || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=256'}" style="width: 44px; height: 44px; border-radius: 50%; border: 2px solid var(--primary); object-fit: cover; background: rgba(255,255,255,0.05);">
+                                    ${igProfilePic 
+                                        ? `<img src="${igProfilePic}" style="width: 44px; height: 44px; border-radius: 50%; border: 2px solid var(--primary); object-fit: cover; background: rgba(255,255,255,0.05);">`
+                                        : `<div style="width: 44px; height: 44px; border-radius: 50%; border: 2px solid var(--primary); background: linear-gradient(135deg, #f58529, #dd2a7b, #8134af, #515bd4); display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: bold; color: white;">${igUsername.charAt(0).toUpperCase()}</div>`
+                                    }
                                     <span style="position: absolute; bottom: 0; right: 0; display: inline-block; width: 12px; height: 12px; background: #10b981; border: 2px solid #09090b; border-radius: 50%; box-shadow: 0 0 8px #10b981;"></span>
                                 </div>
                                 <div style="flex: 1; text-align: left; min-width: 0;">
