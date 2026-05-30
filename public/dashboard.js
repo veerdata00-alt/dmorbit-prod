@@ -304,14 +304,20 @@ async function loadAccount() {
                 'paused': { label: 'Automation Paused', color: 'rgba(107,114,128,0.1)', textColor: 'var(--text-muted)', desc: 'You have manually paused all automations.' }
             };
             const s = statusMap[status] || statusMap['active'];
-
             const username = data.instagram.username || 'Connected User';
+            const profilePic = data.instagram.profile_picture_url || '';
             
             container.innerHTML = `
                 <div class="account-profile-header" style="display: flex; align-items: center; gap: 20px; margin-bottom: 24px; padding: 20px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 16px;">
-                    <div style="width: 64px; height: 64px; border-radius: 50%; background: linear-gradient(135deg, #f58529, #dd2a7b, #8134af, #515bd4); display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: bold; color: white; box-shadow: 0 8px 16px rgba(221, 42, 123, 0.2);">
-                        ${username.charAt(0).toUpperCase()}
-                    </div>
+                    ${profilePic ? `
+                        <div style="width: 64px; height: 64px; border-radius: 50%; border: 2px solid var(--primary); overflow: hidden; display: flex; align-items: center; justify-content: center; box-shadow: 0 8px 16px rgba(79, 70, 229, 0.2);">
+                            <img src="${profilePic}" style="width: 100%; height: 100%; object-fit: cover;">
+                        </div>
+                    ` : `
+                        <div style="width: 64px; height: 64px; border-radius: 50%; background: linear-gradient(135deg, #f58529, #dd2a7b, #8134af, #515bd4); display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: bold; color: white; box-shadow: 0 8px 16px rgba(221, 42, 123, 0.2);">
+                            ${username.charAt(0).toUpperCase()}
+                        </div>
+                    `}
                     <div style="flex: 1;">
                         <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
                             <h3 style="margin: 0; font-size: 20px; color: #fff;">@${username}</h3>
@@ -342,7 +348,7 @@ async function loadAccount() {
                         <div style="font-size: 12px; color: var(--text-secondary);">Last sync: Just now</div>
                     </div>
                 </div>
-
+ 
                 <div class="security-box" style="padding: 20px; background: rgba(0,0,0,0.2); border-radius: 12px; border: 1px solid rgba(255,255,255,0.03); margin-bottom: 24px;">
                     <div style="font-weight: 600; margin-bottom: 12px; color: var(--text-primary); font-size: 14px;">Active Permissions Granted</div>
                     <div style="display: flex; gap: 8px; flex-wrap: wrap;">
@@ -351,10 +357,10 @@ async function loadAccount() {
                         <span style="background: rgba(255,255,255,0.05); padding: 4px 12px; border-radius: 6px; font-size: 12px; color: #e5e7eb;">instagram_manage_comments</span>
                     </div>
                 </div>
-
+ 
                 <div style="display: flex; justify-content: flex-end;">
-                    <button class="btn" style="background: rgba(239, 68, 68, 0.1); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.2); padding: 10px 20px; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 500; transition: all 0.2s;" onmouseover="this.style.background='rgba(239,68,68,0.2)'" onmouseout="this.style.background='rgba(239,68,68,0.1)'">Disconnect Account</button>
-                </div>
+                    <button class="btn" onclick="window.disconnectInstagram()" style="background: rgba(239, 68, 68, 0.1); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.2); padding: 10px 20px; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 500; transition: all 0.2s;" onmouseover="this.style.background='rgba(239,68,68,0.2)'" onmouseout="this.style.background='rgba(239,68,68,0.1)'">Disconnect Account</button>
+                </div> </div>
             `;
         } else {
             container.innerHTML = `
@@ -388,6 +394,23 @@ async function loadAccount() {
         `;
     }
 }
+
+window.disconnectInstagram = async function() {
+    if (!confirm("Are you sure you want to disconnect your Instagram account? This will pause all active automations.")) return;
+    try {
+        const res = await request('/api/instagram/disconnect', { method: 'POST' });
+        if (res && !res.error) {
+            alert("Instagram account disconnected successfully.");
+            // Reload status & dashboard
+            loadAccount();
+            hydrateDashboardLiveView();
+        } else {
+            alert(res.error || "Failed to disconnect account. Please try again.");
+        }
+    } catch(err) {
+        alert("Failed to disconnect account. Network error.");
+    }
+};
 
 // === WIZARD LOGIC ===
 function setupWizard() {
@@ -1164,36 +1187,90 @@ function setupSmartBioListeners() {
             const accountRes = await API.accountStatus();
             const statsRes = await API.stats();
             
-            if (accountRes.instagram && accountRes.instagram.connected) {
-                const igUsername = accountRes.instagram.username || (currentUser && currentUser.name) || 'User';
-                console.log("[DMOrbit Dynamic Sync] Connected Account Verified");
-                
+            const isIgConnected = accountRes.instagram && accountRes.instagram.connected;
+            const igStatus = isIgConnected ? accountRes.instagram.status : 'disconnected';
+            const isIgExpired = igStatus === 'expired' || igStatus === 'invalid';
+            let igUsername = isIgConnected ? accountRes.instagram.username : '';
+            let igProfilePic = isIgConnected ? accountRes.instagram.profile_picture_url : '';
+            let igName = isIgConnected ? accountRes.instagram.name : '';
+
+            // Auto-refresh profile if username is a known placeholder (one-time per session)
+            const PLACEHOLDER_NAMES = ['connected_user', 'connected user', ''];
+            if (isIgConnected && !isIgExpired && PLACEHOLDER_NAMES.includes((igUsername || '').toLowerCase())) {
+                if (!window._igProfileRefreshDone) {
+                    window._igProfileRefreshDone = true; // prevent loops
+                    try {
+                        const refreshRes = await fetch('/api/instagram/refresh-profile', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' }
+                        });
+                        const refreshData = await refreshRes.json();
+                        if (refreshData.success && refreshData.username && !PLACEHOLDER_NAMES.includes((refreshData.username || '').toLowerCase())) {
+                            igUsername = refreshData.username;
+                            igProfilePic = refreshData.profile_picture_url || '';
+                            igName = refreshData.name || '';
+                            console.log(`[DMOrbit] ✅ Real IG username loaded: @${igUsername}`);
+                        }
+                    } catch (refreshErr) {
+                        console.warn('[DMOrbit] Profile refresh failed:', refreshErr.message);
+                    }
+                }
+            }
+
+            // Update workspace status dot & title
+            const statusDot = document.getElementById('topbar-status-dot');
+            const wsTitle = document.getElementById('topbar-workspace-name') || document.getElementById('workspaceTitle') || document.querySelector('.workspace-title');
+            
+            // Update Overview Subtitle, Queue and Workflow Headers
+            const overviewSubtitle = document.getElementById('overview-subtitle');
+            const pacingQueueHeader = document.getElementById('pacing-queue-title');
+            const workflowsHeader = document.getElementById('workflows-header');
+
+            if (isIgConnected) {
                 // Hide connect prompt if exists
                 const connectBox = document.getElementById('ig-connection-card') || document.getElementById('connectInstagramPrompt') || document.querySelector('.connect-prompt-box');
                 if (connectBox) connectBox.style.display = 'none';
-                
-                // Update workspace title
-                const wsTitle = document.getElementById('topbar-workspace-name') || document.getElementById('workspaceTitle') || document.querySelector('.workspace-title');
-                if (wsTitle && accountRes.instagram.username) {
-                    wsTitle.innerText = `${accountRes.instagram.username}'s Workspace`;
+
+                if (isIgExpired) {
+                    if (statusDot) statusDot.style.background = 'var(--danger)';
+                    if (wsTitle) wsTitle.innerHTML = `<span style="display:flex; align-items:center; gap:6px;">@${igUsername} <span style="font-size:10px; background:rgba(239,68,68,0.15); color:var(--danger); border:1px solid rgba(239,68,68,0.3); padding:2px 8px; border-radius:10px; font-weight:600; text-transform:uppercase; animation: pulse 2s infinite;">Needs Reconnect ⚠️</span></span>`;
+                    if (overviewSubtitle) overviewSubtitle.innerHTML = `<span style="color: var(--danger); font-weight:600;">⚠️ Instagram Needs Reconnect</span> • Connected as @${igUsername}`;
+                } else {
+                    if (statusDot) statusDot.style.background = 'var(--success)';
+                    if (wsTitle) wsTitle.innerText = `${igUsername}'s Workspace`;
+                    if (overviewSubtitle) overviewSubtitle.innerHTML = `Your automation engine at a glance • <span style="color: var(--success); font-weight:600;">Connected as @${igUsername}</span>`;
                 }
 
                 // Dynamic Sidebar Integration
                 const sidebarNameEl = document.getElementById('sidebar-user-name');
                 if (sidebarNameEl) {
-                    sidebarNameEl.innerHTML = `<span style="font-weight: 600;">@${accountRes.instagram.username}</span>`;
+                    sidebarNameEl.innerHTML = `<span style="font-weight: 600; display: flex; align-items: center; gap: 6px;">@${igUsername} <span class="status-pulse" style="width: 6px; height: 6px; background: ${isIgExpired ? 'var(--danger)' : '#10b981'}; border-radius: 50%; box-shadow: 0 0 8px ${isIgExpired ? 'var(--danger)' : '#10b981'}; display: inline-block;"></span></span>`;
                 }
                 const avatarEl = document.getElementById('user-avatar');
                 if (avatarEl) {
-                    if (accountRes.instagram.profile_picture_url) {
-                        avatarEl.innerHTML = `<img src="${accountRes.instagram.profile_picture_url}" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">`;
+                    if (igProfilePic) {
+                        avatarEl.innerHTML = `<img src="${igProfilePic}" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">`;
                         avatarEl.style.background = 'transparent';
-                        avatarEl.style.boxShadow = '0 0 10px rgba(79, 70, 229, 0.3)';
+                        avatarEl.style.boxShadow = `0 0 10px ${isIgExpired ? 'rgba(239,68,68,0.4)' : 'rgba(79, 70, 229, 0.3)'}`;
                     } else {
-                        avatarEl.textContent = accountRes.instagram.username[0].toUpperCase();
+                        avatarEl.textContent = igUsername[0].toUpperCase();
+                        avatarEl.style.background = isIgExpired ? 'var(--danger)' : 'linear-gradient(135deg, var(--primary), #7c3aed)';
                     }
                 }
+                const sidebarPlanEl = document.getElementById('sidebar-user-plan');
+                if (sidebarPlanEl) {
+                    sidebarPlanEl.innerHTML = isIgExpired ? `<span style="color: var(--danger); font-weight: 600;">Needs Reconnect ⚠️</span>` : `<span style="color: var(--success); font-weight: 600;">Instagram Connected</span>`;
+                }
+
+                // Dynamic Headers
+                if (pacingQueueHeader) pacingQueueHeader.innerText = `Meta Safe-Pacing Queue for @${igUsername}`;
+                if (workflowsHeader) workflowsHeader.innerText = `Active Workflows for @${igUsername}`;
             } else {
+                // Completely disconnected state
+                if (statusDot) statusDot.style.background = 'var(--warning)';
+                if (wsTitle) wsTitle.innerText = `My Workspace`;
+                if (overviewSubtitle) overviewSubtitle.innerText = `Your automation engine at a glance.`;
+
                 // Restore generic profile details if disconnected
                 const sidebarNameEl = document.getElementById('sidebar-user-name');
                 if (sidebarNameEl && currentUser) {
@@ -1206,6 +1283,14 @@ function setupSmartBioListeners() {
                     avatarEl.style.boxShadow = '0 2px 8px rgba(79, 70, 229, 0.4)';
                     avatarEl.innerHTML = (currentUser.name || currentUser.email || 'U')[0].toUpperCase();
                 }
+                const sidebarPlanEl = document.getElementById('sidebar-user-plan');
+                if (sidebarPlanEl && currentUser) {
+                    sidebarPlanEl.textContent = (currentUser.plan || 'FREE') + ' Plan';
+                }
+
+                // Dynamic Headers
+                if (pacingQueueHeader) pacingQueueHeader.innerText = `Meta Safe-Pacing Queue`;
+                if (workflowsHeader) workflowsHeader.innerText = `Active Workflows`;
             }
 
             if (statsRes && !statsRes.error) {
@@ -1221,7 +1306,7 @@ function setupSmartBioListeners() {
                 if (dmsSentEl) dmsSentEl.innerText = stats.totalDmsSent || 0;
 
                 // Onboarding checklist dynamic calculation
-                const step1Done = !!statsRes.instagramConnected;
+                const step1Done = isIgConnected && !isIgExpired;
                 const step2Done = (statsRes.automations?.total || 0) > 0;
                 const step3Done = (statsRes.totalDmsSent || 0) > 0 || (statsRes.logs?.thisWeek || 0) > 0;
                 const step4Done = step1Done && (statsRes.automations?.active || 0) > 0;
@@ -1266,16 +1351,21 @@ function setupSmartBioListeners() {
                             btn.style.pointerEvents = 'none';
                         }
                     } else {
-                        stepCard.style.borderColor = 'var(--border)';
-                        stepCard.style.background = 'rgba(255, 255, 255, 0.01)';
+                        stepCard.style.borderColor = isIgExpired && stepNum === 1 ? 'rgba(239, 68, 68, 0.25)' : 'var(--border)';
+                        stepCard.style.background = isIgExpired && stepNum === 1 ? 'rgba(239, 68, 68, 0.02)' : 'rgba(255, 255, 255, 0.01)';
                         if (badge) {
-                            badge.innerText = 'Pending';
-                            badge.style.color = 'var(--text-muted)';
+                            if (isIgExpired && stepNum === 1) {
+                                badge.innerText = 'Needs Reconnect ⚠️';
+                                badge.style.color = 'var(--danger)';
+                            } else {
+                                badge.innerText = 'Pending';
+                                badge.style.color = 'var(--text-muted)';
+                            }
                         }
                         if (btn) {
                             btn.style.opacity = '1';
                             btn.style.pointerEvents = 'auto';
-                            if (stepNum === 1) btn.innerText = 'Connect Account';
+                            if (stepNum === 1) btn.innerText = isIgExpired ? 'Reconnect Account' : 'Connect Account';
                             else if (stepNum === 2) btn.innerText = 'Open Wizard';
                             else if (stepNum === 3) btn.innerText = 'View Log';
                             else if (stepNum === 4) btn.innerText = 'Go Live';
@@ -1326,29 +1416,57 @@ function setupSmartBioListeners() {
             // Update Overview Connection Status Block
             const overviewConnBlock = document.getElementById('overview-connection-status');
             if (overviewConnBlock) {
-                if (accountRes.instagram && accountRes.instagram.connected) {
-                    overviewConnBlock.innerHTML = `
-                        <div style="display: flex; align-items: center; gap: 12px; width: 100%;">
-                            <img src="${accountRes.instagram.profile_picture_url || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=256'}" style="width: 44px; height: 44px; border-radius: 50%; border: 2px solid var(--primary); object-fit: cover; background: rgba(255,255,255,0.05);">
-                            <div style="flex: 1; text-align: left; min-width: 0;">
-                                <h4 style="font-size: 14px; font-weight: 700; color: #fff; margin: 0; display: flex; align-items: center; gap: 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                                    @${accountRes.instagram.username}
-                                    <span style="display: inline-block; width: 6px; height: 6px; background: #10b981; border-radius: 50%; box-shadow: 0 0 8px #10b981; flex-shrink:0;"></span>
-                                </h4>
-                                <p style="font-size: 12px; color: var(--text-secondary); margin: 2px 0 0 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${accountRes.instagram.name || 'Instagram Business'}</p>
+                if (isIgConnected) {
+                    if (isIgExpired) {
+                        overviewConnBlock.innerHTML = `
+                            <div style="display: flex; align-items: center; gap: 12px; width: 100%;">
+                                <div style="position: relative; flex-shrink: 0;">
+                                    <img src="${igProfilePic || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=256'}" style="width: 44px; height: 44px; border-radius: 50%; border: 2px solid var(--danger); object-fit: cover; background: rgba(255,255,255,0.05);">
+                                    <span style="position: absolute; bottom: 0; right: 0; display: inline-block; width: 12px; height: 12px; background: var(--danger); border: 2px solid #09090b; border-radius: 50%;"></span>
+                                </div>
+                                <div style="flex: 1; text-align: left; min-width: 0;">
+                                    <h4 style="font-size: 14px; font-weight: 700; color: #fff; margin: 0; display: flex; align-items: center; gap: 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                        @${igUsername}
+                                    </h4>
+                                    <p style="font-size: 12px; color: var(--text-secondary); margin: 2px 0 0 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; color: var(--danger);">Instagram needs reconnect</p>
+                                </div>
                             </div>
-                        </div>
-                        <div style="display: flex; gap: 8px; margin-top: 14px; width: 100%;">
-                            <span style="flex: 1; text-align: center; background: rgba(16,185,129,0.1); color: #10b981; border: 1px solid rgba(16,185,129,0.2); padding: 6px; border-radius: 8px; font-size: 11px; font-weight: 600; display: inline-flex; align-items: center; justify-content: center; gap: 4px;">
-                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                                Token Healthy
-                            </span>
-                            <span style="flex: 1; text-align: center; background: rgba(79,70,229,0.1); color: #818cf8; border: 1px solid rgba(79,70,229,0.2); padding: 6px; border-radius: 8px; font-size: 11px; font-weight: 600; display: inline-flex; align-items: center; justify-content: center; gap: 4px;">
-                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline></svg>
-                                Webhooks Active
-                            </span>
-                        </div>
-                    `;
+                            <div style="font-size: 12px; color: var(--text-muted); margin-top: 10px; text-align: left; line-height: 1.4;">
+                                Meta credentials expired or changed. Reconnect now in 10 seconds to resume smart bio funnel tracking and comment automations.
+                            </div>
+                            <div style="display: flex; gap: 8px; margin-top: 14px; width: 100%;">
+                                <a href="/auth/instagram" class="btn btn-primary btn-sm" style="flex: 1; text-decoration: none; text-align: center; display: inline-flex; align-items: center; justify-content: center; gap: 4px; padding: 8px;">
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path></svg>
+                                    Reconnect Instagram
+                                </a>
+                            </div>
+                        `;
+                    } else {
+                        overviewConnBlock.innerHTML = `
+                            <div style="display: flex; align-items: center; gap: 12px; width: 100%;">
+                                <div style="position: relative; flex-shrink: 0;">
+                                    <img src="${igProfilePic || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=256'}" style="width: 44px; height: 44px; border-radius: 50%; border: 2px solid var(--primary); object-fit: cover; background: rgba(255,255,255,0.05);">
+                                    <span style="position: absolute; bottom: 0; right: 0; display: inline-block; width: 12px; height: 12px; background: #10b981; border: 2px solid #09090b; border-radius: 50%; box-shadow: 0 0 8px #10b981;"></span>
+                                </div>
+                                <div style="flex: 1; text-align: left; min-width: 0;">
+                                    <h4 style="font-size: 14px; font-weight: 700; color: #fff; margin: 0; display: flex; align-items: center; gap: 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                        @${igUsername}
+                                    </h4>
+                                    <p style="font-size: 12px; color: var(--text-secondary); margin: 2px 0 0 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">Connected as @${igUsername}</p>
+                                </div>
+                            </div>
+                            <div style="display: flex; gap: 8px; margin-top: 14px; width: 100%;">
+                                <span style="flex: 1; text-align: center; background: rgba(16,185,129,0.1); color: #10b981; border: 1px solid rgba(16,185,129,0.2); padding: 6px; border-radius: 8px; font-size: 11px; font-weight: 600; display: inline-flex; align-items: center; justify-content: center; gap: 4px;">
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                    Token Healthy
+                                </span>
+                                <span style="flex: 1; text-align: center; background: rgba(79,70,229,0.1); color: #818cf8; border: 1px solid rgba(79,70,229,0.2); padding: 6px; border-radius: 8px; font-size: 11px; font-weight: 600; display: inline-flex; align-items: center; justify-content: center; gap: 4px;">
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline></svg>
+                                    Webhooks Active
+                                </span>
+                            </div>
+                        `;
+                    }
                 } else {
                     overviewConnBlock.innerHTML = `
                         <div style="display: flex; flex-direction: column; align-items: center; text-align: center; padding: 6px 0; width: 100%;">
@@ -1357,11 +1475,12 @@ function setupSmartBioListeners() {
                             </div>
                             <div style="font-size: 14px; font-weight: 600; color: #fff; margin-bottom: 2px;">No connected account</div>
                             <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 12px;">Connect your profile to start automating comments & DMs.</div>
-                            <button class="btn btn-primary btn-sm" onclick="window.switchTab('account')" style="width: 100%; padding: 8px;">Connect Instagram</button>
+                            <a href="/auth/instagram" class="btn btn-primary btn-sm" style="width: 100%; padding: 8px; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; gap: 6px;">Connect Instagram</a>
                         </div>
                     `;
                 }
             }
+
 
             // Load sub-widgets
             loadQueueJobs();
