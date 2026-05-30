@@ -2245,16 +2245,17 @@ app.get('/auth/callback', async (req, res) => {
 
         try {
             console.log(`[OAUTH] Fetching profile details for Instagram Business Account ID: ${igAccountId}`);
-            const igUserRes = await axios.get(`https://graph.facebook.com/v19.0/${igAccountId}`, {
+            const igUserRes = await axios.get(`https://graph.facebook.com/v19.0/${pageId}`, {
                 params: {
-                    fields: 'username,name,profile_picture_url',
+                    fields: 'instagram_business_account{username,name},picture.type(large)',
                     access_token: pageAccessToken
                 }
             });
             if (igUserRes.data) {
-                igUsername = igUserRes.data.username || 'connected_user';
-                igProfilePic = igUserRes.data.profile_picture_url || '';
-                igName = igUserRes.data.name || '';
+                const biz = igUserRes.data.instagram_business_account || {};
+                igUsername = biz.username || 'connected_user';
+                igProfilePic = (igUserRes.data.picture && igUserRes.data.picture.data) ? igUserRes.data.picture.data.url : '';
+                igName = biz.name || '';
                 console.log(`[OAUTH] Instagram username fetched: @${igUsername}`);
             }
         } catch (apiErr) {
@@ -3692,13 +3693,12 @@ app.post('/api/instagram/refresh-profile', authenticateToken, async (req, res) =
             try {
                 const igRes = await axios.get(`https://graph.facebook.com/v19.0/${account.instagram_id}`, {
                     params: {
-                        fields: 'username,name,profile_picture_url,biography,followers_count',
+                        fields: 'username,name,biography,followers_count',
                         access_token: account.access_token
                     }
                 });
                 if (igRes.data && igRes.data.username) {
                     igUsername = igRes.data.username;
-                    igProfilePic = igRes.data.profile_picture_url || igProfilePic;
                     igName = igRes.data.name || igName;
                     updated = true;
                     console.log(`[PROFILE REFRESH] IG username fetched: @${igUsername}`);
@@ -3708,22 +3708,26 @@ app.post('/api/instagram/refresh-profile', authenticateToken, async (req, res) =
             }
         }
 
-        // Fallback: Try fetching from Page ID using /me/instagram_accounts
-        if (!updated && account.page_id) {
+        // Fetch picture from Page ID
+        if (account.page_id) {
             try {
                 const pageRes = await axios.get(`https://graph.facebook.com/v19.0/${account.page_id}`, {
                     params: {
-                        fields: 'instagram_business_account{username,name,profile_picture_url}',
+                        fields: 'instagram_business_account{username,name},picture.type(large)',
                         access_token: account.access_token
                     }
                 });
-                const igBiz = pageRes.data?.instagram_business_account;
-                if (igBiz && igBiz.username) {
-                    igUsername = igBiz.username;
-                    igProfilePic = igBiz.profile_picture_url || igProfilePic;
-                    igName = igBiz.name || igName;
-                    updated = true;
-                    console.log(`[PROFILE REFRESH] IG username via Page: @${igUsername}`);
+                if (pageRes.data) {
+                    if (pageRes.data.picture && pageRes.data.picture.data && pageRes.data.picture.data.url) {
+                        igProfilePic = pageRes.data.picture.data.url;
+                        updated = true;
+                    }
+                    const igBiz = pageRes.data.instagram_business_account;
+                    if (igBiz && igBiz.username) {
+                        igUsername = igBiz.username;
+                        igName = igBiz.name || igName;
+                        updated = true;
+                    }
                 }
             } catch (err2) {
                 console.warn('[PROFILE REFRESH] Page-level fetch failed:', err2.message);
