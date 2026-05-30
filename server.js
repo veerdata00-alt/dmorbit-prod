@@ -1321,7 +1321,9 @@ const sendDM = async (platform, ownerId, targetId, message, metadata = {}, type 
         
         let finalMessage = message;
         if (metadata && metadata.templateType === 'initial_access') {
+            const fallbackLink = metadata.targetLink || "https://web-production-dd826.up.railway.app";
             finalMessage = {
+                text: "Hey 🖐\nSaw your interest! (If you can't see the button below, click this link to continue: " + fallbackLink + " )",
                 attachment: {
                     type: "template",
                     payload: {
@@ -1338,6 +1340,7 @@ const sendDM = async (platform, ownerId, targetId, message, metadata = {}, type 
             const fallbackText = metadata.fallbackText || "This is what you asked for. Try it and let me know 👍";
             const targetLink = metadata.targetLink || "https://web-production-dd826.up.railway.app";
             finalMessage = {
+                text: "Here you go 👇\n(If you can't see the button below, click this link to access: " + targetLink + " )",
                 attachment: {
                     type: "template",
                     payload: {
@@ -1353,6 +1356,7 @@ const sendDM = async (platform, ownerId, targetId, message, metadata = {}, type 
         } else if (metadata && metadata.templateType === 'follow_gate') {
             const profileUrl = metadata.profileUrl || "https://www.instagram.com/_u/dmorbitapp/";
             finalMessage = {
+                text: "Looks like you're not following yet 👀\n(If you can't see the buttons, visit " + profileUrl + " to follow and try again!)",
                 attachment: {
                     type: "template",
                     payload: {
