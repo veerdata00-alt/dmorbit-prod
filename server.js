@@ -2792,8 +2792,8 @@ app.post('/webhook', verifySignature, async (req, res) => {
                                         const link = extractUrl(automation?.privateMessageText);
                                         const profileUrl = `https://www.instagram.com/_u/dmorbitapp/`;
 
-                                        if (isFollowing) {
-                                            // USER IS FOLLOWING: Send final delivery
+                                        if (isFollowing || session.clickCount >= 1) {
+                                            // USER IS FOLLOWING (or bypassed on 2nd attempt): Send final delivery
                                             if (session.isCompleted) {
                                                 console.log(`[DM AUTOMATION] Ignoring duplicate final delivery for user ${senderId}.`);
                                                 session.processing = false;
