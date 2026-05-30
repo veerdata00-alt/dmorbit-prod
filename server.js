@@ -2140,6 +2140,12 @@ app.get('/auth/callback', async (req, res) => {
         // Update User state
         await User.findByIdAndUpdate(userId, { instagramConnected: true });
 
+        // Reset stale lingering jobs to prevent reconnect spam
+        await Job.updateMany(
+            { userId: userId, status: { $in: ['pending', 'processing'] } }, 
+            { status: 'failed', error: 'Cancelled due to reconnect stabilization' }
+        );
+
         // 5. Subscribe Webhooks for this Page
         await axios.post(`https://graph.facebook.com/v19.0/${pageId}/subscribed_apps`, {
             subscribed_fields: 'feed,messages',
@@ -2427,9 +2433,13 @@ app.post('/webhook', verifySignature, async (req, res) => {
     const headers = req.headers;
 
     try {
+        const safeHeaders = { ...headers };
+        if (safeHeaders.authorization) safeHeaders.authorization = "[REDACTED]";
+        if (safeHeaders.cookie) safeHeaders.cookie = "[REDACTED]";
+
         await WebhookLog.create({
             payload: body,
-            headers: headers,
+            headers: safeHeaders,
             source: body.object || "unknown"
         });
         console.log(`[DEBUG LOGGED] Webhook from ${body.object || "unknown"}`);
@@ -2533,7 +2543,12 @@ app.post('/webhook', verifySignature, async (req, res) => {
                             const ownerAccount = await InstagramAccount.findOne({ instagram_id: igAccountId });
                             const pageToken = ownerAccount ? ownerAccount.access_token : null;
 
-                            if (pageToken && senderId && ownerAccount) {
+                            if (pageToken && senderId && ownerAccount && ownerAccount.status === 'active') {
+                                const ownerUser = await User.findById(ownerAccount.userId);
+                                if (!ownerUser || !ownerUser.instagramConnected) {
+                                    console.warn(`[WEBHOOK] Blocked execution: Instagram account disconnected for owner: ${ownerAccount.userId}`);
+                                    continue;
+                                }
                                 const automation = await Automation.findOne({ userId: ownerAccount.userId, isActive: true }).sort({ createdAt: -1 });
 
                                 if (postbackPayload === "REQUEST_ACCESS_CLICKED") {
@@ -2856,7 +2871,10 @@ app.post('/webhook', verifySignature, async (req, res) => {
                                                         ig_id: entry.id,
                                                         original_text: commentText,
                                                         public_reply: true,
-                                                        post_url: postUrl
+                                                        post_url: postUrl,
+                                                        instagramAccountId: ownerAccount.instagram_id,
+                                                        igUsername: ownerAccount.username,
+                                                        snapshotAt: Date.now()
                                                     },
                                                     status: "pending"
                                                 });
@@ -3387,6 +3405,17 @@ app.post('/api/instagram/disconnect', authenticateToken, async (req, res) => {
         if (lastUsername) updateData.lastInstagramUsername = lastUsername;
         
         await User.findByIdAndUpdate(userId, updateData);
+        
+        // Auto-cancel orphaned jobs
+        await Job.updateMany(
+            { userId: userId, status: { $in: ['pending', 'processing'] } }, 
+            { status: 'failed', error: 'Cancelled: Instagram disconnected' }
+        );
+        await Followup.updateMany(
+            { ownerId: userId, status: "pending" }, 
+            { status: "failed" }
+        );
+
         res.status(200).json({ success: true, message: 'Instagram account disconnected successfully.' });
     } catch (err) {
         console.error('[INSTAGRAM DISCONNECT ERROR]', err);
