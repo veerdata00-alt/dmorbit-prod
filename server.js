@@ -353,6 +353,12 @@ const webhookEventSchema = new mongoose.Schema({
 });
 const WebhookEvent = mongoose.model('WebhookEvent', webhookEventSchema);
 
+const processedEventSchema = new mongoose.Schema({
+    fingerprint: { type: String, unique: true, index: true },
+    createdAt: { type: Date, default: Date.now, expires: '1h' } // Auto-delete after 1 hour
+});
+const ProcessedEvent = mongoose.model('ProcessedEvent', processedEventSchema);
+
 const instagramAccountSchema = new mongoose.Schema({
     userId: { type: String, unique: true, index: true },
     page_id: String,
@@ -2506,6 +2512,10 @@ app.post('/webhook', verifySignature, async (req, res) => {
                         if (!senderId) continue;
 
                         if (event.message && event.message.text) {
+                            if (event.message.is_echo) {
+                                console.log(`[WEBHOOK] Ignoring message echo from ${senderId}`);
+                                continue;
+                            }
                             const messageText = event.message.text;
                             console.log(`[WEBHOOK] DM Received | Sender: ${senderId} | Text: "${messageText}"`);
                             
@@ -2633,6 +2643,17 @@ app.post('/webhook', verifySignature, async (req, res) => {
                             const postbackPayload = event.postback.payload;
                             console.log(`[DMOrbit] Button Clicked! Payload received: ${postbackPayload}`);
                             
+                            // 1. Idempotency Check: Drop duplicates immediately
+                            const fingerprint = `${senderId}_${eventId}_${postbackPayload}`;
+                            try {
+                                await ProcessedEvent.create({ fingerprint });
+                            } catch (err) {
+                                if (err.code === 11000) {
+                                    console.log(`[WEBHOOK] Duplicate postback ignored: ${fingerprint}`);
+                                    continue;
+                                }
+                            }
+                            
                             const igAccountId = entry.id;
                             // Find the newest active account linked to this Instagram ID
                             const ownerAccount = await InstagramAccount.findOne({ instagram_id: igAccountId, status: 'active' }).sort({ updatedAt: -1 });
@@ -2752,39 +2773,50 @@ app.post('/webhook', verifySignature, async (req, res) => {
 
                                 if (postbackPayload === "VERIFY_FOLLOW_CLICKED") {
                                     console.log("[DMOrbit] 'I'm following' clicked. Verifying status via API.");
-                                    let session = null;
                                     try {
                                         const now = new Date();
-                                        const lockTime = new Date(now.getTime() - 10000); // 10s auto-unlock safety
                                         
+                                        // 1. Pre-Flight Check: Load DMSession WITHOUT locking first
+                                        let session = await DMSession.findOne({
+                                            userId: ownerAccount.userId,
+                                            targetId: senderId,
+                                            automationId: automation?._id
+                                        });
+
+                                        if (!session) {
+                                            console.log(`[DM AUTOMATION] Session not found for VERIFY_FOLLOW_CLICKED. Ignoring.`);
+                                            continue;
+                                        }
+
+                                        // Strict State Rules:
+                                        if (session.currentStep === 'VERIFYING_FOLLOW' || 
+                                            session.currentStep === 'DELIVERED' ||
+                                            (session.cooldownUntil && session.cooldownUntil > now) || 
+                                            session.processing === true) {
+                                            console.log(`[DM AUTOMATION] State machine violation or cooldown active for ${senderId}. Returning immediately.`);
+                                            continue;
+                                        }
+
+                                        // 2. Lock the session and update state to VERIFYING_FOLLOW
+                                        const lockTime = new Date(now.getTime() - 10000); // 10s auto-unlock safety
                                         session = await DMSession.findOneAndUpdate(
                                             {
-                                                userId: ownerAccount.userId,
-                                                targetId: senderId,
-                                                automationId: automation?._id,
+                                                _id: session._id,
                                                 $or: [
                                                     { processing: { $ne: true } },
                                                     { processingAt: { $lt: lockTime } } 
                                                 ]
                                             },
-                                            { $set: { processing: true, processingAt: now } },
+                                            { $set: { processing: true, processingAt: now, currentStep: 'VERIFYING_FOLLOW' } },
                                             { new: true }
                                         );
 
                                         if (!session) {
-                                            console.log(`[DM AUTOMATION] Session locked for VERIFY_FOLLOW_CLICKED from user ${senderId}. Ignoring concurrent request.`);
-                                            continue;
-                                        }
-                                        
-                                        // 1. Check strict cooldown
-                                        if (session.cooldownUntil && session.cooldownUntil > now) {
-                                            console.log(`[DM AUTOMATION] Strict cooldown active for VERIFY_FOLLOW_CLICKED from user ${senderId}. Ignoring.`);
-                                            session.processing = false;
-                                            await session.save();
+                                            console.log(`[DM AUTOMATION] Session locked concurrently for VERIFY_FOLLOW_CLICKED from user ${senderId}. Ignoring.`);
                                             continue;
                                         }
 
-                                        // 2. Query Facebook Graph API for follow status
+                                        // 3. Query Facebook Graph API for follow status
                                         const followCheckUrl = `https://graph.facebook.com/v21.0/${senderId}?fields=is_viewer_follow_page&access_token=${pageToken}`;
                                         const followRes = await axios.get(followCheckUrl).catch(() => null);
                                         const isFollowing = followRes?.data?.is_viewer_follow_page || false;
@@ -2793,14 +2825,9 @@ app.post('/webhook', verifySignature, async (req, res) => {
                                         const profileUrl = `https://www.instagram.com/_u/dmorbitapp/`;
 
                                         if (isFollowing || session.clickCount >= 1) {
-                                            // USER IS FOLLOWING (or bypassed on 2nd attempt): Send final delivery
-                                            if (session.isCompleted) {
-                                                console.log(`[DM AUTOMATION] Ignoring duplicate final delivery for user ${senderId}.`);
-                                                session.processing = false;
-                                                await session.save();
-                                                continue;
-                                            }
+                                            // USER IS FOLLOWING: Transition to DELIVERED
                                             session.isCompleted = true;
+                                            session.currentStep = 'DELIVERED';
                                             session.processing = false;
                                             await session.save();
 
@@ -2825,9 +2852,10 @@ app.post('/webhook', verifySignature, async (req, res) => {
                                                 status: "pending"
                                             });
                                         } else {
-                                            // USER IS NOT FOLLOWING: Send Nice Try & Start Cooldown
+                                            // USER IS NOT FOLLOWING: Transition to FOLLOW_RETRY_COOLDOWN
                                             session.clickCount += 1;
-                                            session.cooldownUntil = new Date(now.getTime() + 30 * 1000); // 30 second penalty box
+                                            session.currentStep = 'FOLLOW_RETRY_COOLDOWN';
+                                            session.cooldownUntil = new Date(now.getTime() + 30 * 1000); // 30s strict penalty box
                                             session.processing = false;
                                             await session.save();
 
@@ -2853,15 +2881,11 @@ app.post('/webhook', verifySignature, async (req, res) => {
                                         }
                                     } catch (err) {
                                         console.error("Error verifying follow status:", err.message);
-                                        if (session) {
-                                            session.processing = false;
-                                            await session.save().catch(() => {});
-                                        }
-                                    } finally {
-                                        if (session && session.processing) {
-                                            session.processing = false;
-                                            await session.save().catch(() => {});
-                                        }
+                                        // Emergency unlock
+                                        await DMSession.updateOne(
+                                            { userId: ownerAccount.userId, targetId: senderId, automationId: automation?._id },
+                                            { $set: { processing: false } }
+                                        ).catch(() => {});
                                     }
                                 }
 
