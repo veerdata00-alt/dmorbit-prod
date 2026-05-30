@@ -1317,12 +1317,16 @@ function setupSmartBioListeners() {
                 if (workflowsHeader) workflowsHeader.innerText = `Active Workflows for @${igUsername}`;
                 
                 const ctaBtn = document.getElementById('primary-cta-btn');
+                const ctaHelper = document.getElementById('primary-cta-helper');
                 if (ctaBtn) {
                     ctaBtn.innerHTML = `
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                         <span>New Automation</span>
                     `;
                     ctaBtn.onclick = () => window.openWizard();
+                }
+                if (ctaHelper) {
+                    ctaHelper.style.display = 'none';
                 }
             } else {
                 // Completely disconnected state
@@ -1356,12 +1360,17 @@ function setupSmartBioListeners() {
                 if (workflowsHeader) workflowsHeader.innerText = `Active Workflows`;
 
                 const ctaBtn = document.getElementById('primary-cta-btn');
+                const ctaHelper = document.getElementById('primary-cta-helper');
                 if (ctaBtn) {
                     ctaBtn.innerHTML = `
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
-                        <span>Connect Instagram</span>
+                        <span>Reconnect Instagram</span>
                     `;
                     ctaBtn.onclick = () => window.switchTab('account');
+                }
+                if (ctaHelper) {
+                    ctaHelper.style.display = 'block';
+                    ctaHelper.innerText = 'Your workflows are safely paused until reconnect.';
                 }
             }
 
@@ -1474,12 +1483,22 @@ function setupSmartBioListeners() {
                             btn.style.pointerEvents = 'none';
                         }
                     } else {
-                        stepCard.style.borderColor = isIgExpired && stepNum === 1 ? 'rgba(239, 68, 68, 0.25)' : 'var(--border)';
-                        stepCard.style.background = isIgExpired && stepNum === 1 ? 'rgba(239, 68, 68, 0.02)' : 'rgba(255, 255, 255, 0.01)';
+                        stepCard.style.borderColor = (!step1Done && stepNum === 1) ? 'rgba(79, 70, 229, 0.4)' : 'var(--border)';
+                        stepCard.style.background = (!step1Done && stepNum === 1) ? 'rgba(79, 70, 229, 0.05)' : 'rgba(255, 255, 255, 0.01)';
+                        
+                        // Visually soften later steps if step 1 is not done
+                        if (!step1Done && stepNum > 1) {
+                            stepCard.style.opacity = '0.4';
+                            stepCard.style.pointerEvents = 'none';
+                        } else {
+                            stepCard.style.opacity = '1';
+                            stepCard.style.pointerEvents = 'auto';
+                        }
+
                         if (badge) {
-                            if (isIgExpired && stepNum === 1) {
-                                badge.innerText = 'Needs Reconnect ⚠️';
-                                badge.style.color = 'var(--danger)';
+                            if (!step1Done && stepNum === 1) {
+                                badge.innerText = 'Action Required';
+                                badge.style.color = 'var(--primary)';
                             } else {
                                 badge.innerText = 'Pending';
                                 badge.style.color = 'var(--text-muted)';
