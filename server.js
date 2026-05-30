@@ -1952,10 +1952,9 @@ app.get('/api/me', authenticateToken, (req, res) => {
 // --- Instagram OAuth Connection System ---
 
 app.get('/auth/instagram', authenticateToken, (req, res) => {
-    const host = req.get('host');
-    const isLocal = host.includes('localhost') || host.includes('127.0.0.1');
-    const protocol = isLocal ? 'http' : 'https';
-    const redirectUri = `${protocol}://${host}/auth/callback`;
+    // Force absolute production URL if defined to avoid reverse-proxy host mismatch
+    const baseUrl = process.env.APP_URL || (req.get('host').includes('localhost') ? 'http://localhost:3000' : `https://${req.get('host')}`);
+    const redirectUri = `${baseUrl}/auth/callback`;
     const scopes = [
         'instagram_basic',
         'instagram_manage_comments',
@@ -1976,10 +1975,9 @@ app.get('/auth/callback', async (req, res) => {
     if (!code) return res.status(400).send('No code provided');
 
     try {
-        const host = req.get('host');
-        const isLocal = host.includes('localhost') || host.includes('127.0.0.1');
-        const protocol = isLocal ? 'http' : 'https';
-        const redirectUri = `${protocol}://${host}/auth/callback`;
+        // Force absolute production URL if defined to avoid reverse-proxy host mismatch
+        const baseUrl = process.env.APP_URL || (req.get('host').includes('localhost') ? 'http://localhost:3000' : `https://${req.get('host')}`);
+        const redirectUri = `${baseUrl}/auth/callback`;
         // 1. Exchange code for Short-Lived User Access Token
         const tokenRes = await axios.get(`https://graph.facebook.com/v19.0/oauth/access_token`, {
             params: {
