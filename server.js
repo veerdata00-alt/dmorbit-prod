@@ -147,6 +147,7 @@ const jobSchema = new mongoose.Schema({
     process_after: { type: Number, index: true },
     metadata: mongoose.Schema.Types.Mixed,
     priority: { type: String, enum: ['high', 'low'], default: 'low', index: true },
+    chargeCredit: { type: Boolean, default: true },
     status: { type: String, index: true, default: 'pending' },
     delivery_status: { type: String, enum: ['sent', 'not_delivered', 'pending'], default: 'pending' },
     attempts: { type: Number, default: 0 },
@@ -212,6 +213,7 @@ const dmSessionSchema = new mongoose.Schema({
     lastTriggeredAt: { type: Date, default: Date.now },
     isCompleted: { type: Boolean, default: false },
     awaitingFollowCheck: { type: Boolean, default: false },
+    warningSent: { type: Boolean, default: false },
     cooldownUntil: Date,
     clickCount: { type: Number, default: 0 },
     processing: { type: Boolean, default: false },
@@ -1415,7 +1417,9 @@ const finalizeJob = async (jobId, status, error = null, deliveryStatus = 'pendin
             }
 
             // Sync User DM limits and Dashboard stats atomically
-            await User.updateOne({ _id: job.userId }, { $inc: { dmCountThisMonth: 1 } });
+            if (job.chargeCredit !== false) {
+                await User.updateOne({ _id: job.userId }, { $inc: { dmCountThisMonth: 1 } });
+            }
 
             // Create Audit Log entry - Isolated by ownerId
             await Log.create({
@@ -2554,56 +2558,40 @@ app.post('/webhook', verifySignature, async (req, res) => {
                                     console.log(`[DM AUTOMATION] Matched keyword! Checking session...`);
                                     let session = null;
                                     try {
-                                        const now = new Date();
-                                        const lockTime = new Date(now.getTime() - 10000); 
+                                        // Check if an active session ALREADY exists
+                                        let existingActiveSession = await DMSession.findOne({
+                                            userId: ownerId,
+                                            targetId: senderId,
+                                            automationId: matched._id,
+                                            isCompleted: false
+                                        });
 
+                                        if (existingActiveSession) {
+                                            console.log(`[DM AUTOMATION] Active session locked for Keyword trigger from user ${senderId}. Ignoring spam.`);
+                                            continue;
+                                        }
+
+                                        const now = new Date();
                                         session = await DMSession.findOneAndUpdate(
                                             {
                                                 userId: ownerId,
                                                 targetId: senderId,
-                                                automationId: matched._id,
-                                                $or: [
-                                                    { processing: { $ne: true } },
-                                                    { processingAt: { $lt: lockTime } } 
-                                                ]
+                                                automationId: matched._id
                                             },
-                                            { $set: { processing: true, processingAt: now } },
-                                            { new: true }
-                                        );
-
-                                        if (!session) {
-                                            let exists = await DMSession.exists({ userId: ownerId, targetId: senderId, automationId: matched._id });
-                                            if (exists) {
-                                                console.log(`[DM AUTOMATION] Session locked for Keyword trigger from user ${senderId}. Ignoring.`);
-                                                continue;
-                                            } else {
-                                                session = await DMSession.create({
-                                                    userId: ownerId,
-                                                    targetId: senderId,
-                                                    automationId: matched._id,
-                                                    processing: true,
+                                            {
+                                                $set: {
+                                                    processing: false, 
                                                     processingAt: now,
                                                     currentStep: 'initial_access',
+                                                    lastTriggeredAt: now,
+                                                    isCompleted: false,
+                                                    clickCount: 0,
+                                                    warningSent: false,
                                                     cooldownUntil: new Date(now.getTime() + 10 * 1000)
-                                                });
-                                            }
-                                        }
-
-                                        if (session.cooldownUntil && session.cooldownUntil > now) {
-                                            console.log(`[DM AUTOMATION] Cooldown active for user ${senderId}. Ignoring.`);
-                                            session.processing = false;
-                                            await session.save();
-                                            continue;
-                                        }
-                                        
-                                        // Reset session for a new conversation trigger
-                                        session.currentStep = 'initial_access';
-                                        session.lastTriggeredAt = now;
-                                        session.isCompleted = false;
-                                        session.clickCount = 0;
-                                        session.cooldownUntil = new Date(now.getTime() + 10 * 1000); // 10 sec burst protection
-                                        session.processing = false;
-                                        await session.save();
+                                                }
+                                            },
+                                            { upsert: true, new: true }
+                                        );
 
                                         // Create Job for Initial Access Card
                                         const job = await Job.create({
@@ -2727,6 +2715,7 @@ app.post('/webhook', verifySignature, async (req, res) => {
                                             message: 'Follow-Gate Check',
                                             type: 'send_dm',
                                             priority: 'high',
+                                            chargeCredit: false,
                                             process_after: Date.now(),
                                             metadata: {
                                                 ig_id: entry.id,
@@ -2759,6 +2748,7 @@ app.post('/webhook', verifySignature, async (req, res) => {
                                             message: 'Follow-Gate Check (Fallback)',
                                             type: 'send_dm',
                                             priority: 'high',
+                                            chargeCredit: false,
                                             process_after: Date.now(),
                                             metadata: {
                                                 ig_id: entry.id,
@@ -2846,6 +2836,7 @@ app.post('/webhook', verifySignature, async (req, res) => {
                                                 message: 'Final Delivery',
                                                 type: 'send_dm',
                                                 priority: 'high',
+                                                chargeCredit: false,
                                                 process_after: Date.now(),
                                                 metadata: {
                                                     ig_id: entry.id,
@@ -2862,30 +2853,38 @@ app.post('/webhook', verifySignature, async (req, res) => {
                                             // USER IS NOT FOLLOWING: Transition to FOLLOW_RETRY_COOLDOWN
                                             session.clickCount += 1;
                                             session.currentStep = 'FOLLOW_RETRY_COOLDOWN';
-                                            session.cooldownUntil = new Date(now.getTime() + 30 * 1000); // 30s strict penalty box
+                                            session.cooldownUntil = new Date(now.getTime() + 10 * 1000); // 10s cooldown
                                             session.processing = false;
-                                            await session.save();
 
-                                            await Job.create({
-                                                automationId: automation?._id,
-                                                userId: ownerAccount.userId,
-                                                user_id: senderId,
-                                                username: senderId,
-                                                platform: "instagram",
-                                                message: 'Nice Try Check',
-                                                type: 'send_dm',
-                                                priority: 'high',
-                                                process_after: Date.now(),
-                                                metadata: {
-                                                    ig_id: entry.id,
-                                                    instagramAccountId: ownerAccount.instagram_id,
-                                                    igUsername: ownerAccount.username,
-                                                    templateType: 'nice_try',
-                                                    profileUrl: profileUrl,
-                                                    eventId: eventId
-                                                },
-                                                status: "pending"
-                                            });
+                                            if (session.warningSent) {
+                                                console.log(`[DM AUTOMATION] Warning already sent to ${senderId}. Silently ignoring.`);
+                                                await session.save();
+                                            } else {
+                                                session.warningSent = true;
+                                                await session.save();
+
+                                                await Job.create({
+                                                    automationId: automation?._id,
+                                                    userId: ownerAccount.userId,
+                                                    user_id: senderId,
+                                                    username: senderId,
+                                                    platform: "instagram",
+                                                    message: 'Nice Try Check',
+                                                    type: 'send_dm',
+                                                    priority: 'high',
+                                                    chargeCredit: false,
+                                                    process_after: Date.now(),
+                                                    metadata: {
+                                                        ig_id: entry.id,
+                                                        instagramAccountId: ownerAccount.instagram_id,
+                                                        igUsername: ownerAccount.username,
+                                                        templateType: 'nice_try',
+                                                        profileUrl: profileUrl,
+                                                        eventId: eventId
+                                                    },
+                                                    status: "pending"
+                                                });
+                                            }
                                         }
                                     } catch (err) {
                                         console.error("Error verifying follow status:", err.message);
