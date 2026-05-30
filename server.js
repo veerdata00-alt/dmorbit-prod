@@ -219,6 +219,13 @@ const dmSessionSchema = new mongoose.Schema({
     processing: { type: Boolean, default: false },
     processingAt: Date
 });
+
+// Enforce strictly ONE active session per user+target+automation
+dmSessionSchema.index(
+    { userId: 1, targetId: 1, automationId: 1 }, 
+    { unique: true, partialFilterExpression: { isCompleted: false } }
+);
+
 const DMSession = mongoose.model('DMSession', dmSessionSchema);
 
 // --- NEW SAAS DATABASE DRIVEN PLAN SCHEMA ---
@@ -2558,40 +2565,32 @@ app.post('/webhook', verifySignature, async (req, res) => {
                                     console.log(`[DM AUTOMATION] Matched keyword! Checking session...`);
                                     let session = null;
                                     try {
-                                        // Check if an active session ALREADY exists
-                                        let existingActiveSession = await DMSession.findOne({
-                                            userId: ownerId,
-                                            targetId: senderId,
-                                            automationId: matched._id,
-                                            isCompleted: false
-                                        });
-
-                                        if (existingActiveSession) {
-                                            console.log(`[DM AUTOMATION] Active session locked for Keyword trigger from user ${senderId}. Ignoring spam.`);
-                                            continue;
-                                        }
-
                                         const now = new Date();
-                                        session = await DMSession.findOneAndUpdate(
-                                            {
+                                        
+                                        // Atomic Creation: The unique index on (userId, targetId, automationId) 
+                                        // with partialFilterExpression { isCompleted: false } guarantees
+                                        // that duplicate parallel webhooks will fail with E11000 here.
+                                        try {
+                                            session = await DMSession.create({
                                                 userId: ownerId,
                                                 targetId: senderId,
-                                                automationId: matched._id
-                                            },
-                                            {
-                                                $set: {
-                                                    processing: false, 
-                                                    processingAt: now,
-                                                    currentStep: 'initial_access',
-                                                    lastTriggeredAt: now,
-                                                    isCompleted: false,
-                                                    clickCount: 0,
-                                                    warningSent: false,
-                                                    cooldownUntil: new Date(now.getTime() + 10 * 1000)
-                                                }
-                                            },
-                                            { upsert: true, new: true }
-                                        );
+                                                automationId: matched._id,
+                                                processing: false, 
+                                                processingAt: now,
+                                                currentStep: 'initial_access',
+                                                lastTriggeredAt: now,
+                                                isCompleted: false,
+                                                clickCount: 0,
+                                                warningSent: false,
+                                                cooldownUntil: new Date(now.getTime() + 10 * 1000)
+                                            });
+                                        } catch (insertErr) {
+                                            if (insertErr.code === 11000) {
+                                                console.log(`[DM AUTOMATION] Active session natively locked (E11000) for Keyword trigger from user ${senderId}. Ignoring spam.`);
+                                                continue;
+                                            }
+                                            throw insertErr; // Re-throw if it's a different DB error
+                                        }
 
                                         // Create Job for Initial Access Card
                                         const job = await Job.create({
@@ -2670,25 +2669,19 @@ app.post('/webhook', verifySignature, async (req, res) => {
                                                 userId: ownerAccount.userId,
                                                 targetId: senderId,
                                                 automationId: automation?._id,
+                                                currentStep: 'initial_access',
                                                 $or: [
                                                     { processing: { $ne: true } },
                                                     { processingAt: { $lt: lockTime } } 
                                                 ]
                                             },
-                                            { $set: { processing: true, processingAt: now } },
+                                            { $set: { processing: true, processingAt: now, currentStep: 'follow_gate' } },
                                             { new: true }
                                         );
 
                                         if (!session) {
-                                            console.log(`[DM AUTOMATION] Session locked for REQUEST_ACCESS_CLICKED from user ${senderId}. Ignoring.`);
+                                            console.log(`[DM AUTOMATION] Duplicate REQUEST_ACCESS_CLICKED from user ${senderId} rejected natively.`);
                                             continue;
-                                        }
-
-                                        if (session.currentStep !== 'initial_access') {
-                                            console.log(`[DM AUTOMATION] Ignoring duplicate REQUEST_ACCESS_CLICKED from user ${senderId}`);
-                                            session.processing = false;
-                                            await session.save();
-                                            continue; 
                                         }
 
                                         const followCheckUrl = `https://graph.facebook.com/v21.0/${senderId}?fields=is_viewer_follow_page&access_token=${pageToken}`;
@@ -2772,35 +2765,17 @@ app.post('/webhook', verifySignature, async (req, res) => {
                                     try {
                                         const now = new Date();
                                         
-                                        // 1. Pre-Flight Check: Load DMSession WITHOUT locking first
-                                        let session = await DMSession.findOne({
-                                            userId: ownerAccount.userId,
-                                            targetId: senderId,
-                                            automationId: automation?._id
-                                        });
-
-                                        if (!session) {
-                                            console.log(`[DM AUTOMATION] Session not found for VERIFY_FOLLOW_CLICKED. Ignoring.`);
-                                            continue;
-                                        }
-
-                                        // Strict State Rules:
-                                        if (session.currentStep === 'VERIFYING_FOLLOW' || 
-                                            session.currentStep === 'DELIVERED' ||
-                                            (session.cooldownUntil && session.cooldownUntil > now) || 
-                                            session.processing === true) {
-                                            console.log(`[DM AUTOMATION] State machine violation or cooldown active for ${senderId}. Returning immediately.`);
-                                            continue;
-                                        }
-
-                                        // 2. Lock the session and update state to VERIFYING_FOLLOW
+                                        // Atomic Lock & State Transition
                                         const lockTime = new Date(now.getTime() - 10000); // 10s auto-unlock safety
-                                        session = await DMSession.findOneAndUpdate(
+                                        let session = await DMSession.findOneAndUpdate(
                                             {
-                                                _id: session._id,
-                                                $or: [
-                                                    { processing: { $ne: true } },
-                                                    { processingAt: { $lt: lockTime } } 
+                                                userId: ownerAccount.userId,
+                                                targetId: senderId,
+                                                automationId: automation?._id,
+                                                currentStep: { $in: ['follow_gate', 'FOLLOW_RETRY_COOLDOWN'] },
+                                                $and: [
+                                                    { $or: [ { cooldownUntil: { $exists: false } }, { cooldownUntil: { $lte: now } }, { cooldownUntil: null } ] },
+                                                    { $or: [ { processing: { $ne: true } }, { processingAt: { $lt: lockTime } } ] }
                                                 ]
                                             },
                                             { $set: { processing: true, processingAt: now, currentStep: 'VERIFYING_FOLLOW' } },
@@ -2808,7 +2783,7 @@ app.post('/webhook', verifySignature, async (req, res) => {
                                         );
 
                                         if (!session) {
-                                            console.log(`[DM AUTOMATION] Session locked concurrently for VERIFY_FOLLOW_CLICKED from user ${senderId}. Ignoring.`);
+                                            console.log(`[DM AUTOMATION] Native atomic rejection for VERIFY_FOLLOW_CLICKED from user ${senderId}. (Wrong state, cooldown, or locked)`);
                                             continue;
                                         }
 
