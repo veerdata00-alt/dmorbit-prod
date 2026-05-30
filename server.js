@@ -2522,27 +2522,26 @@ app.post('/webhook', verifySignature, async (req, res) => {
                                 const replyText = matched?.privateMessageText || (matched?.actions?.find(act => act.type === 'send_dm')?.text);
 
                                 if (matched && replyText) {
-                                    console.log(`[DM AUTOMATION] Matched keyword! Queuing reply...`);
+                                    console.log(`[DM AUTOMATION] Matched keyword "${normalizedDm}"! Sending direct reply: "${replyText}"`);
                                     try {
-                                        // Create Job for Initial Access Card
+                                        // Send actual automation text directly (no template card)
                                         const job = await Job.create({
                                             automationId: matched._id,
                                             userId: ownerId,
                                             user_id: senderId,
                                             username: senderId,
                                             platform: "instagram",
-                                            message: 'DM Keyword Delivery',
+                                            message: replyText,
                                             type: 'send_dm',
                                             process_after: Date.now(),
                                             metadata: {
                                                 ig_id: entry.id,
                                                 instagramAccountId: ownerAccount.instagram_id,
-                                                igUsername: ownerAccount.username,
-                                                templateType: 'initial_access'
+                                                igUsername: ownerAccount.username
                                             },
                                             status: "pending"
                                         });
-                                        console.log(`[OFFICIAL QUEUED] DB ID: ${job._id} | Target: ${senderId}`);
+                                        console.log(`[OFFICIAL QUEUED] DB ID: ${job._id} | Target: ${senderId} | Msg: "${replyText}"`);
                                     } catch (err) {
                                         console.error("[DM QUEUE ERROR]", err.message);
                                     }
