@@ -111,8 +111,19 @@ function setupNav() {
 }
 
 function loadPage(page) {
+    const gatedPages = ['automations', 'templates'];
+    if (gatedPages.includes(page) && window.cachedIsIgConnected === false) {
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        const gate = document.getElementById('page-gate');
+        if (gate) gate.classList.add('active');
+        // Still remove sidebar open class if mobile
+        document.getElementById('sidebar')?.classList.remove('open');
+        return;
+    }
+
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-    document.getElementById(`page-${page}`).classList.add('active');
+    const target = document.getElementById(`page-${page}`);
+    if (target) target.classList.add('active');
 
     if (page === 'overview') loadOverview();
     else if (page === 'automations') loadAutomations();
@@ -1188,6 +1199,7 @@ function setupSmartBioListeners() {
             const statsRes = await API.stats();
             
             const isIgConnected = accountRes.instagram && accountRes.instagram.connected;
+            window.cachedIsIgConnected = isIgConnected;
             const igStatus = isIgConnected ? accountRes.instagram.status : 'disconnected';
             const isIgExpired = igStatus === 'expired' || igStatus === 'invalid';
             let igUsername = isIgConnected ? accountRes.instagram.username : '';
@@ -1265,6 +1277,15 @@ function setupSmartBioListeners() {
                 // Dynamic Headers
                 if (pacingQueueHeader) pacingQueueHeader.innerText = `Meta Safe-Pacing Queue for @${igUsername}`;
                 if (workflowsHeader) workflowsHeader.innerText = `Active Workflows for @${igUsername}`;
+                
+                const ctaBtn = document.getElementById('primary-cta-btn');
+                if (ctaBtn) {
+                    ctaBtn.innerHTML = `
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                        <span>New Automation</span>
+                    `;
+                    ctaBtn.onclick = () => window.openWizard();
+                }
             } else {
                 // Completely disconnected state
                 if (statusDot) statusDot.style.background = 'var(--warning)';
@@ -1291,6 +1312,15 @@ function setupSmartBioListeners() {
                 // Dynamic Headers
                 if (pacingQueueHeader) pacingQueueHeader.innerText = `Meta Safe-Pacing Queue`;
                 if (workflowsHeader) workflowsHeader.innerText = `Active Workflows`;
+
+                const ctaBtn = document.getElementById('primary-cta-btn');
+                if (ctaBtn) {
+                    ctaBtn.innerHTML = `
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
+                        <span>Connect Instagram</span>
+                    `;
+                    ctaBtn.onclick = () => window.switchTab('account');
+                }
             }
 
             if (statsRes && !statsRes.error) {
