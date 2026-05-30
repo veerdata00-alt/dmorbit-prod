@@ -2495,7 +2495,8 @@ app.post('/webhook', verifySignature, async (req, res) => {
 
                             // Trigger for DMs (DM Automation Test)
                             const igAccountId = entry.id;
-                            const ownerAccount = await InstagramAccount.findOne({ instagram_id: igAccountId });
+                            // Find the newest active account linked to this Instagram ID
+                            const ownerAccount = await InstagramAccount.findOne({ instagram_id: igAccountId, status: 'active' }).sort({ updatedAt: -1 });
                             
                             if (ownerAccount && ownerAccount.status === 'active') {
                                 const ownerUser = await User.findById(ownerAccount.userId);
@@ -2551,7 +2552,8 @@ app.post('/webhook', verifySignature, async (req, res) => {
                             console.log(`[DMOrbit] Button Clicked! Payload received: ${postbackPayload}`);
                             
                             const igAccountId = entry.id;
-                            const ownerAccount = await InstagramAccount.findOne({ instagram_id: igAccountId });
+                            // Find the newest active account linked to this Instagram ID
+                            const ownerAccount = await InstagramAccount.findOne({ instagram_id: igAccountId, status: 'active' }).sort({ updatedAt: -1 });
                             const pageToken = ownerAccount ? ownerAccount.access_token : null;
 
                             if (pageToken && senderId && ownerAccount && ownerAccount.status === 'active') {
@@ -2714,7 +2716,8 @@ app.post('/webhook', verifySignature, async (req, res) => {
 
                                 // ISOLATION: Find the owner of this Instagram Account
                                 const igAccountId = entry.id; // This is the IG Business ID from the webhook
-                                const ownerAccount = await InstagramAccount.findOne({ instagram_id: igAccountId });
+                                // Find the newest active account linked to this Instagram ID
+                                const ownerAccount = await InstagramAccount.findOne({ instagram_id: igAccountId, status: 'active' }).sort({ updatedAt: -1 });
                                 
                                 if (!ownerAccount || ownerAccount.status !== 'active') {
                                     console.warn(`[WEBHOOK] Blocked execution: Instagram account disconnected or inactive for IG ID: ${igAccountId}. Skipping.`);
