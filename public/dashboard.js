@@ -111,16 +111,6 @@ function setupNav() {
 }
 
 function loadPage(page) {
-    const gatedPages = ['automations', 'templates'];
-    if (gatedPages.includes(page) && window.cachedIsIgConnected === false) {
-        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-        const gate = document.getElementById('page-gate');
-        if (gate) gate.classList.add('active');
-        // Still remove sidebar open class if mobile
-        document.getElementById('sidebar')?.classList.remove('open');
-        return;
-    }
-
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     const target = document.getElementById(`page-${page}`);
     if (target) target.classList.add('active');
@@ -177,26 +167,40 @@ async function loadAutomations() {
     try {
         const autos = await API.automations();
         if (!autos.length) {
-            listBody.innerHTML = `<tr><td colspan="6" class="p-12 text-center">
-                <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding: 40px 0;">
-                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color:var(--text-muted); margin-bottom:16px;"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="9" y1="3" x2="9" y2="21"></line></svg>
-                    <h3 style="color:var(--text-primary); font-size:16px; margin-bottom:8px;">No automations found</h3>
-                    <p style="color:var(--text-muted); font-size:14px; margin-bottom:24px;">Create your first keyword trigger to start capturing leads.</p>
-                    <button class="btn btn-primary" onclick="window.openWizard()" style="display:flex; align-items:center; gap:8px;">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-                        Create Automation
-                    </button>
-                </div>
-            </td></tr>`;
+            if (window.cachedIsIgConnected === false) {
+                listBody.innerHTML = `<tr><td colspan="6" class="p-12 text-center">
+                    <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding: 40px 0;">
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color:var(--danger); margin-bottom:16px;"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="9" y1="3" x2="9" y2="21"></line></svg>
+                        <h3 style="color:var(--text-primary); font-size:16px; margin-bottom:8px;">Connect Instagram First</h3>
+                        <p style="color:var(--text-muted); font-size:14px; margin-bottom:24px;">You must connect your Instagram account to create automations.</p>
+                        <button class="btn btn-primary" onclick="window.switchTab('account')" style="display:flex; align-items:center; gap:8px;">
+                            Connect Instagram
+                        </button>
+                    </div>
+                </td></tr>`;
+            } else {
+                listBody.innerHTML = `<tr><td colspan="6" class="p-12 text-center">
+                    <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding: 40px 0;">
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color:var(--text-muted); margin-bottom:16px;"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="9" y1="3" x2="9" y2="21"></line></svg>
+                        <h3 style="color:var(--text-primary); font-size:16px; margin-bottom:8px;">No automations found</h3>
+                        <p style="color:var(--text-muted); font-size:14px; margin-bottom:24px;">Create your first keyword trigger to start capturing leads.</p>
+                        <button class="btn btn-primary" onclick="window.openWizard()" style="display:flex; align-items:center; gap:8px;">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                            Create Automation
+                        </button>
+                    </div>
+                </td></tr>`;
+            }
             return;
         }
 
-        listBody.innerHTML = autos.map((auto, index) => {
+        const rowsHtml = autos.map((auto, index) => {
             const isChecked = auto.isActive ? 'checked' : '';
+            const isDisabled = window.cachedIsIgConnected === false ? 'disabled' : '';
             const keywordText = (auto.trigger?.keywords || []).join(', ') || 'ANY_COMMENT';
             const replyMsg = auto.replyStyleMode === 'FOLLOW_GATE' ? '⚡ Viral Follow-Gate' : (auto.privateMessageText || 'Direct Message');
             return `
-                <tr class="border-b border-white/5 hover:bg-white/[0.02] transition-colors group">
+                <tr class="border-b border-white/5 hover:bg-white/[0.02] transition-colors group ${isDisabled ? 'opacity-50 grayscale' : ''}">
                     <td class="p-4 align-middle text-gray-500 font-medium text-xs w-12">${index + 1}</td>
                     <td class="p-4 align-middle">
                         <div class="flex items-center gap-2">
@@ -213,8 +217,8 @@ async function loadAutomations() {
                         </div>
                     </td>
                     <td class="p-4 align-middle">
-                        <label class="relative inline-flex items-center cursor-pointer">
-                            <input type="checkbox" ${isChecked} class="sr-only peer" onchange="window.toggleAutomationState('${auto._id}', this.checked)">
+                        <label class="relative inline-flex items-center cursor-pointer ${isDisabled ? 'cursor-not-allowed opacity-50' : ''}">
+                            <input type="checkbox" ${isChecked} ${isDisabled} class="sr-only peer" onchange="window.toggleAutomationState('${auto._id}', this.checked)">
                             <div class="w-10 h-5 bg-gray-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-indigo-500"></div>
                         </label>
                     </td>
@@ -227,6 +231,16 @@ async function loadAutomations() {
                 </tr>
             `;
         }).join('');
+
+        if (window.cachedIsIgConnected === false) {
+            listBody.innerHTML = `
+                <tr><td colspan="6" class="p-4 bg-red-500/10 border-b border-red-500/20 text-center">
+                    <span class="text-red-400 font-semibold text-sm">⚠️ Your automations are temporarily paused because Instagram was disconnected. Please reconnect to reactivate.</span>
+                </td></tr>
+            ` + rowsHtml;
+        } else {
+            listBody.innerHTML = rowsHtml;
+        }
     } catch (e) { 
         listBody.innerHTML = '<tr><td colspan="6" class="p-8 text-center text-red-500">Failed to load automations.</td></tr>'; 
     }
@@ -1071,7 +1085,12 @@ function setupSmartBioListeners() {
                 
                 const indicator = document.getElementById('queue-status-indicator');
                 if (indicator) {
-                    if (jobs.length > 0) {
+                    if (window.cachedIsIgConnected === false) {
+                        indicator.innerText = 'Paused';
+                        indicator.style.background = 'rgba(239, 68, 68, 0.15)';
+                        indicator.style.color = 'var(--danger)';
+                        indicator.style.borderColor = 'rgba(239, 68, 68, 0.3)';
+                    } else if (jobs.length > 0) {
                         indicator.innerText = `${jobs.length} Active DMs`;
                         indicator.style.background = 'rgba(245, 158, 11, 0.15)';
                         indicator.style.color = 'var(--warning)';
@@ -1084,6 +1103,17 @@ function setupSmartBioListeners() {
                     }
                 }
                 
+                if (window.cachedIsIgConnected === false) {
+                    listContainer.innerHTML = `
+                        <div style="text-align: center; padding: 32px 16px; color: var(--danger); font-size: 13px; border: 1px dashed rgba(239,68,68,0.2); border-radius: 12px; display: flex; flex-direction: column; align-items: center; gap: 8px; background: rgba(239,68,68,0.05);">
+                            <div style="font-size: 24px;">⚠️</div>
+                            <div style="font-weight: 600;">Queue Paused</div>
+                            <div style="font-size: 12px; opacity: 0.8;">Waiting for Instagram Reconnection.</div>
+                        </div>
+                    `;
+                    return;
+                }
+
                 if (jobs.length === 0) {
                     listContainer.innerHTML = `
                         <div style="text-align: center; padding: 32px 16px; color: var(--text-muted); font-size: 13px; border: 1px dashed rgba(255,255,255,0.05); border-radius: 12px; display: flex; flex-direction: column; align-items: center; gap: 8px;">
@@ -1310,7 +1340,7 @@ function setupSmartBioListeners() {
                 }
 
                 // Dynamic Headers
-                if (pacingQueueHeader) pacingQueueHeader.innerText = `Meta Safe-Pacing Queue`;
+                if (pacingQueueHeader) pacingQueueHeader.innerHTML = `Meta Safe-Pacing Queue <span style="color:var(--danger); font-size:12px; margin-left:8px;">(PAUSED)</span>`;
                 if (workflowsHeader) workflowsHeader.innerText = `Active Workflows`;
 
                 const ctaBtn = document.getElementById('primary-cta-btn');
@@ -1371,7 +1401,14 @@ function setupSmartBioListeners() {
 
                 
                 const activeAutoEl = document.getElementById('stat-active-automations');
-                if (activeAutoEl) activeAutoEl.innerText = stats.automations?.active || 0;
+                if (activeAutoEl) {
+                    const isIgConnected = stats.instagramConnected;
+                    if (!isIgConnected || stats.instagramExpired) {
+                        activeAutoEl.innerHTML = `<span style="opacity: 0.5;">${stats.automations?.active || 0}</span><div style="font-size: 10px; color: var(--danger); font-weight: bold; margin-top: 4px; text-transform: uppercase;">PAUSED UNTIL RECONNECT</div>`;
+                    } else {
+                        activeAutoEl.innerText = stats.automations?.active || 0;
+                    }
+                }
                 
                 const commentsCapEl = document.getElementById('stat-comments-captured');
                 if (commentsCapEl) commentsCapEl.innerText = stats.logs?.thisWeek || 0;
