@@ -2262,6 +2262,11 @@ app.get('/auth/callback', async (req, res) => {
             console.error("⚠️ Failed to fetch Instagram username/details during OAuth:", apiErr.message);
             igUsername = pageName ? pageName.replace(/\s+/g, '_').toLowerCase() : 'connected_user';
         }
+        // Prevent duplicate Instagram connections by different tester accounts
+        await InstagramAccount.deleteMany({
+            instagram_id: igAccountId,
+            userId: { $ne: userId }
+        });
 
         await InstagramAccount.findOneAndUpdate(
             { userId },
