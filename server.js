@@ -1321,9 +1321,8 @@ const sendDM = async (platform, ownerId, targetId, message, metadata = {}, type 
         
         let finalMessage = message;
         if (metadata && metadata.templateType === 'initial_access') {
-            const fallbackLink = metadata.targetLink || "https://web-production-dd826.up.railway.app";
+            const fallbackLink = metadata.targetLink || process.env.CLIENT_URL || "https://dmorbit.in";
             finalMessage = {
-                text: "Hey 🖐\nSaw your interest! (If you can't see the button below, click this link to continue: " + fallbackLink + " )",
                 attachment: {
                     type: "template",
                     payload: {
@@ -1338,9 +1337,8 @@ const sendDM = async (platform, ownerId, targetId, message, metadata = {}, type 
             };
         } else if (metadata && metadata.templateType === 'final_delivery') {
             const fallbackText = metadata.fallbackText || "This is what you asked for. Try it and let me know 👍";
-            const targetLink = metadata.targetLink || "https://web-production-dd826.up.railway.app";
+            const targetLink = metadata.targetLink || process.env.CLIENT_URL || "https://dmorbit.in";
             finalMessage = {
-                text: "Here you go 👇\n(If you can't see the button below, click this link to access: " + targetLink + " )",
                 attachment: {
                     type: "template",
                     payload: {
@@ -1356,7 +1354,6 @@ const sendDM = async (platform, ownerId, targetId, message, metadata = {}, type 
         } else if (metadata && metadata.templateType === 'follow_gate') {
             const profileUrl = metadata.profileUrl || "https://www.instagram.com/_u/dmorbitapp/";
             finalMessage = {
-                text: "Looks like you're not following yet 👀\n(If you can't see the buttons, visit " + profileUrl + " to follow and try again!)",
                 attachment: {
                     type: "template",
                     payload: {
@@ -2389,10 +2386,10 @@ app.get('/ig-profile', (req, res) => {
 
 
 function extractUrl(text) {
-    if(!text) return "https://web-production-dd826.up.railway.app";
+    if(!text) return process.env.CLIENT_URL || "https://dmorbit.in";
     const urlRegex = /(https?:\/\/[^\s]+)/g;
     const match = text.match(urlRegex);
-    return match ? match[0] : "https://web-production-dd826.up.railway.app";
+    return match ? match[0] : (process.env.CLIENT_URL || "https://dmorbit.in");
 }
 
 async function checkAutomationLimits(user) {
@@ -2461,8 +2458,8 @@ app.post('/api/billing/checkout', async (req, res) => {
                 quantity: 1,
             }],
             mode: 'payment', // Or 'subscription' depending on your Stripe account capability
-            success_url: `${process.env.CLIENT_URL || 'https://web-production-dd826.up.railway.app'}/dashboard.html?payment=success`,
-            cancel_url: `${process.env.CLIENT_URL || 'https://web-production-dd826.up.railway.app'}/dashboard.html?payment=cancel`,
+            success_url: `${process.env.CLIENT_URL || 'https://dmorbit.in'}/dashboard.html?payment=success`,
+            cancel_url: `${process.env.CLIENT_URL || 'https://dmorbit.in'}/dashboard.html?payment=cancel`,
             metadata: { userId, planType }
         });
 
