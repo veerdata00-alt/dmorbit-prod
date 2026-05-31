@@ -2596,6 +2596,14 @@ app.post('/webhook', verifySignature, async (req, res) => {
                                     try {
                                         const now = new Date();
                                         
+                                        // Self-healing: if a previous session crashed and left a lock, clear it if older than 2 mins
+                                        await mongoose.connection.collection('dmsessions').deleteMany({
+                                            userId: ownerId.toString(),
+                                            targetId: senderId,
+                                            isCompleted: false,
+                                            lastTriggeredAt: { $lt: new Date(now.getTime() - 2 * 60 * 1000) }
+                                        });
+
                                         // Atomic Creation: The unique index on (userId, targetId, automationId) 
                                         // with partialFilterExpression { isCompleted: false } guarantees
                                         // that duplicate parallel webhooks will fail with E11000 here.
