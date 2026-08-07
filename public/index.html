@@ -3,729 +3,449 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DMOrbit | Automate Your Instagram Engagement</title>
-    <meta name="description" content="Turn Instagram comments into leads automatically. 24/7 engagement for creators who value their time.">
+    <title>DMOrbit | Turn Instagram Engagement Into Leads Automatically</title>
+    <meta name="description" content="Automatically send DMs, deliver lead magnets, capture emails, and sync leads into your CRM using Instagram's official APIs.">
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --v3-bg: #fafafa;
+            --v3-card: #ffffff;
+            --v3-text: #171717;
+            --v3-text-muted: #737373;
+            --v3-border: rgba(0, 0, 0, 0.08);
+            --ig-gradient: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
+            --v3-shadow: 0 10px 30px rgba(0,0,0,0.05);
+        }
+        body {
+            background-color: var(--v3-bg) !important;
+            color: var(--v3-text) !important;
+            font-family: 'Inter', sans-serif;
+            margin: 0; padding: 0; box-sizing: border-box;
+        }
+        *, *::before, *::after { box-sizing: border-box; }
+        h1, h2, h3, h4, h5, h6 { color: var(--v3-text); margin: 0; }
+        p { margin: 0; }
+        a { text-decoration: none; }
+        
+        .v3-btn-primary {
+            background: var(--ig-gradient); color: white; border: none; padding: 14px 28px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: opacity 0.2s;
+            display: inline-flex; align-items: center; justify-content: center;
+        }
+        .v3-btn-primary:hover { opacity: 0.9; }
+        .v3-btn-secondary {
+            background: white; color: var(--v3-text); border: 1px solid var(--v3-border); padding: 14px 28px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: background 0.2s;
+            display: inline-flex; align-items: center; justify-content: center;
+        }
+        .v3-btn-secondary:hover { background: #f5f5f5; }
+        
+        .v3-nav {
+            display: flex; justify-content: space-between; align-items: center; padding: 20px 5%;
+            background: rgba(250, 250, 250, 0.9); backdrop-filter: blur(12px); position: fixed; top: 0; left: 0; right: 0; z-index: 100; border-bottom: 1px solid var(--v3-border);
+        }
+        .v3-logo { font-weight: 800; font-size: 20px; color: var(--v3-text); display: flex; align-items: center; gap: 8px;}
+        
+        .v3-section { padding: 80px 5%; max-width: 1200px; margin: 0 auto; }
+        .v3-card { background: var(--v3-card); border-radius: 12px; padding: 24px; box-shadow: var(--v3-shadow); border: 1px solid var(--v3-border); }
+
+        /* Auth Overlay */
+        .auth-overlay { background: rgba(0,0,0,0.4); backdrop-filter: blur(5px); }
+        .auth-card { background: #fff !important; color: #171717 !important; border: none; }
+        .auth-card h2 { color: #171717 !important; }
+        .auth-card label { color: #737373 !important; }
+        .auth-card input { background: #f5f5f5 !important; color: #171717 !important; border: 1px solid #e5e5e5 !important; }
+
+        @media (max-width: 768px) {
+            .hero-grid { grid-template-columns: 1fr !important; gap: 40px; text-align: center; }
+            .hero-actions { justify-content: center; }
+            .hero-title { font-size: 36px !important; }
+            .v3-section { padding: 60px 5%; }
+        }
+    </style>
 </head>
 <body>
-    <div class="landing-container">
-        <!-- Navigation -->
-        <nav class="navbar animate-fade-in delay-100">
-            <div class="logo">
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M12 2L2 7L12 12L22 7L12 2Z"></path>
-                    <path d="M2 17L12 22L22 17"></path>
-                    <path d="M2 12L12 17L22 12"></path>
-                </svg>
-                DMOrbit
-            </div>
-            <div style="display: flex; gap: 16px; align-items: center;">
-                <a href="#features" style="color: var(--text-muted); text-decoration: none; font-weight: 500; font-size: 14px; transition: color 0.2s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='var(--text-muted)'">Features</a>
-                <a href="#pricing" style="color: var(--text-muted); text-decoration: none; font-weight: 500; font-size: 14px; transition: color 0.2s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='var(--text-muted)'">Pricing</a>
-                <button class="btn-secondary" id="open-auth" style="padding: 8px 16px; font-size: 14px;">Sign In</button>
-            </div>
-        </nav>
 
-        <!-- Hero Section -->
-        <section class="hero animate-fade-in delay-200" style="padding: 120px 0 80px; text-align: center;">
-            <div style="display: inline-flex; align-items: center; gap: 8px; background: rgba(79, 70, 229, 0.1); border: 1px solid rgba(79, 70, 229, 0.2); padding: 6px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; color: #818cf8; margin-bottom: 32px;">
-                <span style="display: inline-block; width: 6px; height: 6px; background: #818cf8; border-radius: 50%; box-shadow: 0 0 8px #818cf8;"></span>
-                Official Meta API Integration
-            </div>
-            <h1 style="font-size: clamp(3rem, 6vw, 5.5rem); font-weight: 800; line-height: 1.1; margin-bottom: 24px;">
-                Turn Instagram comments <br>
-                <span class="text-gradient">into leads automatically.</span>
-            </h1>
-            <p style="font-size: clamp(1.1rem, 2vw, 1.3rem); color: var(--text-muted); max-width: 600px; margin: 0 auto 40px; line-height: 1.6;">
-                Automatically reply to Instagram comments and send DMs in seconds. Build automated sales funnels while you sleep.
-            </p>
-            <div style="display: flex; justify-content: center; gap: 16px; margin-bottom: 24px;">
-                <button class="btn-primary" id="hero-get-started" style="padding: 14px 32px; font-size: 16px; border-radius: 12px;">Start Automating Free</button>
-                <a href="#how-it-works" class="btn-glass" style="padding: 14px 32px; font-size: 16px; border-radius: 12px; text-decoration: none; display: flex; align-items: center; gap: 8px;">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
-                    Explore Features
-                </a>
-            </div>
-            <div style="margin-top: 40px; display: flex; flex-direction: column; align-items: center; gap: 16px;">
-                <p style="font-size: 13px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.1em;">Creator-First Trust & Compliance</p>
-                <div style="display: flex; justify-content: center; align-items: center; gap: 24px; flex-wrap: wrap;">
-                    <div style="display: flex; align-items: center; gap: 8px; padding: 8px 16px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 100px; font-size: 13px; color: #e5e7eb; box-shadow: inset 0 0 10px rgba(255,255,255,0.02);">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
-                        Official Meta API
-                    </div>
-                    <div style="display: flex; align-items: center; gap: 8px; padding: 8px 16px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 100px; font-size: 13px; color: #e5e7eb; box-shadow: inset 0 0 10px rgba(255,255,255,0.02);">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#818cf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
-                        Secure OAuth 2.0
-                    </div>
-                    <div style="display: flex; align-items: center; gap: 8px; padding: 8px 16px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 100px; font-size: 13px; color: #e5e7eb; box-shadow: inset 0 0 10px rgba(255,255,255,0.02);">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
-                        Rate Limit Protected
-                    </div>
+    <nav class="v3-nav">
+        <a href="#" class="v3-logo">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="url(#ig-grad)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <defs><linearGradient id="ig-grad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#f09433" /><stop offset="50%" stop-color="#dc2743" /><stop offset="100%" stop-color="#bc1888" /></linearGradient></defs>
+                <path d="M12 2L2 7L12 12L22 7L12 2Z"></path><path d="M2 17L12 22L22 17"></path><path d="M2 12L12 17L22 12"></path>
+            </svg>
+            DMOrbit
+        </a>
+        <button class="v3-btn-secondary" id="open-auth" style="padding: 8px 16px;">Sign In</button>
+    </nav>
+
+    <!-- SECTION 1: HERO -->
+    <div style="padding-top: 140px; background: linear-gradient(180deg, rgba(220,39,67,0.03) 0%, rgba(250,250,250,0) 100%);">
+        <div class="v3-section hero-grid" style="display: grid; grid-template-columns: 1fr 1fr; align-items: center; gap: 60px;">
+            <div>
+                <h1 class="hero-title" style="font-size: 48px; font-weight: 800; line-height: 1.1; margin-bottom: 20px; letter-spacing: -0.02em;">
+                    Turn Instagram Engagement Into Leads Automatically
+                </h1>
+                <p style="font-size: 18px; color: var(--v3-text-muted); line-height: 1.5; margin-bottom: 32px; max-width: 480px;">
+                    Automatically send DMs, deliver lead magnets, capture emails, and sync leads into your CRM using Instagram's official APIs.
+                </p>
+                <div class="hero-actions" style="display: flex; gap: 16px; flex-wrap: wrap;">
+                    <button class="v3-btn-primary" onclick="document.getElementById('open-auth').click()">Connect Instagram</button>
+                    <a href="#demo" class="v3-btn-secondary" style="gap: 8px;">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                        Watch Demo
+                    </a>
                 </div>
-            </div>
-        </section>
-
-        <!-- Dashboard Preview -->
-        <section class="animate-fade-in delay-300" style="margin-bottom: 120px; position: relative; z-index: 10;">
-            <div class="hero-mockup-wrapper" style="background: rgba(24, 24, 27, 0.8); border: 1px solid var(--border-light); border-radius: 24px; padding: 12px; backdrop-filter: blur(20px); box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); position: relative; overflow: hidden; width: 100%;">
-                <!-- Faux Window Controls -->
-                <div style="display: flex; gap: 8px; padding: 12px 16px; border-bottom: 1px solid var(--border-light);">
-                    <div style="width: 12px; height: 12px; border-radius: 50%; background: #ef4444;"></div>
-                    <div style="width: 12px; height: 12px; border-radius: 50%; background: #f59e0b;"></div>
-                    <div style="width: 12px; height: 12px; border-radius: 50%; background: #10b981;"></div>
-                </div>
-                <!-- Mockup Content -->
-                <div class="hero-mockup-container" style="display: flex; gap: 24px; padding: 24px; min-height: 400px; background: #09090b; border-radius: 0 0 16px 16px;">
-                    <!-- Sidebar Mock -->
-                    <div class="hero-sidebar" style="width: 220px; border-right: 1px solid rgba(255,255,255,0.05); display: flex; flex-direction: column; gap: 8px; padding-right: 16px;">
-                        <div style="display: flex; align-items: center; gap: 12px; padding: 10px 12px; background: rgba(79, 70, 229, 0.15); color: #818cf8; border-radius: 8px; font-weight: 500; font-size: 14px; border: 1px solid rgba(79, 70, 229, 0.2);">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
-                            Dashboard
-                        </div>
-                        <div style="display: flex; align-items: center; gap: 12px; padding: 10px 12px; color: var(--text-muted); font-size: 14px;">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path><polyline points="13 2 13 9 20 9"></polyline></svg>
-                            Automations
-                        </div>
-                        <div style="display: flex; align-items: center; gap: 12px; padding: 10px 12px; color: var(--text-muted); font-size: 14px;">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
-                            Activity Logs
-                        </div>
-                        
-                        <div style="margin-top: auto; padding: 12px; background: rgba(255,255,255,0.03); border-radius: 12px; border: 1px solid rgba(255,255,255,0.05);">
-                            <div style="display: flex; align-items: center; gap: 10px;">
-                                <div style="width: 8px; height: 8px; background: #10b981; border-radius: 50%; box-shadow: 0 0 8px #10b981;"></div>
-                                <span style="font-size: 12px; color: #e5e7eb;">Instagram Connected</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Main Mock -->
-                    <div class="hero-main-content" style="flex: 1; display: flex; flex-direction: column; gap: 20px;">
-                        <div class="hero-stats-row" style="display: flex; gap: 16px;">
-                            <!-- Card 1 -->
-                            <div style="flex: 1; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 16px; position: relative; overflow: hidden;">
-                                <div style="position: absolute; top: 0; right: 0; width: 60px; height: 60px; background: radial-gradient(circle, rgba(79,70,229,0.2) 0%, transparent 70%);"></div>
-                                <div style="color: var(--text-muted); font-size: 13px; font-weight: 500; margin-bottom: 8px;">Comments Captured</div>
-                                <div class="shimmer-text" style="font-size: 28px; font-weight: 700; color: #fff; margin-bottom: 4px;">4,281</div>
-                                <div style="color: #10b981; font-size: 12px; font-weight: 500; display: flex; align-items: center; gap: 4px;">
-                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline><polyline points="16 7 22 7 22 13"></polyline></svg>
-                                    +124 today
-                                </div>
-                            </div>
-                            <!-- Card 2 -->
-                            <div style="flex: 1; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 16px;">
-                                <div style="color: var(--text-muted); font-size: 13px; font-weight: 500; margin-bottom: 8px;">DMs Sent Automatically</div>
-                                <div class="shimmer-text" style="font-size: 28px; font-weight: 700; color: #fff; margin-bottom: 4px;">3,902</div>
-                                <div style="color: #10b981; font-size: 12px; font-weight: 500; display: flex; align-items: center; gap: 4px;">
-                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline><polyline points="16 7 22 7 22 13"></polyline></svg>
-                                    +82 today
-                                </div>
-                            </div>
-                            <!-- Card 3 -->
-                            <div style="flex: 1; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 16px;">
-                                <div style="color: var(--text-muted); font-size: 13px; font-weight: 500; margin-bottom: 8px;">Conversion Rate</div>
-                                <div class="shimmer-text" style="font-size: 28px; font-weight: 700; color: #fff; margin-bottom: 4px;">38.4%</div>
-                                <div style="color: #10b981; font-size: 12px; font-weight: 500; display: flex; align-items: center; gap: 4px;">
-                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline><polyline points="16 7 22 7 22 13"></polyline></svg>
-                                    +2.1% this week
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="hero-flow-row" style="display: flex; gap: 20px; flex: 1;">
-                            <!-- Active Automation Box -->
-                            <div style="flex: 1; background: linear-gradient(180deg, rgba(255,255,255,0.03) 0%, transparent 100%); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 20px;">
-                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-                                    <h4 style="font-size: 14px; font-weight: 600; color: #fff; margin: 0;">Active Automation</h4>
-                                    <span class="pulse-dot-anim" style="background: rgba(16, 185, 129, 0.15); color: #10b981; font-size: 11px; font-weight: 600; padding: 4px 8px; border-radius: 12px; border: 1px solid rgba(16, 185, 129, 0.2);">LIVE</span>
-                                </div>
-                                <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.05); border-radius: 8px; padding: 16px; margin-bottom: 16px;">
-                                    <div style="font-size: 13px; color: var(--text-muted); margin-bottom: 6px;">Trigger Keyword</div>
-                                    <div style="font-family: monospace; background: rgba(79, 70, 229, 0.15); color: #818cf8; padding: 4px 8px; border-radius: 4px; display: inline-block; font-size: 14px; font-weight: 600; border: 1px solid rgba(79, 70, 229, 0.3);">"LINK"</div>
-                                </div>
-                                <div style="display: flex; justify-content: center; color: var(--border-light); margin-bottom: 16px;">
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><polyline points="19 12 12 19 5 12"></polyline></svg>
-                                </div>
-                                <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.05); border-radius: 8px; padding: 16px;">
-                                    <div style="font-size: 13px; color: var(--text-muted); margin-bottom: 6px;">Auto-DM Reply</div>
-                                    <div style="font-size: 13px; color: #e5e7eb; line-height: 1.5;">"Hey! 👋 Here's the link to my free guide you asked for: <span style="color: #818cf8;">link.com/guide</span>"</div>
-                                </div>
-                            </div>
-                            
-                            <!-- Recent Activity Feed -->
-                            <div style="flex: 1.2; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 20px;">
-                                <h4 style="font-size: 14px; font-weight: 600; color: #fff; margin: 0 0 16px 0;">Live Activity</h4>
-                                <div style="display: flex; flex-direction: column; gap: 12px;">
-                                    <!-- Log Item 1 -->
-                                    <div class="float-item-1" style="display: flex; gap: 12px; align-items: flex-start; padding: 12px; background: rgba(0,0,0,0.2); border-radius: 8px; border-left: 3px solid #818cf8;">
-                                        <div style="width: 32px; height: 32px; background: rgba(255,255,255,0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0;">👤</div>
-                                        <div>
-                                            <div style="font-size: 13px; color: #e5e7eb; margin-bottom: 4px;"><strong>@alex_creates</strong> commented "link" on your reel.</div>
-                                            <div style="font-size: 12px; color: #10b981; display: flex; align-items: center; gap: 4px;">
-                                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                                                DM sent successfully • Just now
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <!-- Log Item 2 -->
-                                    <div class="float-item-2" style="display: flex; gap: 12px; align-items: flex-start; padding: 12px; background: rgba(0,0,0,0.2); border-radius: 8px; border-left: 3px solid rgba(255,255,255,0.1);">
-                                        <div style="width: 32px; height: 32px; background: rgba(255,255,255,0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0;">👤</div>
-                                        <div>
-                                            <div style="font-size: 13px; color: #e5e7eb; margin-bottom: 4px;"><strong>@sarah.designs</strong> commented "link" on your post.</div>
-                                            <div style="font-size: 12px; color: #10b981; display: flex; align-items: center; gap: 4px;">
-                                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                                                DM sent successfully • 2m ago
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Trust Section -->
-        <section style="text-align: center; margin-bottom: 120px; border-top: 1px solid var(--border-light); border-bottom: 1px solid var(--border-light); padding: 60px 0;">
-            <p style="font-size: 14px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 32px;">Trusted by creators. Approved by Meta.</p>
-            <div style="display: flex; justify-content: center; gap: 40px; align-items: center; opacity: 0.6; filter: grayscale(100%);">
-                <!-- Meta Logo SVG -->
-                <svg width="120" height="40" viewBox="0 0 100 30" fill="currentColor"><path d="M25 15c0 5.5-4.5 10-10 10S5 20.5 5 15 9.5 5 15 5s10 4.5 10 10zm-15 0c0 2.8 2.2 5 5 5s5-2.2 5-5-2.2-5-5-5-5 2.2-5 5zm75 0c0 5.5-4.5 10-10 10s-10-4.5-10-10 4.5-10 10-10 10 4.5 10 10zm-15 0c0 2.8 2.2 5 5 5s5-2.2 5-5-2.2-5-5-5-5 2.2-5 5zm-30-10h10v20h-10z"/></svg>
-                <div style="font-size: 24px; font-weight: 800; font-family: sans-serif;">INSTAGRAM</div>
-            </div>
-        </section>
-
-        <!-- How It Works -->
-        <section id="how-it-works" style="margin-bottom: 120px;">
-            <div style="text-align: center; margin-bottom: 60px;">
-                <h2 style="font-size: 36px; margin-bottom: 16px;">How it works</h2>
-                <p style="color: var(--text-muted); font-size: 16px; max-width: 500px; margin: 0 auto;">Set up your first automation in under 2 minutes. No coding required.</p>
             </div>
             
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px; position: relative;">
-                
-                <div class="glass-panel" style="padding: 40px 32px; text-align: center; position: relative; z-index: 2;">
-                    <div style="width: 56px; height: 56px; background: rgba(255,255,255,0.05); border: 1px solid var(--border-light); border-radius: 16px; display: flex; align-items: center; justify-content: center; margin: 0 auto 24px; color: #fff;">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
+            <div style="display: flex; justify-content: center; align-items: center;">
+                <div style="width: 100%; max-width: 320px; background: white; border-radius: 16px; padding: 24px; box-shadow: var(--v3-shadow); border: 1px solid var(--v3-border);">
+                    <div style="display: flex; flex-direction: column; gap: 16px;">
+                        <div style="display: flex; align-items: center; gap: 12px; padding: 12px; background: #fafafa; border-radius: 8px; border: 1px solid #e5e5e5;">
+                            <div style="font-size: 24px;">📱</div><div style="font-weight: 600; font-size: 14px;">Instagram Comment</div>
+                        </div>
+                        <div style="text-align: center; color: var(--v3-text-muted);">↓</div>
+                        <div style="display: flex; align-items: center; gap: 12px; padding: 12px; background: #fafafa; border-radius: 8px; border: 1px solid #e5e5e5;">
+                            <div style="font-size: 24px;">✉️</div><div style="font-weight: 600; font-size: 14px;">Auto DM</div>
+                        </div>
+                        <div style="text-align: center; color: var(--v3-text-muted);">↓</div>
+                        <div style="display: flex; align-items: center; gap: 12px; padding: 12px; background: #fafafa; border-radius: 8px; border: 1px solid #e5e5e5;">
+                            <div style="font-size: 24px;">🎯</div><div style="font-weight: 600; font-size: 14px;">Lead Capture</div>
+                        </div>
+                        <div style="text-align: center; color: var(--v3-text-muted);">↓</div>
+                        <div style="display: flex; align-items: center; gap: 12px; padding: 12px; background: var(--ig-gradient); color: white; border-radius: 8px; box-shadow: 0 4px 10px rgba(220, 39, 67, 0.2);">
+                            <div style="font-size: 24px;">🔄</div><div style="font-weight: 600; font-size: 14px;">CRM</div>
+                        </div>
                     </div>
-                    <h3 style="font-size: 20px; margin-bottom: 12px;">1. Trigger Keyword</h3>
-                    <p style="color: var(--text-muted); font-size: 14px;">Follower comments your trigger word (e.g. "LINK") on your post or reel.</p>
-                </div>
-                
-                <div class="glass-panel" style="padding: 40px 32px; text-align: center; position: relative; z-index: 2;">
-                    <div style="width: 56px; height: 56px; background: rgba(255,255,255,0.05); border: 1px solid var(--border-light); border-radius: 16px; display: flex; align-items: center; justify-content: center; margin: 0 auto 24px; color: #facc15;">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
-                    </div>
-                    <h3 style="font-size: 20px; margin-bottom: 12px;">2. Auto Reply</h3>
-                    <p style="color: var(--text-muted); font-size: 14px;">DMOrbit instantly replies to their comment publicly to boost algorithm engagement.</p>
-                </div>
-
-                <div class="glass-panel" style="padding: 40px 32px; text-align: center; position: relative; z-index: 2;">
-                    <div style="width: 56px; height: 56px; background: rgba(79,70,229,0.15); border: 1px solid rgba(79,70,229,0.3); border-radius: 16px; display: flex; align-items: center; justify-content: center; margin: 0 auto 24px; color: #818cf8;">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"></path><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"></path><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"></path><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"></path></svg>
-                    </div>
-                    <h3 style="font-size: 20px; margin-bottom: 12px;">3. DM Sent</h3>
-                    <p style="color: var(--text-muted); font-size: 14px;">A personalized direct message with your link or lead magnet is sent immediately.</p>
-                </div>
-            </div>
-        </section>
-
-        <!-- Features Section -->
-        <!-- Animated Flow Visualization -->
-        <section id="how-it-works" style="margin-bottom: 120px; position: relative;">
-            <div style="text-align: center; margin-bottom: 60px;">
-                <h2 style="font-size: 32px; font-weight: 700; margin-bottom: 16px;">The DM Automation Engine</h2>
-                <p style="font-size: 16px; color: var(--text-muted); max-width: 600px; margin: 0 auto;">Connect the dots between engaged followers and paying customers while you sleep.</p>
-            </div>
-            
-            <div style="display: flex; flex-direction: column; align-items: center; max-width: 800px; margin: 0 auto; position: relative;">
-                
-                <!-- Step 1 -->
-                <div class="glass-panel soft-pulse" style="width: 100%; max-width: 400px; padding: 20px; display: flex; align-items: center; gap: 16px; z-index: 2;">
-                    <div style="width: 48px; height: 48px; background: rgba(79, 70, 229, 0.15); border-radius: 12px; display: flex; align-items: center; justify-content: center; color: #818cf8; border: 1px solid rgba(79, 70, 229, 0.3);">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
-                    </div>
-                    <div>
-                        <h4 style="font-size: 16px; font-weight: 600; margin: 0 0 4px 0;">1. Comment Detected</h4>
-                        <p style="font-size: 13px; color: var(--text-muted); margin: 0;">User comments on your reel or post.</p>
-                    </div>
-                </div>
-
-                <!-- Connector Line -->
-                <svg width="2" height="60" viewBox="0 0 2 60" style="margin: 8px 0; opacity: 0.5;">
-                    <line x1="1" y1="0" x2="1" y2="60" stroke="#818cf8" stroke-width="2" stroke-dasharray="4 4" style="animation: flowingLine 1s linear infinite;"></line>
-                </svg>
-
-                <!-- Step 2 -->
-                <div class="glass-panel" style="width: 100%; max-width: 400px; padding: 20px; display: flex; align-items: center; gap: 16px; z-index: 2;">
-                    <div style="width: 48px; height: 48px; background: rgba(16, 185, 129, 0.15); border-radius: 12px; display: flex; align-items: center; justify-content: center; color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3);">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
-                    </div>
-                    <div>
-                        <h4 style="font-size: 16px; font-weight: 600; margin: 0 0 4px 0;">2. Keyword Matched</h4>
-                        <p style="font-size: 13px; color: var(--text-muted); margin: 0;">Our AI instantly identifies the trigger word.</p>
-                    </div>
-                </div>
-
-                <!-- Connector Line -->
-                <svg width="2" height="60" viewBox="0 0 2 60" style="margin: 8px 0; opacity: 0.5;">
-                    <line x1="1" y1="0" x2="1" y2="60" stroke="#10b981" stroke-width="2" stroke-dasharray="4 4" style="animation: flowingLine 1s linear infinite;"></line>
-                </svg>
-
-                <!-- Step 3 -->
-                <div class="glass-panel soft-pulse" style="width: 100%; max-width: 400px; padding: 20px; display: flex; align-items: center; gap: 16px; z-index: 2;">
-                    <div style="width: 48px; height: 48px; background: rgba(245, 158, 11, 0.15); border-radius: 12px; display: flex; align-items: center; justify-content: center; color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.3);">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
-                    </div>
-                    <div>
-                        <h4 style="font-size: 16px; font-weight: 600; margin: 0 0 4px 0;">3. DM Sent & Lead Captured</h4>
-                        <p style="font-size: 13px; color: var(--text-muted); margin: 0;">Personalized link delivered directly to their inbox.</p>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <section id="features" style="margin-bottom: 120px;">
-            <div style="text-align: center; margin-bottom: 60px;">
-                <h2 style="font-size: 36px; margin-bottom: 16px;">Everything you need to scale</h2>
-                <p style="color: var(--text-muted); font-size: 16px; max-width: 500px; margin: 0 auto;">Powerful tools designed specifically for modern creators and brands.</p>
-            </div>
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 24px;">
-                <div class="glass-panel" style="padding: 32px;">
-                    <div style="margin-bottom: 20px; color: #fff;">
-                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle><circle cx="12" cy="12" r="2"></circle></svg>
-                    </div>
-                    <h3 style="font-size: 18px; margin-bottom: 12px;">Keyword Automation</h3>
-                    <p style="color: var(--text-muted); font-size: 14px; line-height: 1.6;">Trigger different DMs based on specific words. Run multiple campaigns simultaneously.</p>
-                </div>
-                <div class="glass-panel" style="padding: 32px;">
-                    <div style="margin-bottom: 20px; color: #fff;">
-                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="20" x2="12" y2="10"></line><line x1="18" y1="20" x2="18" y2="4"></line><line x1="6" y1="20" x2="6" y2="16"></line></svg>
-                    </div>
-                    <h3 style="font-size: 18px; margin-bottom: 12px;">Real-time Analytics</h3>
-                    <p style="color: var(--text-muted); font-size: 14px; line-height: 1.6;">Track every comment, DM, and conversion. See exactly what's working instantly.</p>
-                </div>
-                <div class="glass-panel" style="padding: 32px;">
-                    <div style="margin-bottom: 20px; color: #fff;">
-                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
-                    </div>
-                    <h3 style="font-size: 18px; margin-bottom: 12px;">Safe Automation Pacing</h3>
-                    <p style="color: var(--text-muted); font-size: 14px; line-height: 1.6;">Built-in rate limiting ensures your account stays safe and compliant with Meta's rules.</p>
-                </div>
-                <div class="glass-panel" style="padding: 32px;">
-                    <div style="margin-bottom: 20px; color: #fff;">
-                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
-                    </div>
-                    <h3 style="font-size: 18px; margin-bottom: 12px;">Smart Bio Funnel Creator</h3>
-                    <p style="color: var(--text-muted); font-size: 14px; line-height: 1.6;">Consolidate your links into a stunning, responsive, custom-branded bio funnel that syncs with comments automatically.</p>
-                </div>
-            </div>
-        </section>
-
-        <!-- Pricing Section -->
-        <section id="pricing" style="margin-bottom: 120px; padding-top: 40px;">
-            <div style="text-align: center; margin-bottom: 60px;">
-                <h2 style="font-size: 36px; margin-bottom: 16px;">Simple, Transparent Pricing</h2>
-                <p style="color: var(--text-muted); font-size: 16px; max-width: 500px; margin: 0 auto;">No hidden fees. Upgrade when you scale.</p>
-            </div>
-
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px; max-width: 1100px; margin: 0 auto; padding: 0 20px;">
-                <!-- Free Plan -->
-                <div class="glass-panel" style="padding: 40px 32px; display: flex; flex-direction: column;">
-                    <h3 style="font-size: 24px; font-weight: 600; margin-bottom: 8px;">Free</h3>
-                    <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 24px;">Perfect for testing out DM automations.</p>
-                    <div style="font-size: 48px; font-weight: 800; margin-bottom: 32px;">₹0<span style="font-size: 16px; font-weight: 500; color: var(--text-muted);">/mo</span></div>
-                    
-                    <ul style="list-style: none; padding: 0; margin: 0 0 32px 0; display: flex; flex-direction: column; gap: 16px; flex: 1;">
-                        <li style="display: flex; align-items: center; gap: 12px; font-size: 14px; color: #e5e7eb;">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                            1 Instagram account
-                        </li>
-                        <li style="display: flex; align-items: center; gap: 12px; font-size: 14px; color: #e5e7eb;">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                            1,000 DMs / month
-                        </li>
-                        <li style="display: flex; align-items: center; gap: 12px; font-size: 14px; color: #e5e7eb;">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                            3 automations max
-                        </li>
-                        <li style="display: flex; align-items: center; gap: 12px; font-size: 14px; color: #e5e7eb;">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                            Basic analytics
-                        </li>
-                        <li style="display: flex; align-items: center; gap: 12px; font-size: 14px; color: #e5e7eb;">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                            Standard Support (Slower response queue)
-                        </li>
-                    </ul>
-                    
-                    <button class="btn-secondary" style="width: 100%; padding: 14px; border-radius: 12px;" onclick="document.getElementById('open-auth').click()">Start Free</button>
-                </div>
-
-                <!-- Creator Plan (Recommended) -->
-                <div class="glass-panel" style="padding: 40px 32px; display: flex; flex-direction: column; border: 1px solid rgba(79, 70, 229, 0.4); position: relative; transform: scale(1.02); z-index: 2; box-shadow: 0 20px 40px -10px rgba(79, 70, 229, 0.2);">
-                    <div style="position: absolute; top: -14px; left: 50%; transform: translateX(-50%); background: linear-gradient(90deg, #4f46e5, #818cf8); color: #fff; padding: 4px 16px; border-radius: 20px; font-size: 12px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase;">Most Popular</div>
-                    
-                    <h3 style="font-size: 24px; font-weight: 600; margin-bottom: 8px; color: #fff;">Creator</h3>
-                    <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 24px;">Ideal for growing creators and viral reels.</p>
-                    <div style="font-size: 48px; font-weight: 800; margin-bottom: 32px; color: #fff;">₹499<span style="font-size: 16px; font-weight: 500; color: var(--text-muted);">/mo</span></div>
-                    
-                    <ul style="list-style: none; padding: 0; margin: 0 0 32px 0; display: flex; flex-direction: column; gap: 16px; flex: 1;">
-                        <li style="display: flex; align-items: center; gap: 12px; font-size: 14px; color: #fff;">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#818cf8" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                            2 Instagram accounts
-                        </li>
-                        <li style="display: flex; align-items: center; gap: 12px; font-size: 14px; color: #fff;">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#818cf8" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                            25,000 DMs / month
-                        </li>
-                        <li style="display: flex; align-items: center; gap: 12px; font-size: 14px; color: #fff;">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#818cf8" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                            Unlimited automations
-                        </li>
-                        <li style="display: flex; align-items: center; gap: 12px; font-size: 14px; color: #fff;">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#818cf8" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                            Smart Bio link page
-                        </li>
-                        <li style="display: flex; align-items: center; gap: 12px; font-size: 14px; color: #fff;">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#818cf8" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                            Rollover unused credits
-                        </li>
-                        <li style="display: flex; align-items: center; gap: 12px; font-size: 14px; color: #fff;">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#818cf8" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                            Priority Support (Faster response queue)
-                        </li>
-                    </ul>
-                    
-                    <button class="btn-primary" style="width: 100%; padding: 14px; border-radius: 12px;" onclick="document.getElementById('open-auth').click()">Get Creator Plan</button>
-                </div>
-
-                <!-- Pro Plan -->
-                <div class="glass-panel" style="padding: 40px 32px; display: flex; flex-direction: column;">
-                    <h3 style="font-size: 24px; font-weight: 600; margin-bottom: 8px;">Pro</h3>
-                    <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 24px;">For brands, agencies, and serious creators.</p>
-                    <div style="font-size: 48px; font-weight: 800; margin-bottom: 32px;">₹1299<span style="font-size: 16px; font-weight: 500; color: var(--text-muted);">/mo</span></div>
-                    
-                    <ul style="list-style: none; padding: 0; margin: 0 0 32px 0; display: flex; flex-direction: column; gap: 16px; flex: 1;">
-                        <li style="display: flex; align-items: center; gap: 12px; font-size: 14px; color: #e5e7eb;">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                            5 Instagram accounts
-                        </li>
-                        <li style="display: flex; align-items: center; gap: 12px; font-size: 14px; color: #e5e7eb;">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                            100,000 DMs / month
-                        </li>
-                        <li style="display: flex; align-items: center; gap: 12px; font-size: 14px; color: #e5e7eb;">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                            Unlimited automations
-                        </li>
-                        <li style="display: flex; align-items: center; gap: 12px; font-size: 14px; color: #e5e7eb;">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                            Rollover unused credits
-                        </li>
-                        <li style="display: flex; align-items: center; gap: 12px; font-size: 14px; color: #e5e7eb;">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                            Priority Processing
-                        </li>
-                        <li style="display: flex; align-items: center; gap: 12px; font-size: 14px; color: #e5e7eb;">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                            Premium Support (Highest priority assistance)
-                        </li>
-                        <li style="display: flex; align-items: center; gap: 12px; font-size: 14px; color: #e5e7eb;">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                            Advanced Analytics & Controls
-                        </li>
-                        <li style="display: flex; align-items: center; gap: 12px; font-size: 14px; color: #e5e7eb;">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                            Advanced Automation Controls
-                        </li>
-                        <li style="display: flex; align-items: center; gap: 12px; font-size: 14px; color: #e5e7eb;">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                            Team Support & Workspace sharing
-                        </li>
-                    </ul>
-                    
-                    <button class="btn-secondary" style="width: 100%; padding: 14px; border-radius: 12px;" onclick="document.getElementById('open-auth').click()">Go Pro</button>
-                </div>
-            </div>
-        </section>
-
-        <!-- Final CTA -->
-        <section style="text-align: center; margin-bottom: 120px; background: linear-gradient(180deg, rgba(79,70,229,0.05) 0%, rgba(9,9,11,1) 100%); border: 1px solid rgba(255,255,255,0.05); border-radius: 24px; padding: 100px 24px; position: relative; overflow: hidden;">
-            <!-- Glowing Orbs -->
-            <div style="position: absolute; top: -50px; left: 20%; width: 200px; height: 200px; background: rgba(79,70,229,0.3); filter: blur(100px); border-radius: 50%; animation: pulseDot 4s infinite;"></div>
-            <div style="position: absolute; bottom: -50px; right: 20%; width: 200px; height: 200px; background: rgba(16,185,129,0.2); filter: blur(100px); border-radius: 50%; animation: pulseDot 6s infinite;"></div>
-            
-            <div style="position: relative; z-index: 2;">
-                <h2 style="font-size: 48px; margin-bottom: 24px; letter-spacing: -0.04em;">Ready to automate your engagement?</h2>
-                <p style="color: var(--text-muted); font-size: 18px; margin-bottom: 40px; max-width: 500px; margin-left: auto; margin-right: auto;">Join thousands of creators turning comments into customers. Set up your first automation in under 2 minutes.</p>
-                <button class="btn-primary" onclick="document.getElementById('open-auth').click()" style="padding: 16px 40px; font-size: 18px; border-radius: 12px; box-shadow: 0 10px 25px rgba(79,70,229,0.4); margin-bottom: 32px;">Get Started Free</button>
-                
-                <div style="display: flex; justify-content: center; align-items: center; gap: 32px; color: var(--text-muted); font-size: 13px; font-weight: 500;">
-                    <span style="display: flex; align-items: center; gap: 6px;">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                        No credit card required
-                    </span>
-                    <span style="display: flex; align-items: center; gap: 6px;">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                        Cancel anytime
-                    </span>
-                    <span style="display: flex; align-items: center; gap: 6px;">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                        100% Meta Compliant
-                    </span>
-                </div>
-            </div>
-        </section>
-        
-        <!-- Footer -->
-        <footer style="border-top: 1px solid var(--border-light); padding: 60px 0 40px; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 40px;">
-            <div>
-                <div class="logo" style="font-size: 20px; font-weight: 800; color: #fff; margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7L12 12L22 7L12 2Z"></path><path d="M2 17L12 22L22 17"></path><path d="M2 12L12 17L22 12"></path></svg>
-                    DMOrbit
-                </div>
-                <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 24px; max-width: 250px;">The creator-first automation platform for Instagram growth.</p>
-                <p style="color: var(--text-muted); font-size: 12px;">&copy; 2026 DMOrbit. All rights reserved.</p>
-            </div>
-            <div>
-                <h4 style="color: #fff; font-size: 14px; font-weight: 600; margin-bottom: 16px;">Product</h4>
-                <div style="display: flex; flex-direction: column; gap: 12px;">
-                    <a href="#features" style="color: var(--text-muted); text-decoration: none; font-size: 14px; transition: color 0.2s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='var(--text-muted)'">Features</a>
-                    <a href="#how-it-works" style="color: var(--text-muted); text-decoration: none; font-size: 14px; transition: color 0.2s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='var(--text-muted)'">How it works</a>
-                    <a href="#" style="color: var(--text-muted); text-decoration: none; font-size: 14px; transition: color 0.2s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='var(--text-muted)'">Pricing</a>
-                </div>
-            </div>
-            <div>
-                <h4 style="color: #fff; font-size: 14px; font-weight: 600; margin-bottom: 16px;">Legal</h4>
-                <div style="display: flex; flex-direction: column; gap: 12px;">
-                    <a href="privacy.html" style="color: var(--text-muted); text-decoration: none; font-size: 14px; transition: color 0.2s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='var(--text-muted)'">Privacy Policy</a>
-                    <a href="terms.html" style="color: var(--text-muted); text-decoration: none; font-size: 14px; transition: color 0.2s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='var(--text-muted)'">Terms of Service</a>
-                    <a href="delete-data.html" style="color: var(--text-muted); text-decoration: none; font-size: 14px; transition: color 0.2s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='var(--text-muted)'">Data Deletion</a>
-                </div>
-            </div>
-            <div>
-                <h4 style="color: #fff; font-size: 14px; font-weight: 600; margin-bottom: 16px;">Support</h4>
-                <div style="display: flex; flex-direction: column; gap: 12px;">
-                    <a href="mailto:dmorbitapp@gmail.com" style="color: var(--text-muted); text-decoration: none; font-size: 14px; transition: color 0.2s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='var(--text-muted)'">Contact Us</a>
-                    <a href="#" style="color: var(--text-muted); text-decoration: none; font-size: 14px; transition: color 0.2s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='var(--text-muted)'">Documentation</a>
-                </div>
-            </div>
-        </footer>
-    </div>
-
-    <!-- Auth Overlay -->
-    <div class="auth-overlay" id="auth-overlay">
-        <div class="auth-card">
-            <button class="close-btn" id="close-auth" style="position: absolute; top: 20px; right: 24px; background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 20px; padding: 4px;">✕</button>
-            <h2 id="auth-title">Welcome Back</h2>
-            <p id="auth-subtitle">Log in to your workspace.</p>
-            
-            <div id="auth-error" class="auth-error hidden"></div>
-
-            <button class="social-btn google" id="google-login">
-                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="18" alt="Google">
-                <span id="google-btn-text">Continue with Google</span>
-            </button>
-
-            <div class="divider">or use email</div>
-
-            <div class="email-form">
-                <div class="input-group hidden" id="name-input-group">
-                    <label for="name-input">Full Name</label>
-                    <input type="text" id="name-input" placeholder="Enter your name">
-                </div>
-                <div class="input-group">
-                    <label for="email-input">Email Address</label>
-                    <input type="email" id="email-input" placeholder="you@example.com">
-                </div>
-                <div class="input-group">
-                    <label for="password-input">Password</label>
-                    <input type="password" id="password-input" placeholder="••••••••">
-                </div>
-                
-                <button class="btn-primary" id="email-submit" style="width: 100%; margin-top: 10px; border-radius: 8px;">Sign In</button>
-                
-                <div style="margin-top: 24px; font-size: 14px; color: var(--text-muted);">
-                    <span id="auth-toggle-text">New to DMOrbit?</span>
-                    <a id="auth-toggle-link" style="color: var(--primary); cursor: pointer; font-weight: 500; margin-left: 4px; text-decoration: none;">Sign Up</a>
-                </div>
-                
-                <div style="margin-top: 12px; margin-bottom: 20px;">
-                    <a id="forgot-password-link" style="font-size: 13px; color: var(--text-muted); cursor: pointer; text-decoration: underline;">Forgot password?</a>
-                </div>
-                
-                <div style="margin-top: 24px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.06); text-align: center; display: flex; flex-direction: column; gap: 8px;">
-                    <div style="font-size: 12px; color: #10b981; display: inline-flex; align-items: center; justify-content: center; gap: 6px; font-weight: 500;">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
-                        Secure Meta OAuth Integration
-                    </div>
-                    <p style="font-size: 11px; color: var(--text-muted); margin: 0; line-height: 1.4;">
-                        We never ask for or store your Instagram password. 100% compliant with Meta Platform Policies.
-                    </p>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Firebase SDKs & Auth Logic -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-        import { 
-            getAuth, 
-            signInWithPopup, 
-            GoogleAuthProvider, 
-            onAuthStateChanged,
-            setPersistence,
-            browserLocalPersistence,
-            createUserWithEmailAndPassword,
-            signInWithEmailAndPassword,
-            updateProfile
-        } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+    <!-- SECTION 2: WHO IT IS FOR -->
+    <div class="v3-section" style="background: rgba(0,0,0,0.02); border-top: 1px solid var(--v3-border); border-bottom: 1px solid var(--v3-border); margin-top: 40px; padding-top: 60px; padding-bottom: 60px;">
+        <h2 style="text-align: center; font-size: 28px; font-weight: 800; margin-bottom: 40px;">Who It Is For</h2>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px;">
+            <div class="v3-card" style="padding: 20px;">
+                <h3 style="font-size: 16px; margin-bottom: 12px; font-weight: 700;">Creators</h3>
+                <p style="font-size: 13px; color: var(--v3-text-muted); margin-bottom: 8px;"><b>Problem:</b> Followers ask for links in comments.</p>
+                <p style="font-size: 13px; color: #10b981; font-weight: 600;">Outcome: Links sent instantly.</p>
+            </div>
+            <div class="v3-card" style="padding: 20px;">
+                <h3 style="font-size: 16px; margin-bottom: 12px; font-weight: 700;">Coaches</h3>
+                <p style="font-size: 13px; color: var(--v3-text-muted); margin-bottom: 8px;"><b>Problem:</b> Lead magnets require manual delivery.</p>
+                <p style="font-size: 13px; color: #10b981; font-weight: 600;">Outcome: Automated PDF delivery.</p>
+            </div>
+            <div class="v3-card" style="padding: 20px;">
+                <h3 style="font-size: 16px; margin-bottom: 12px; font-weight: 700;">Educators</h3>
+                <p style="font-size: 13px; color: var(--v3-text-muted); margin-bottom: 8px;"><b>Problem:</b> Course enrollments are slow.</p>
+                <p style="font-size: 13px; color: #10b981; font-weight: 600;">Outcome: Webinars booked 24/7.</p>
+            </div>
+            <div class="v3-card" style="padding: 20px;">
+                <h3 style="font-size: 16px; margin-bottom: 12px; font-weight: 700;">Agencies</h3>
+                <p style="font-size: 13px; color: var(--v3-text-muted); margin-bottom: 8px;"><b>Problem:</b> Client DMs are overflowing.</p>
+                <p style="font-size: 13px; color: #10b981; font-weight: 600;">Outcome: Scalable lead capture.</p>
+            </div>
+            <div class="v3-card" style="padding: 20px;">
+                <h3 style="font-size: 16px; margin-bottom: 12px; font-weight: 700;">Local Businesses</h3>
+                <p style="font-size: 13px; color: var(--v3-text-muted); margin-bottom: 8px;"><b>Problem:</b> Missed appointment requests.</p>
+                <p style="font-size: 13px; color: #10b981; font-weight: 600;">Outcome: Automated bookings.</p>
+            </div>
+        </div>
+    </div>
 
-        let app, auth, firebaseReady = false;
-        let isSignUpMode = false;
+    <!-- SECTION 3: HOW IT WORKS -->
+    <div id="demo" class="v3-section">
+        <h2 style="text-align: center; font-size: 32px; font-weight: 800; margin-bottom: 60px;">How It Works</h2>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 40px; text-align: center;">
+            <div>
+                <div style="font-size: 48px; margin-bottom: 16px;">💬</div>
+                <h3 style="font-size: 18px; font-weight: 700; margin-bottom: 8px;">Step 1: User comments</h3>
+                <p style="font-size: 14px; color: var(--v3-text-muted);">A follower comments on your Instagram post or reel.</p>
+            </div>
+            <div>
+                <div style="font-size: 48px; margin-bottom: 16px;">⚡</div>
+                <h3 style="font-size: 18px; font-weight: 700; margin-bottom: 8px;">Step 2: DMOrbit sends DM</h3>
+                <p style="font-size: 14px; color: var(--v3-text-muted);">An automated DM is instantly delivered to their inbox.</p>
+            </div>
+            <div>
+                <div style="font-size: 48px; margin-bottom: 16px;">🎯</div>
+                <h3 style="font-size: 18px; font-weight: 700; margin-bottom: 8px;">Step 3: Lead captured</h3>
+                <p style="font-size: 14px; color: var(--v3-text-muted);">Their email is securely collected and sent to your CRM.</p>
+            </div>
+        </div>
+    </div>
 
-        async function initFirebase() {
+    <!-- SECTION 4: AUTOMATIONS -->
+    <div class="v3-section" style="background: white; border-top: 1px solid var(--v3-border); border-bottom: 1px solid var(--v3-border);">
+        <h2 style="text-align: center; font-size: 32px; font-weight: 800; margin-bottom: 40px;">Primary Automations</h2>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 24px;">
+            <div class="v3-card">
+                <h3 style="font-size: 16px; font-weight: 700; margin-bottom: 8px;">Comment → DM</h3>
+                <p style="font-size: 14px; color: var(--v3-text-muted);">Reply to specific post comments.<br><b>Why:</b> Instant gratification for followers.</p>
+            </div>
+            <div class="v3-card">
+                <h3 style="font-size: 16px; font-weight: 700; margin-bottom: 8px;">Story Reply</h3>
+                <p style="font-size: 14px; color: var(--v3-text-muted);">Trigger flows from story replies.<br><b>Why:</b> Capitalize on engaged viewers.</p>
+            </div>
+            <div class="v3-card">
+                <h3 style="font-size: 16px; font-weight: 700; margin-bottom: 8px;">Keyword Automation</h3>
+                <p style="font-size: 14px; color: var(--v3-text-muted);">Listen for DMs with specific words.<br><b>Why:</b> Routes leads automatically.</p>
+            </div>
+            <div class="v3-card">
+                <h3 style="font-size: 16px; font-weight: 700; margin-bottom: 8px;">Lead Magnet Delivery</h3>
+                <p style="font-size: 14px; color: var(--v3-text-muted);">Send PDFs or links in DMs.<br><b>Why:</b> Seamless value exchange.</p>
+            </div>
+            <div class="v3-card">
+                <h3 style="font-size: 16px; font-weight: 700; margin-bottom: 8px;">CRM Sync</h3>
+                <p style="font-size: 14px; color: var(--v3-text-muted);">Push data to your external tools.<br><b>Why:</b> Keeps your business organized.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 5: PRODUCT SHOWCASE -->
+    <div class="v3-section">
+        <div style="text-align: center; margin-bottom: 40px;">
+            <h2 style="font-size: 32px; font-weight: 800; margin-bottom: 16px;">Inside The Product</h2>
+            <p style="font-size: 16px; color: var(--v3-text-muted);">Simple interface. Powerful outcomes.</p>
+        </div>
+        <div style="background: #e5e5e5; border-radius: 12px; overflow: hidden; aspect-ratio: 16/9; display: flex; align-items: center; justify-content: center; color: var(--v3-text-muted); border: 1px solid var(--v3-border);">
+            <!-- Placeholder for actual dashboard screenshot -->
+            <p style="font-weight: 600;">[ Actual Dashboard Screenshot: Campaign Creation, Inbox, Analytics ]</p>
+        </div>
+    </div>
+
+    <!-- SECTION 6: PRICING -->
+    <section id="pricing" class="v3-section" style="background: rgba(0,0,0,0.02); border-top: 1px solid var(--v3-border); border-bottom: 1px solid var(--v3-border);">
+        <div style="text-align: center; margin-bottom: 40px;">
+            <h2 style="font-size: 32px; font-weight: 800; margin-bottom: 16px;">Simple Pricing</h2>
+            <p style="color: var(--v3-text-muted); font-size: 16px;">No hidden limits.</p>
+        </div>
+        <div id="pricing-loading" style="text-align: center; color: var(--v3-text-muted); padding: 20px;">Loading plans securely...</div>
+        <div id="pricing-error" class="hidden auth-error" style="max-width: 500px; margin: 0 auto; text-align: center;">Unable to load pricing plans.</div>
+        <div id="pricing-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px; max-width: 1000px; margin: 0 auto;"></div>
+    </section>
+
+    <!-- SECTION 7: FINAL CTA -->
+    <div class="v3-section" style="text-align: center; padding-top: 100px; padding-bottom: 100px;">
+        <h2 style="font-size: 36px; font-weight: 800; margin-bottom: 32px;">Your Next Customer Is Already Commenting</h2>
+        <button class="v3-btn-primary" onclick="document.getElementById('open-auth').click()" style="font-size: 18px; padding: 16px 40px;">Connect Instagram</button>
+    </div>
+
+    <!-- FOOTER -->
+    <footer style="border-top: 1px solid var(--v3-border); padding: 40px 5%; background: white;">
+        <div style="max-width: 1200px; margin: 0 auto; display: flex; flex-direction: column; align-items: center; gap: 24px;">
+            <div style="font-weight: 800; font-size: 20px; color: var(--v3-text);">DMOrbit</div>
+            <div style="display: flex; gap: 24px; flex-wrap: wrap; justify-content: center;">
+                <a href="/privacy.html" style="color: var(--v3-text-muted); font-size: 14px;">Privacy Policy</a>
+                <a href="/terms.html" style="color: var(--v3-text-muted); font-size: 14px;">Terms of Service</a>
+                <a href="/delete-data.html" style="color: var(--v3-text-muted); font-size: 14px;">Data Deletion</a>
+            </div>
+            <div style="color: var(--v3-text-muted); font-size: 14px;">
+                Support: <a href="mailto:dmorbitapp@gmail.com" style="color: #e1306c;">dmorbitapp@gmail.com</a>
+            </div>
+            <div style="color: var(--v3-text-muted); font-size: 14px;">&copy; 2026 DMOrbit. All rights reserved.</div>
+        </div>
+    </footer>
+
+    <!-- Auth Overlay -->
+    <div class="auth-overlay" id="auth-overlay" style="position: fixed; inset: 0; display: none; align-items: center; justify-content: center; z-index: 9999;">
+        <div class="auth-card" style="width: 100%; max-width: 400px; padding: 32px; border-radius: 16px; background: white; box-shadow: 0 20px 40px rgba(0,0,0,0.2);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+                <h2 style="font-size: 24px; font-weight: 700;">Welcome</h2>
+                <button id="close-auth" style="background: none; border: none; font-size: 24px; cursor: pointer; color: var(--v3-text-muted);">&times;</button>
+            </div>
+            <div id="auth-error" style="color: #ef4444; font-size: 14px; margin-bottom: 16px; display: none;"></div>
+            <form id="login-form">
+                <div style="margin-bottom: 16px;">
+                    <label style="display: block; font-size: 14px; margin-bottom: 8px;">Email</label>
+                    <input type="email" id="login-email" required style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #e5e5e5; background: #fafafa;">
+                </div>
+                <div style="margin-bottom: 24px;">
+                    <label style="display: block; font-size: 14px; margin-bottom: 8px;">Password</label>
+                    <input type="password" id="login-password" required style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #e5e5e5; background: #fafafa;">
+                </div>
+                <button type="submit" class="v3-btn-primary" style="width: 100%;" id="login-submit">Sign In</button>
+            </form>
+            <div style="margin-top: 16px; text-align: center; font-size: 14px; color: var(--v3-text-muted);">
+                Don't have an account? <a href="#" id="switch-signup" style="color: #e1306c; font-weight: 600;">Sign up</a>
+            </div>
+            <div style="margin-top: 24px; border-top: 1px solid #e5e5e5; padding-top: 24px;">
+                <button type="button" class="v3-btn-secondary" id="google-login-btn" style="width: 100%; gap: 8px;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+                    Continue with Google
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Modal Logic
+        const authOverlay = document.getElementById('auth-overlay');
+        document.getElementById('open-auth').addEventListener('click', (e) => { 
+            e.preventDefault(); 
+            authOverlay.style.display = 'flex'; 
+            setTimeout(() => authOverlay.classList.add('visible'), 10);
+        });
+        document.getElementById('close-auth').addEventListener('click', () => {
+            authOverlay.classList.remove('visible');
+            setTimeout(() => authOverlay.style.display = 'none', 300);
+        });
+        authOverlay.addEventListener('click', (e) => { 
+            if(e.target === authOverlay) {
+                authOverlay.classList.remove('visible');
+                setTimeout(() => authOverlay.style.display = 'none', 300);
+            }
+        });
+
+        // Pricing Logic
+        async function loadPricingPlans() {
+            const loading = document.getElementById('pricing-loading');
+            const error = document.getElementById('pricing-error');
+            const grid = document.getElementById('pricing-grid');
             try {
-                const res = await fetch('/api/firebase-config');
-                if (!res.ok) throw new Error('Config missing');
-                const config = await res.json();
-                app = initializeApp(config);
-                auth = getAuth(app);
-                await setPersistence(auth, browserLocalPersistence);
-                firebaseReady = true;
-                
-                onAuthStateChanged(auth, (user) => {
-                    if (user) {
-                        user.getIdToken().then(idToken => syncWithBackend(idToken));
-                    }
-                });
+                const res = await fetch('/api/public/plans');
+                if (!res.ok) throw new Error('Failed to fetch plans');
+                const data = await res.json();
+                const plans = Array.isArray(data) ? data : (data.plans || []);
+                loading.style.display = 'none';
+                if (plans.length === 0) {
+                    error.style.display = 'block';
+                    error.textContent = 'No plans available.';
+                    return;
+                }
+                grid.innerHTML = plans.map(plan => {
+                    const isPopular = plan.name.toLowerCase() === 'creator' || plan.isPopular;
+                    const dmLimitText = plan.dmLimit === -1 ? 'Unlimited' : (plan.dmLimit || 0).toLocaleString();
+                    const accountsText = plan.maxAccounts === -1 ? 'Unlimited' : (plan.maxAccounts || 1);
+                    return `
+                    <div class="v3-card" style="padding: 32px; display: flex; flex-direction: column; position: relative; ${isPopular ? 'border: 2px solid #e1306c;' : ''}">
+                        ${isPopular ? '<div style="position: absolute; top: -12px; left: 50%; transform: translateX(-50%); background: var(--ig-gradient); color: #fff; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 700; text-transform: uppercase;">Most Popular</div>' : ''}
+                        <h3 style="font-size: 20px; font-weight: 700; margin-bottom: 8px;">${plan.name}</h3>
+                        <div style="font-size: 36px; font-weight: 800; margin-bottom: 24px;">₹${plan.priceMonthly || 0}<span style="font-size: 14px; font-weight: 500; color: var(--v3-text-muted);">/mo</span></div>
+                        <ul style="list-style: none; padding: 0; margin: 0 0 24px 0; display: flex; flex-direction: column; gap: 12px; flex: 1;">
+                            <li style="font-size: 14px; color: var(--v3-text-muted);">✓ ${accountsText} Instagram account${plan.maxAccounts > 1 || plan.maxAccounts === -1 ? 's' : ''}</li>
+                            <li style="font-size: 14px; color: var(--v3-text-muted);">✓ ${dmLimitText} DMs / month</li>
+                            <li style="font-size: 14px; color: var(--v3-text-muted);">✓ ${plan.hasRollover ? 'Unused DMs roll over monthly' : 'No DM rollover'}</li>
+                        </ul>
+                        <button class="${isPopular ? 'v3-btn-primary' : 'v3-btn-secondary'}" style="width: 100%;" onclick="document.getElementById('open-auth').click()">Get ${plan.name}</button>
+                    </div>
+                    `;
+                }).join('');
             } catch (err) {
-                console.warn('[Firebase] Client side not initialized. Using local auth only.');
+                loading.style.display = 'none';
+                error.style.display = 'block';
             }
         }
+        document.addEventListener('DOMContentLoaded', loadPricingPlans);
 
+        // Session Check on Load
         async function checkSession() {
             try {
                 const res = await fetch('/api/me');
                 if (res.ok) {
                     const data = await res.json();
-                    window.location.href = (data.user.role === 'admin') ? '/admin.html' : '/dashboard.html';
+                    window.location.href = (data.user && data.user.role === 'admin') ? '/admin.html' : '/dashboard.html';
                 }
             } catch (e) {}
         }
-
         checkSession();
-        initFirebase();
 
-        const overlay = document.getElementById('auth-overlay');
-        const errorEl = document.getElementById('auth-error');
-        const emailSubmitBtn = document.getElementById('email-submit');
-        const googleBtn = document.getElementById('google-login');
-
-        // Toggle Sign In / Sign Up
-        document.getElementById('auth-toggle-link').addEventListener('click', () => {
-            isSignUpMode = !isSignUpMode;
-            document.getElementById('auth-title').textContent = isSignUpMode ? 'Create Account' : 'Welcome Back';
-            document.getElementById('name-input-group').classList.toggle('hidden', !isSignUpMode);
-            emailSubmitBtn.textContent = isSignUpMode ? 'Create Account' : 'Sign In';
-            document.getElementById('auth-toggle-text').textContent = isSignUpMode ? 'Already have an account?' : 'New to DMOrbit?';
-            document.getElementById('auth-toggle-link').textContent = isSignUpMode ? 'Sign In' : 'Sign Up';
-        });
-
-        // Direct Server Auth
-        emailSubmitBtn.addEventListener('click', async () => {
-            const email = document.getElementById('email-input').value.trim();
-            const password = document.getElementById('password-input').value;
-            const name = document.getElementById('name-input').value.trim();
-
-            if (!email || !password) return showAuthError('Please fill all fields');
-
-            emailSubmitBtn.disabled = true;
-            emailSubmitBtn.textContent = 'Processing...';
-
+        // Real Login & Signup Logic
+        let isSignUpMode = false;
+        document.getElementById('login-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('login-submit');
+            btn.textContent = 'Processing...';
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+            const errorEl = document.getElementById('auth-error');
             try {
                 const endpoint = isSignUpMode ? '/api/signup' : '/api/login';
-                const res = await fetch(endpoint, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email, password, name })
-                });
+                const bodyPayload = { email, password };
+                if (isSignUpMode) bodyPayload.name = email.split('@')[0];
+                const res = await fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(bodyPayload) });
                 const data = await res.json();
-
                 if (res.ok) {
-                    window.location.reload();
+                    checkSession();
                 } else {
-                    showAuthError(data.error || 'Authentication failed');
-                    emailSubmitBtn.disabled = false;
-                    emailSubmitBtn.textContent = isSignUpMode ? 'Create Account' : 'Sign In';
+                    errorEl.textContent = data.error || 'Authentication failed';
+                    errorEl.style.display = 'block';
+                    btn.textContent = isSignUpMode ? 'Create Account' : 'Sign In';
                 }
             } catch (err) {
-                showAuthError('Server error. Please try again.');
-                emailSubmitBtn.disabled = false;
+                errorEl.textContent = 'Connection error. Please try again.';
+                errorEl.style.display = 'block';
+                btn.textContent = isSignUpMode ? 'Create Account' : 'Sign In';
             }
         });
-
-        // Google Auth
-        googleBtn.addEventListener('click', async () => {
-            if (!firebaseReady) return showAuthError('Google Login not configured for this domain.');
+        
+        document.getElementById('switch-signup').addEventListener('click', (e) => {
+            e.preventDefault();
+            isSignUpMode = !isSignUpMode;
+            const title = document.querySelector('.auth-card h2');
+            const btn = document.getElementById('login-submit');
+            if (isSignUpMode) {
+                title.textContent = 'Create Account';
+                btn.textContent = 'Create Account';
+                e.target.textContent = 'Sign In instead';
+            } else {
+                title.textContent = 'Welcome Back';
+                btn.textContent = 'Sign In';
+                e.target.textContent = 'Sign up';
+            }
+        });
+    </script>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getAuth, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        let firebaseAuth = null;
+        let googleProvider = null;
+        async function initFirebase() {
             try {
-                const provider = new GoogleAuthProvider();
-                await signInWithPopup(auth, provider);
-            } catch (err) {
-                showAuthError(err.message);
-            }
-        });
-
-        async function syncWithBackend(idToken) {
-            await fetch('/api/auth/firebase', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ idToken })
-            });
-            window.location.reload();
+                const res = await fetch('/api/firebase-config');
+                const config = await res.json();
+                if (config && config.apiKey) {
+                    const app = initializeApp(config);
+                    firebaseAuth = getAuth(app);
+                    googleProvider = new GoogleAuthProvider();
+                }
+            } catch (err) { }
         }
-
-        document.getElementById('forgot-password-link').addEventListener('click', async () => {
-            const email = document.getElementById('email-input').value.trim();
-            const newPassword = prompt("Reset Password: Enter your NEW password:");
-            if (!email || !newPassword) return;
-            const res = await fetch('/api/forgot-password', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, newPassword })
-            });
-            if (res.ok) alert("Password reset successfully!");
-        });
-
-        // UI Handlers
-        document.getElementById('open-auth').addEventListener('click', () => overlay.classList.add('visible'));
-        document.getElementById('hero-get-started').addEventListener('click', () => overlay.classList.add('visible'));
-        document.getElementById('close-auth').addEventListener('click', () => overlay.classList.remove('visible'));
-
-        function showAuthError(msg) {
-            let friendlyMsg = msg;
-            if (msg.includes('auth/unauthorized-domain')) {
-                errorEl.innerHTML = `<strong>Setup Required:</strong> Add this domain to Firebase Console.<br><small>Domain: ${window.location.hostname}</small>`;
-                errorEl.classList.remove('hidden');
+        initFirebase();
+        document.getElementById('google-login-btn').addEventListener('click', async () => {
+            const errorEl = document.getElementById('auth-error');
+            const btn = document.getElementById('google-login-btn');
+            if (!firebaseAuth) {
+                errorEl.textContent = 'Google Login is currently unavailable.';
+                errorEl.style.display = 'block';
                 return;
-            } else if (msg.includes('auth/wrong-password') || msg.includes('auth/user-not-found') || msg.includes('invalid-credential')) {
-                friendlyMsg = "Account not found or password incorrect. Please verify your email and password.";
-            } else if (msg.includes('auth/invalid-email')) {
-                friendlyMsg = "Please enter a valid email address (e.g. name@domain.com).";
-            } else if (msg.includes('auth/email-already-in-use')) {
-                friendlyMsg = "This email is already registered. Try signing in instead.";
-            } else if (msg.includes('auth/weak-password')) {
-                friendlyMsg = "Password is too weak. Please choose at least 6 characters.";
-            } else if (msg.includes('Firebase') || msg.includes('auth/')) {
-                friendlyMsg = "Authentication failed. Please check your network and try again.";
             }
-            errorEl.textContent = friendlyMsg;
-            errorEl.classList.remove('hidden');
-        }
+            const originalText = btn.innerHTML;
+            btn.textContent = 'Opening Google...';
+            errorEl.style.display = 'none';
+            try {
+                const result = await signInWithPopup(firebaseAuth, googleProvider);
+                btn.textContent = 'Logging in...';
+                const idToken = await result.user.getIdToken();
+                const res = await fetch('/api/auth/firebase', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ idToken: idToken })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    window.location.href = (data.user && data.user.role === 'admin') ? '/admin.html' : '/dashboard.html';
+                } else {
+                    errorEl.textContent = data.error || 'Google Login failed on server';
+                    errorEl.style.display = 'block';
+                    btn.innerHTML = originalText;
+                }
+            } catch (error) {
+                if (error.code !== 'auth/popup-closed-by-user') {
+                    errorEl.textContent = error.message || 'Google Auth failed';
+                    errorEl.style.display = 'block';
+                }
+                btn.innerHTML = originalText;
+            }
+        });
     </script>
 </body>
 </html>
