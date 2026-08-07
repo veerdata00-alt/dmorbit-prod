@@ -30,7 +30,24 @@
             <h2>3. Data Security & Permissions</h2>
             <p>We use industry-standard encryption to protect your access tokens. You can revoke permissions at any time directly through your Facebook/Instagram Security settings.</p>
             
-            <h2>4. Contact Us</h2>
+            <h2>4. Data Deletion Policy</h2>
+            <p>You have the right to request the deletion of your data at any time. Because DMOrbit uses Facebook Login to connect your Instagram account, you can instantly and securely delete all your data using Facebook's Data Deletion callback.</p>
+            <p><strong>To automatically delete your data:</strong></p>
+            <ol style="margin-left: 20px; margin-bottom: 20px; line-height: 1.6;">
+                <li>Go to your Facebook profile's <strong>Settings &amp; Privacy &gt; Settings</strong>.</li>
+                <li>Navigate to <strong>Apps and Websites</strong>.</li>
+                <li>Find <strong>DMOrbit</strong> and click <strong>Remove</strong>.</li>
+            </ol>
+            <p>Once removed, Facebook will send a secure request to our Data Deletion Callback URL. DMOrbit will immediately erase your Instagram connection, access tokens, and all associated automation data from our servers.</p>
+            <p>Alternatively, you can email us to request manual deletion.</p>
+
+            <div id="deletion-status-box" style="display: none; background: rgba(0, 255, 128, 0.1); border: 1px solid rgba(0, 255, 128, 0.3); padding: 20px; border-radius: 12px; margin-top: 24px;">
+                <h3 style="color: #00ff80; margin-top: 0;">Data Deletion Confirmed</h3>
+                <p>Your data deletion request has been processed successfully.</p>
+                <p style="font-family: monospace; opacity: 0.8;">Confirmation Code: <span id="deletion-code"></span></p>
+            </div>
+            
+            <h2>5. Contact Us</h2>
             <p>For support or privacy questions, reach out to us at <a href="mailto:dmorbitapp@gmail.com" style="color: var(--primary);">dmorbitapp@gmail.com</a>.</p>
             
             <div style="margin-top: 40px; padding-top: 24px; border-top: 1px solid var(--border-light); text-align: center; font-size: 13px; color: var(--text-muted);">
@@ -38,5 +55,16 @@
             </div>
         </div>
     </div>
+    <script>
+        // Handle Meta Data Deletion confirmation hash
+        if (window.location.hash.includes('deletion-status')) {
+            const urlParams = new URLSearchParams(window.location.hash.split('?')[1]);
+            const code = urlParams.get('code');
+            if (code) {
+                document.getElementById('deletion-status-box').style.display = 'block';
+                document.getElementById('deletion-code').textContent = code;
+            }
+        }
+    </script>
 </body>
 </html>
