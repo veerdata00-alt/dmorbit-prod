@@ -1,0 +1,100 @@
+{
+  "appInfo": {
+    "name": "dmorbit",
+    "app_type": 0,
+    "category": "Business",
+    "roles": {
+      "data": [
+        {
+          "app_id": "1746396296328706",
+          "user": "122099091945301270",
+          "role": "administrators"
+        }
+      ],
+      "paging": {
+        "cursors": {
+          "before": "MAZDZD",
+          "after": "MAZDZD"
+        }
+      }
+    },
+    "permissions": {
+      "data": [
+        {
+          "permission": "email",
+          "status": "live"
+        },
+        {
+          "permission": "public_profile",
+          "status": "live"
+        }
+      ]
+    },
+    "id": "1746396296328706"
+  },
+  "permissions": {
+    "data": [
+      {
+        "permission": "email",
+        "status": "live"
+      },
+      {
+        "permission": "public_profile",
+        "status": "live"
+      }
+    ]
+  },
+  "webhooks": {
+    "data": [
+      {
+        "object": "instagram",
+        "callback_url": "https://web-production-dd826.up.railway.app/webhook",
+        "active": true,
+        "fields": [
+          {
+            "name": "messages",
+            "version": "v25.0"
+          },
+          {
+            "name": "comments",
+            "version": "v25.0"
+          },
+          {
+            "name": "mentions",
+            "version": "v25.0"
+          },
+          {
+            "name": "messaging_postbacks",
+            "version": "v25.0"
+          }
+        ]
+      },
+      {
+        "object": "page",
+        "callback_url": "https://web-production-dd826.up.railway.app/webhook",
+        "active": true,
+        "fields": [
+          {
+            "name": "messaging_postbacks",
+            "version": "v25.0"
+          },
+          {
+            "name": "feed",
+            "version": "v25.0"
+          }
+        ]
+      }
+    ]
+  },
+  "features": {
+    "error": {
+      "message": "Unknown path components: /features",
+      "type": "OAuthException",
+      "code": 2500,
+      "fbtrace_id": "AwuFBZzR8bcuKLvv2dj87Ri"
+    }
+  },
+  "products": {
+    "data": []
+  }
+}
