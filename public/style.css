@@ -352,3 +352,131 @@ p {
         font-size: 24px !important;
     }
 }
+
+
+/* --- V2 LANDING PAGE ADDITIONS --- */
+
+/* Marquee */
+.marquee-container {
+    overflow: hidden;
+    white-space: nowrap;
+    position: relative;
+    width: 100%;
+}
+.marquee-content {
+    display: inline-flex;
+    gap: 40px;
+    animation: scrollMarquee 30s linear infinite;
+}
+@keyframes scrollMarquee {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+}
+
+/* Sticky Cards */
+.sticky-stack-container {
+    position: relative;
+    padding-bottom: 60px;
+}
+.sticky-card {
+    position: sticky;
+    transition: transform 0.3s ease;
+}
+.sticky-card:nth-child(1) { top: 100px; z-index: 1; }
+.sticky-card:nth-child(2) { top: 120px; z-index: 2; }
+.sticky-card:nth-child(3) { top: 140px; z-index: 3; }
+
+/* FAQ Accordion */
+.faq-accordion {
+    width: 100%;
+    max-width: 800px;
+    margin: 0 auto;
+}
+.faq-item {
+    border: 1px solid var(--border-light);
+    border-radius: 12px;
+    margin-bottom: 16px;
+    background: rgba(255, 255, 255, 0.02);
+    overflow: hidden;
+}
+.faq-item summary {
+    padding: 24px;
+    font-weight: 600;
+    font-size: 16px;
+    cursor: pointer;
+    list-style: none;
+    position: relative;
+    color: #fff;
+}
+.faq-item summary::-webkit-details-marker {
+    display: none;
+}
+.faq-item summary::after {
+    content: '+';
+    position: absolute;
+    right: 24px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 24px;
+    font-weight: 300;
+    color: var(--primary);
+    transition: transform 0.3s ease;
+}
+.faq-item[open] summary::after {
+    transform: translateY(-50%) rotate(45deg);
+}
+.faq-content {
+    padding: 0 24px 24px 24px;
+    color: var(--text-muted);
+    font-size: 15px;
+    line-height: 1.6;
+    animation: slideDown 0.3s ease-out;
+}
+@keyframes slideDown {
+    0% { opacity: 0; transform: translateY(-10px); }
+    100% { opacity: 1; transform: translateY(0); }
+}
+
+/* Hero Funnel */
+.funnel-container {
+    position: relative;
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 20px;
+}
+.funnel-node {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-light);
+    border-radius: 16px;
+    padding: 16px 24px;
+    margin: 0 auto;
+    width: 100%;
+    backdrop-filter: blur(12px);
+    position: relative;
+    z-index: 2;
+    box-shadow: 0 10px 30px -10px rgba(0,0,0,0.5);
+}
+.funnel-line {
+    width: 2px;
+    height: 40px;
+    background: linear-gradient(to bottom, var(--primary), var(--secondary));
+    margin: 0 auto;
+    position: relative;
+}
+.funnel-line::after {
+    content: '';
+    position: absolute;
+    top: 0; left: -3px; width: 8px; height: 8px;
+    background: #fff;
+    border-radius: 50%;
+    box-shadow: 0 0 10px #fff;
+    animation: flowDown 2s infinite linear;
+}
+@keyframes flowDown {
+    0% { top: 0; opacity: 1; }
+    80% { top: 40px; opacity: 0.5; }
+    100% { top: 40px; opacity: 0; }
+}
