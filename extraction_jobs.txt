@@ -1,0 +1,61 @@
+Line 241: queuePriority: { type: String, enum: ['LOW', 'MEDIUM', 'HIGH'], default: 'LOW' },
+Line 561: // Failed jobs & queue metrics
+Line 562: const failedDMs = await Job.countDocuments({ status: 'failed' });
+Line 563: const queueSize = await Job.countDocuments({ status: 'pending' });
+Line 564: const delayedJobs = await Job.countDocuments({ status: 'pending', process_after: { $gt: Date.now() } });
+Line 602: queueSize,
+Line 651: user.queueUsage = await Job.countDocuments({ userId: user._id.toString(), status: 'pending' });
+Line 681: user.queueUsage = await Job.countDocuments({ userId: user._id.toString(), status: 'pending' });
+Line 771: await Job.deleteMany({ userId });
+Line 915: app.post('/api/admin/queue/control', authenticateToken, authenticateAdmin, async (req, res) => {
+Line 919: { key: 'queue_paused' },
+Line 920: { key: 'queue_paused', value: !!paused },
+Line 930: app.post('/api/admin/queue/retry', authenticateToken, authenticateAdmin, async (req, res) => {
+Line 932: const result = await Job.updateMany(
+Line 943: app.post('/api/admin/queue/clear', authenticateToken, authenticateAdmin, async (req, res) => {
+Line 950: const result = await Job.deleteMany(query);
+Line 990: const { type, limit } = req.query; // type: 'webhook' | 'queue' | 'meta' | 'all'
+Line 1008: if (!type || type === 'all' || type === 'queue') {
+Line 1009: const queueLogs = await Job.find({ status: { $in: ['done', 'failed', 'processing'] } }).sort({ createdAt: -1 }).limit(maxLimit).lean();
+Line 1010: queueLogs.forEach(ql => {
+Line 1194: // but in DMOrbit we define the templateType in the queue job metadata.
+Line 1441: const job = await Job.findById(jobId);
+Line 1593: setInterval(processFollowups, 30000); // Check every 30 seconds
+Line 1698: setInterval(processFlowStates, 15000); // Check every 15 seconds
+Line 1717: setInterval(async () => {
+Line 1723: const pausedSetting = await GlobalSettings.findOne({ key: 'queue_paused' });
+Line 1727: const pacingSetting = await GlobalSettings.findOne({ key: 'queue_pacing' });
+Line 1737: const processingJobs = await Job.find({ status: "processing" });
+Line 1744: const pendingJobs = await Job.find({ status: "pending" }).sort({ priority: 1, createdAt: 1 }).limit(50);
+Line 1765: await Job.updateOne({ _id: item._id }, { status: 'failed', error: 'Paused: Instagram disconnected' });
+Line 1788: const locked = await Job.findOneAndUpdate(
+Line 1809: setInterval(async () => {
+Line 1812: const result = await Job.deleteMany({
+Line 1825: setInterval(async () => {
+Line 2393: await Job.updateMany(
+Line 2764: const job = await Job.create({
+Line 2784: console.log(`[STORY_REPLY] Job queued`);
+Line 2877: await Job.create({
+Line 2910: await Job.create({
+Line 2983: await Job.create({
+Line 3019: await Job.create({
+Line 3088: const existingJob = await Job.findOne({ "metadata.comment_id": commentId });
+Line 3199: const job = await Job.create({
+Line 3262: const job = await Job.create({
+Line 3453: const pendingJobs = await Job.countDocuments({ status: 'pending' });
+Line 3454: const failedJobs = await Job.countDocuments({ status: 'failed' });
+Line 3455: const recentJobs = await Job.find().sort({ createdAt: -1 }).limit(5);
+Line 3460: queue: { pending: pendingJobs, failed: failedJobs },
+Line 3605: const lastJob = await Job.findOne({ automationId: a._id }).sort({ createdAt: -1 });
+Line 3609: lastJobStatus: lastJob ? lastJob.status : null,
+Line 3664: Job.countDocuments({ userId }),
+Line 3665: Job.countDocuments({ userId, status: 'pending' }),
+Line 3666: Job.countDocuments({ userId, status: 'done' }),
+Line 3667: Job.countDocuments({ userId, status: 'failed' }),
+Line 3729: const jobs = await Job.find({
+Line 3821: await Job.updateMany(
+Line 4333: queuePriority: 'LOW',
+Line 4345: queuePriority: 'MEDIUM',
+Line 4357: queuePriority: 'HIGH',
+Line 4365: { key: 'queue_paused', value: false },
+Line 4366: { key: 'queue_pacing', value: 10000 },
