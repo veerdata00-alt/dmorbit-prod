@@ -1,0 +1,36 @@
+Line 11: const axios = require('axios');
+Line 13: const browserManager = require('./browser/BrowserManager');
+Line 1190: const url = `https://graph.facebook.com/v19.0/${endpointId}/messages`;
+Line 1205: const response = await axios.post(url, payload, {
+Line 1248: const url = `https://graph.facebook.com/v19.0/${commentId}/replies`;
+Line 1254: const response = await axios.post(url, payload, {
+Line 1285: const url = `https://graph.facebook.com/v19.0/${endpointId}/messages`;
+Line 1301: const response = await axios.post(url, payload, {
+Line 1998: const response = await axios.get(`https://graph.facebook.com/v19.0/${account.instagram_id}/media`, {
+Line 1998: const response = await axios.get(`https://graph.facebook.com/v19.0/${account.instagram_id}/media`, {
+Line 2019: const response = await axios.get(`https://graph.facebook.com/v19.0/${account.instagram_id}/stories`, {
+Line 2019: const response = await axios.get(`https://graph.facebook.com/v19.0/${account.instagram_id}/stories`, {
+Line 2140: const tokenRes = await axios.get(`https://graph.facebook.com/v19.0/oauth/access_token`, {
+Line 2140: const tokenRes = await axios.get(`https://graph.facebook.com/v19.0/oauth/access_token`, {
+Line 2152: const longLivedRes = await axios.get(`https://graph.facebook.com/v19.0/oauth/access_token`, {
+Line 2152: const longLivedRes = await axios.get(`https://graph.facebook.com/v19.0/oauth/access_token`, {
+Line 2164: const pagesRes = await axios.get(`https://graph.facebook.com/v19.0/me/accounts`, {
+Line 2164: const pagesRes = await axios.get(`https://graph.facebook.com/v19.0/me/accounts`, {
+Line 2171: const igRes = await axios.get(`https://graph.facebook.com/v19.0/${page.id}`, {
+Line 2171: const igRes = await axios.get(`https://graph.facebook.com/v19.0/${page.id}`, {
+Line 2351: const igUserRes = await axios.get(`https://graph.facebook.com/v19.0/${pageId}`, {
+Line 2351: const igUserRes = await axios.get(`https://graph.facebook.com/v19.0/${pageId}`, {
+Line 2399: await axios.post(`https://graph.facebook.com/v19.0/${pageId}/subscribed_apps`, {
+Line 2399: await axios.post(`https://graph.facebook.com/v19.0/${pageId}/subscribed_apps`, {
+Line 2425: const debugUrl = `https://graph.facebook.com/debug_token?input_token=${account.access_token}&access_token=${process.env.FB_APP_ID}|${process.env.FB_APP_SECRET}`;
+Line 2426: const response = await axios.get(debugUrl);
+Line 2862: const followCheckUrl = `https://graph.facebook.com/v21.0/${senderId}?fields=is_viewer_follow_page&access_token=${pageToken}`;
+Line 2863: const followRes = await axios.get(followCheckUrl).catch(() => null);
+Line 2969: const followCheckUrl = `https://graph.facebook.com/v21.0/${senderId}?fields=is_viewer_follow_page&access_token=${pageToken}`;
+Line 2970: const followRes = await axios.get(followCheckUrl).catch(() => null);
+Line 3853: const igRes = await axios.get(`https://graph.facebook.com/v19.0/${account.instagram_id}`, {
+Line 3853: const igRes = await axios.get(`https://graph.facebook.com/v19.0/${account.instagram_id}`, {
+Line 3873: const pageRes = await axios.get(`https://graph.facebook.com/v19.0/${account.page_id}`, {
+Line 3873: const pageRes = await axios.get(`https://graph.facebook.com/v19.0/${account.page_id}`, {
+Line 3935: const LoginPortal = require('./browser/LoginPortal');
+Line 3941: const loginPortal = new LoginPortal(wss);
