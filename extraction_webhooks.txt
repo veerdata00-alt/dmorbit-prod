@@ -1,0 +1,45 @@
+Line 97: console.log("Webhook endpoint active");
+Line 104: webhook: (msg, meta = {}) => console.log(`[WEBHOOK] ${new Date().toISOString()} | ${msg}`, meta)
+Line 351: const webhookLogSchema = new mongoose.Schema({
+Line 357: const WebhookLog = mongoose.model('WebhookLog', webhookLogSchema);
+Line 359: const webhookEventSchema = new mongoose.Schema({
+Line 366: const WebhookEvent = mongoose.model('WebhookEvent', webhookEventSchema);
+Line 574: // Webhook processed health in last hour
+Line 576: const webhookEventsCount = await WebhookEvent.countDocuments({ createdAt: { $gte: lastHour } });
+Line 577: const webhookHealth = webhookEventsCount > 0 ? 'HEALTHY' : 'INACTIVE';
+Line 605: webhookHealth,
+Line 990: const { type, limit } = req.query; // type: 'webhook' | 'queue' | 'meta' | 'all'
+Line 995: if (!type || type === 'all' || type === 'webhook') {
+Line 996: const webhookLogs = await WebhookLog.find().sort({ timestamp: -1 }).limit(maxLimit).lean();
+Line 997: webhookLogs.forEach(wl => {
+Line 1002: message: `Webhook received from source: ${wl.source || 'unknown'}`,
+Line 1077: // --- Webhook Security Middleware ---
+Line 1497: // Mark WebhookEvent as processed if applicable
+Line 1499: await WebhookEvent.findOneAndUpdate(
+Line 2379: access_token: pageAccessToken, // Long-lived Page Token for webhooks/API
+Line 2398: // 5. Subscribe Webhooks for this Page
+Line 2448: // --- Meta Webhook Handshake (GET /webhook) ---
+Line 2449: app.get('/webhook', (req, res) => {
+Line 2450: console.log("Webhook request:", req.query);
+Line 2580: // Route 2: Stripe Webhook Listener to capture successful payments
+Line 2581: app.post('/api/billing/webhook', async (req, res) => {
+Line 2586: const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+Line 2587: if (!webhookSecret) throw new Error("STRIPE_WEBHOOK_SECRET is not configured.");
+Line 2589: event = stripe.webhooks.constructEvent(req.rawBody, sig, webhookSecret);
+Line 2591: console.error(`[Stripe Webhook Error]: ${err.message}`);
+Line 2592: return res.status(400).send(`Webhook Error: ${err.message}`);
+Line 2600: console.log(`[Stripe Webhook] Successful Payment! Upgrading User: ${userId} to ${planType}`);
+Line 2615: // --- Unified Meta Webhook Receiver (POST /webhook) ---
+Line 2616: app.post('/webhook', verifySignature, async (req, res) => {
+Line 2629: await WebhookLog.create({
+Line 2634: console.log(`[DEBUG LOGGED] Webhook from ${body.object || "unknown"}`);
+Line 2636: console.error("[CRITICAL] Failed to log webhook to DB:", err.message);
+Line 2650: const existingEvent = await WebhookEvent.findOne({ eventId });
+Line 2656: await WebhookEvent.findOneAndUpdate(
+Line 2737: // that duplicate parallel webhooks will fail with E11000 here.
+Line 3098: const igAccountId = entry.id; // This is the IG Business ID from the webhook
+Line 3325: // DEPRECATED: Removed redundant/simulator routes in favor of unified /webhook
+Line 3744: app.get('/api/webhook-logs', authenticateToken, async (req, res) => {
+Line 3754: // WebhookLog entry has entry[0].id (Page/Account ID)
+Line 3758: const logs = await WebhookLog.find(query).sort({ timestamp: -1 }).limit(parseInt(limit));
+Line 4388: console.log("Webhook URL ready");
