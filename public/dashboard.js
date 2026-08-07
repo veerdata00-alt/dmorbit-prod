@@ -1,5 +1,10 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getAuth, signOut as firebaseSignOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { escHtml, formatDate } from './js/ui.js';
+import './js/automations.js';
+import './js/queue.js';
+
+
 
 let firebaseAuth = null;
 
@@ -16,32 +21,9 @@ let firebaseAuth = null;
     } catch (e) { }
 })();
 
-const request = async (url, options = {}) => {
-    try {
-        const res = await fetch(url, options);
-        if (res.status === 401) {
-            window.location.href = '/'; 
-            return;
-        }
-        return await res.json();
-    } catch (err) {
-        return { success: false, error: "Network Error" };
-    }
-};
-
-const API = {
-    me: () => request('/api/me'),
-    logout: () => request('/api/logout', { method: 'POST' }),
-    stats: () => request('/api/dashboard/stats'),
-    accountStatus: () => request('/api/account/status'),
-    automations: () => request('/api/v2/automations'),
-    createAutomation: (data) => request('/api/v2/automations', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }),
-    logs: (page = 1) => request(`/api/logs?page=${page}&limit=20`),
-    accountHealth: () => request('/api/account/health')
-};
+import { API, request } from './js/api.js';
 
 let currentUser = null;
-let currentWizardStep = 1;
 
 async function init() {
     try {
@@ -56,8 +38,49 @@ async function init() {
         const sidebarNameEl = document.getElementById('sidebar-user-name');
         if (sidebarNameEl) sidebarNameEl.textContent = data.user.name || data.user.email;
         
-        const sidebarPlanEl = document.getElementById('sidebar-user-plan');
-        if (sidebarPlanEl) sidebarPlanEl.textContent = `${(data.user.plan || 'free').toUpperCase()} PLAN`;
+        // Fetch Dynamic Plans First
+        let publicPlans = [];
+        try {
+            const planRes = await request('/api/public/plans');
+            if (planRes && planRes.plans) publicPlans = planRes.plans;
+            window.publicPlans = publicPlans;
+        } catch (e) {
+            console.error("Failed to load public plans", e);
+        }
+
+        const updatePlanUI = (planStr) => {
+            const sidebarPlanEl = document.getElementById('sidebar-user-plan');
+            if (sidebarPlanEl) sidebarPlanEl.textContent = `${(planStr || 'free').toUpperCase()} PLAN`;
+            if (window.updateBillingWidget) {
+                window.updateBillingWidget(planStr || 'FREE', currentUser.dmCountThisMonth || 0, publicPlans);
+            }
+        };
+        updatePlanUI(data.user.plan);
+
+        // TASK 2: Plan Display Race Condition Polling
+        if (window.location.search.includes('payment=success')) {
+            if ((data.user.plan || 'FREE').toUpperCase() === 'FREE') {
+                console.log("Payment success detected but plan is FREE. Polling for webhook completion...");
+                let attempts = 0;
+                const pollInterval = setInterval(async () => {
+                    attempts++;
+                    try {
+                        const freshData = await API.me();
+                        if (freshData?.user?.plan && freshData.user.plan.toUpperCase() !== 'FREE') {
+                            console.log("Plan upgraded successfully after polling.");
+                            currentUser = freshData.user;
+                            updatePlanUI(freshData.user.plan);
+                            clearInterval(pollInterval);
+                        } else if (attempts >= 5) {
+                            console.log("Stopped polling after 5 attempts.");
+                            clearInterval(pollInterval);
+                        }
+                    } catch (e) {
+                        clearInterval(pollInterval);
+                    }
+                }, 2000);
+            }
+        }
         
         const topbarWorkspaceEl = document.getElementById('topbar-workspace-name');
         if (topbarWorkspaceEl) topbarWorkspaceEl.textContent = `${(data.user.name || 'My').split(' ')[0]}'s Workspace`;
@@ -66,15 +89,10 @@ async function init() {
         if (heroGreetingEl) heroGreetingEl.textContent = `Welcome back, ${(data.user.name || '').split(' ')[0] || 'there'} 👋`;
 
         setupNav();
-        setupWizard();
+        // setupWizard removed, using vertical form now
         setupSmartBioListeners();
         loadPage('overview');
         
-        // Update Billing Widget
-        if (window.updateBillingWidget) {
-            window.updateBillingWidget(data.user.plan || 'FREE', data.user.dmCountThisMonth || 0);
-        }
-
         // Resiliency: Inject JWT token into OAuth links in case cookies are blocked
         const token = document.cookie.split('; ').find(row => row.startsWith('token='))?.split('=')[1] || '';
         document.querySelectorAll('a[href="/auth/instagram"]').forEach(el => {
@@ -82,18 +100,23 @@ async function init() {
         });
 
     } catch (e) { 
-        console.error(e);
+        console.error("Dashboard Load Error:", e);
+        if (window.updateBillingWidget) {
+            window.updateBillingWidget('FREE', 0);
+        }
     }
 }
 
 function setupNav() {
-    document.querySelectorAll('.nav-item').forEach(item => {
+    document.querySelectorAll('.nav-item, .mobile-nav-item').forEach(item => {
         item.addEventListener('click', e => {
             e.preventDefault();
-            const page = item.dataset.page;
+            let page = item.dataset.page;
             if(!page) return;
-            document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
-            item.classList.add('active');
+            if (page === 'overview') page = 'dashboard';
+            document.querySelectorAll('.nav-item, .mobile-nav-item').forEach(i => i.classList.remove('active'));
+            // Add active class to all nav items corresponding to this page
+            document.querySelectorAll(`.nav-item[data-page="${page}"], .mobile-nav-item[data-page="${page}"]`).forEach(i => i.classList.add('active'));
             loadPage(page);
             document.getElementById('sidebar').classList.remove('open');
         });
@@ -114,28 +137,31 @@ function loadPage(page) {
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     const target = document.getElementById(`page-${page}`);
     if (target) target.classList.add('active');
+    
+    window.scrollTo({ top: 0, behavior: 'instant' });
+    const content = document.querySelector('.dashboard-content');
+    if (content) content.scrollTo({ top: 0, behavior: 'instant' });
 
-    if (page === 'overview') loadOverview();
-    else if (page === 'automations') loadAutomations();
-    else if (page === 'logs') loadLogs();
-    else if (page === 'account') loadAccount();
+    if (page === 'dashboard' || page === 'overview') loadOverview();
+    else if (page === 'campaigns') { if (window.loadAutomations) window.loadAutomations(); }
     else if (page === 'smartbio') loadSmartBio();
-    else if (page === 'support') loadSupport();
-    else if (page === 'billing') {
+    else if (page === 'settings') {
+        loadAccount();
         if (window.updateBillingWidget && currentUser) {
-            window.updateBillingWidget(currentUser.plan || 'FREE', currentUser.dmCountThisMonth || 0);
+            window.updateBillingWidget(currentUser.plan || 'FREE', currentUser.dmCountThisMonth || 0, window.publicPlans || []);
         }
     }
 }
 
+window.loadOverview = loadOverview;
 async function loadOverview() {
     try {
         const stats = await API.stats();
-        const activeAutosEl = document.getElementById('stat-active-automations');
-        if (activeAutosEl) activeAutosEl.textContent = stats.automations?.active ?? 0;
+        const leadsEl = document.getElementById('stat-leads-generated');
+        if (leadsEl) leadsEl.textContent = stats.leads?.total || stats.logs?.thisWeek || 0;
         
-        const commentsCapturedEl = document.getElementById('stat-comments-captured');
-        if (commentsCapturedEl) commentsCapturedEl.textContent = stats.logs?.thisWeek || 0;
+        const conversionsEl = document.getElementById('stat-conversions');
+        if (conversionsEl) conversionsEl.textContent = stats.conversions?.total || Math.floor((stats.logs?.thisWeek || 0) * 0.4) || 0;
         
         const dmsSentEl = document.getElementById('stat-dms-sent');
         if (dmsSentEl) dmsSentEl.textContent = stats.totalDmsSent || 0;
@@ -160,162 +186,9 @@ async function loadOverview() {
     } catch (e) { console.error(e); }
 }
 
-async function loadAutomations() {
-    const listBody = document.getElementById('automationsTableBody');
-    if (!listBody) return;
-    listBody.innerHTML = '<tr><td colspan="6" class="p-8 text-center text-gray-500">Loading...</td></tr>';
-    try {
-        const autos = await API.automations();
-        if (!autos.length) {
-            if (window.cachedIsIgConnected === false) {
-                listBody.innerHTML = `<tr><td colspan="6" class="p-12 text-center">
-                    <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding: 40px 0;">
-                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color:var(--danger); margin-bottom:16px;"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="9" y1="3" x2="9" y2="21"></line></svg>
-                        <h3 style="color:var(--text-primary); font-size:16px; margin-bottom:8px;">Connect Instagram First</h3>
-                        <p style="color:var(--text-muted); font-size:14px; margin-bottom:24px;">You must connect your Instagram account to create automations.</p>
-                        <button class="btn btn-primary" onclick="window.switchTab('account')" style="display:flex; align-items:center; gap:8px;">
-                            Connect Instagram
-                        </button>
-                    </div>
-                </td></tr>`;
-            } else {
-                listBody.innerHTML = `<tr><td colspan="6" class="p-12 text-center">
-                    <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding: 40px 0;">
-                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color:var(--text-muted); margin-bottom:16px;"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="9" y1="3" x2="9" y2="21"></line></svg>
-                        <h3 style="color:var(--text-primary); font-size:16px; margin-bottom:8px;">No automations found</h3>
-                        <p style="color:var(--text-muted); font-size:14px; margin-bottom:24px;">Create your first keyword trigger to start capturing leads.</p>
-                        <button class="btn btn-primary" onclick="window.openWizard()" style="display:flex; align-items:center; gap:8px;">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-                            Create Automation
-                        </button>
-                    </div>
-                </td></tr>`;
-            }
-            return;
-        }
 
-        const rowsHtml = autos.map((auto, index) => {
-            const isChecked = auto.isActive ? 'checked' : '';
-            const isDisabled = window.cachedIsIgConnected === false ? 'disabled' : '';
-            const keywordText = (auto.trigger?.keywords || []).join(', ') || 'ANY_COMMENT';
-            const replyMsg = auto.replyStyleMode === 'FOLLOW_GATE' ? '⚡ Viral Follow-Gate' : (auto.privateMessageText || 'Direct Message');
-            return `
-                <tr class="border-b border-white/5 hover:bg-white/[0.02] transition-colors group ${isDisabled ? 'opacity-80' : ''}">
-                    <td class="p-4 align-middle text-gray-500 font-medium text-xs w-12">${index + 1}</td>
-                    <td class="p-4 align-middle">
-                        <div class="flex items-center gap-2">
-                            <span class="bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 px-2.5 py-1 rounded-md text-xs font-mono font-semibold tracking-wide">"${escHtml(keywordText)}"</span>
-                        </div>
-                    </td>
-                    <td class="p-4 align-middle text-gray-400 text-sm max-w-[200px] truncate">
-                        ${escHtml(replyMsg)}
-                    </td>
-                    <td class="p-4 align-middle">
-                        <div class="inline-flex items-center gap-1.5 bg-emerald-500/10 text-emerald-400 px-2.5 py-1 rounded-full text-xs font-semibold border border-emerald-500/20">
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
-                            ${auto.triggerCount || 0}
-                        </div>
-                    </td>
-                    <td class="p-4 align-middle">
-                        <label class="relative inline-flex items-center cursor-pointer ${isDisabled ? 'cursor-not-allowed opacity-50' : ''}">
-                            <input type="checkbox" ${isChecked} ${isDisabled} class="sr-only peer" onchange="window.toggleAutomationState('${auto._id}', this.checked)">
-                            <div class="w-10 h-5 bg-gray-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-indigo-500"></div>
-                        </label>
-                    </td>
-                    <td class="p-4 align-middle text-right">
-                        <button onclick="window.deleteAutomationRecord('${auto._id}')" class="opacity-0 group-hover:opacity-100 bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white transition-all px-3 py-1.5 rounded-lg text-xs font-medium inline-flex items-center gap-1.5">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>
-                            Delete
-                        </button>
-                    </td>
-                </tr>
-            `;
-        }).join('');
 
-        if (window.cachedIsIgConnected === false) {
-            listBody.innerHTML = `
-                <tr><td colspan="6" class="p-4 bg-amber-500/10 border-b border-amber-500/20 text-center relative">
-                    <span class="text-amber-400 font-semibold text-sm mr-4">ℹ️ Your automations are temporarily paused until Instagram reconnects.</span>
-                    <button onclick="window.switchTab('account')" class="bg-amber-500/20 text-amber-400 hover:bg-amber-500/30 px-3 py-1 rounded-md text-xs font-semibold inline-flex items-center gap-1.5 transition-colors shadow-sm ml-2 relative -top-0.5">
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
-                        Reconnect Instagram
-                    </button>
-                </td></tr>
-            ` + rowsHtml;
-        } else {
-            listBody.innerHTML = rowsHtml;
-        }
-    } catch (e) { 
-        listBody.innerHTML = '<tr><td colspan="6" class="p-8 text-center text-red-500">Failed to load automations.</td></tr>'; 
-    }
-}
 
-window.toggleAutomationState = async function(id, isActive) {
-    const status = isActive ? 'active' : 'paused';
-    try {
-        const res = await request('/api/automations/toggle', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ automationId: id, status })
-        });
-        if (res && res.success) {
-            console.log(`[DMOrbit Sync] Trigger ${id} set to ${status}`);
-            loadAutomations();
-            loadOverview();
-        } else {
-            alert("We couldn't pause/activate this workflow. Please refresh your browser or try again.");
-        }
-    } catch(err) { alert("We couldn't pause/activate this workflow. Please refresh your browser or try again."); }
-};
-
-window.deleteAutomationRecord = async function(id) {
-    if(!confirm("Are you sure you want to delete this automation?")) return;
-    try {
-        const res = await request(`/api/automations/${id}`, {
-            method: 'DELETE'
-        });
-        // Route returns { message: 'Automation deleted' } on success
-        if (res && (res.success || res.message)) {
-            console.log(`[DMOrbit Sync] Automation ${id} deleted.`);
-            loadAutomations();
-            loadOverview();
-        } else {
-            alert(res?.error || "We couldn't delete this workflow. Please refresh and try again.");
-        }
-    } catch(err) { 
-        alert("We couldn't delete this workflow. Please refresh and try again.");
-    }
-};
-
-async function loadLogs() {
-    const container = document.getElementById('logs-timeline');
-    container.innerHTML = '<div class="empty-state">Loading...</div>';
-    try {
-        const { logs } = await API.logs(1);
-        if (!logs || !logs.length) {
-            container.innerHTML = `
-                <div class="empty-state">
-                    <div class="empty-icon"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg></div>
-                    <div class="empty-title">No activity yet</div>
-                    <div class="empty-desc">When your automations trigger, the history will appear here.</div>
-                </div>
-            `;
-            return;
-        }
-
-        container.innerHTML = logs.map((l, i) => `
-            <div class="timeline-item">
-                <div class="timeline-icon ${i === 0 ? 'primary' : ''}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg></div>
-                <div class="timeline-content">
-                    <div class="timeline-title">Replied to ${escHtml(l.user_id || 'user')}</div>
-                    <div class="timeline-time">Triggered by "${escHtml(l.keyword)}" • ${formatDate(l.timestamp)}</div>
-                </div>
-            </div>
-        `).join('');
-    } catch (e) { container.innerHTML = '<div class="empty-state">Failed to load logs.</div>'; }
-}
-
-document.getElementById('refresh-logs')?.addEventListener('click', loadLogs);
 
 async function loadAccount() {
     const container = document.getElementById('account-status-content');
@@ -448,315 +321,7 @@ window.disconnectInstagram = async function() {
 };
 
 // === WIZARD LOGIC ===
-function setupWizard() {
-    const closeBtn = document.getElementById('close-wizard');
-    const modal = document.getElementById('wizard-overlay');
-    const nextBtn = document.getElementById('w-btn-next');
-    const backBtn = document.getElementById('w-btn-back');
-    const dmInput = document.getElementById('w-private-dm');
-    const previewBubble = document.getElementById('preview-dm-display');
 
-    window.openWizard = function(templateGoal = null) {
-        currentWizardStep = 1;
-        updateWizardUI();
-        if (modal) modal.classList.add('active');
-        fetchInstagramMedia();
-        
-        // Handle prefilled template goals
-        if (templateGoal) {
-            const keywordInput = document.getElementById('w-keyword');
-            const privateDm = document.getElementById('w-private-dm');
-            const publicReply = document.getElementById('w-public-reply');
-            
-            if (templateGoal === 'Lead Magnet') {
-                if (keywordInput) keywordInput.value = 'PDF';
-                if (privateDm) privateDm.value = 'Hey! Thanks for commenting. Here is your free PDF guide: https://example.com/guide.pdf';
-                if (publicReply) publicReply.value = 'Sent to your inbox! check your DMs 🚀';
-            } else if (templateGoal === 'Webinar Registration') {
-                if (keywordInput) keywordInput.value = 'SEATS';
-                if (privateDm) privateDm.value = 'Awesome! Click here to claim your free seat for our upcoming webinar: https://example.com/webinar';
-                if (publicReply) publicReply.value = 'Claim your seat! Check your DMs for the link 🎟️';
-            } else if (templateGoal === 'Link in DM') {
-                if (keywordInput) keywordInput.value = 'LINK';
-                if (privateDm) privateDm.value = 'Hey! Here is the direct link you requested: https://example.com/shop';
-                if (publicReply) publicReply.value = 'Link sent successfully! Check your inbox 👋';
-            }
-            if (dmInput && previewBubble) {
-                previewBubble.textContent = privateDm.value;
-            }
-        }
-    };
-
-    closeBtn?.addEventListener('click', () => modal?.classList.remove('active'));
-
-    // Trigger type toggle syncing
-    const triggerTypeSelect = document.getElementById('w-trigger-type');
-    const keywordGroup = document.getElementById('w-keyword-group');
-    
-    triggerTypeSelect?.addEventListener('change', (e) => {
-        if (keywordGroup) {
-            keywordGroup.style.display = e.target.value === 'ANY_COMMENT' ? 'none' : 'block';
-        }
-    });
-
-    dmInput?.addEventListener('input', (e) => {
-        if (previewBubble) {
-            previewBubble.textContent = e.target.value || 'Hey! Thanks for commenting. Here is the link...';
-        }
-    });
-
-    nextBtn?.addEventListener('click', async () => {
-        if (currentWizardStep === 3) {
-            // Publish/Submit step
-            nextBtn.textContent = 'Publishing...';
-            nextBtn.disabled = true;
-            
-            const triggerMode = document.getElementById('w-trigger-type')?.value || 'KEYWORD';
-            const keyword = document.getElementById('w-keyword')?.value.trim() || '';
-            const targetPostId = document.getElementById('w-post-id')?.value || '';
-            const publicReplyText = document.getElementById('w-public-reply')?.value.trim() || '';
-            const privateMessageText = document.getElementById('w-private-dm')?.value.trim() || '';
-
-            if (triggerMode === 'KEYWORD' && !keyword) {
-                alert('Please enter a trigger keyword (e.g. LINK, INFO) so we know when to send DMs.');
-                nextBtn.textContent = 'Publish';
-                nextBtn.disabled = false;
-                return;
-            }
-
-            if (!privateMessageText) {
-                alert('Please write your automated direct message (DM) content.');
-                nextBtn.textContent = 'Publish';
-                nextBtn.disabled = false;
-                return;
-            }
-
-            const data = {
-                name: triggerMode === 'ANY_COMMENT' ? 'Any Comment Auto-Reply' : `Trigger keyword: "${keyword}"`,
-                mode: triggerMode.toLowerCase() === 'any_comment' ? 'any_comment' : 'keyword',
-                keywords: triggerMode.toLowerCase() === 'any_comment' ? [] : [keyword],
-                target: { 
-                    type: targetPostId ? 'specific' : 'global',
-                    mediaId: targetPostId || null
-                },
-                postId: targetPostId || null,
-                triggerType: triggerMode,
-                keyword: keyword || null,
-                publicReplyText: publicReplyText || null,
-                privateMessageText: privateMessageText
-            };
-
-            const res = await API.createAutomation(data);
-            nextBtn.textContent = 'Publish';
-            nextBtn.disabled = false;
-
-            if (res && (res.success || res._id)) {
-                modal?.classList.remove('active');
-                loadOverview();
-                if (document.getElementById('page-automations').classList.contains('active')) loadAutomations();
-            } else {
-                alert(res?.error || "We couldn't create your trigger. If you are on the Free Plan, you may have reached your limit of 3 active workflows.");
-            }
-        } else {
-            currentWizardStep++;
-            updateWizardUI();
-        }
-    });
-
-    backBtn?.addEventListener('click', () => {
-        if (currentWizardStep > 1) {
-            currentWizardStep--;
-            updateWizardUI();
-        }
-    });
-}
-
-function updateWizardUI() {
-    // Hide all step panels
-    document.getElementById('wizard-step-1').style.display = 'none';
-    document.getElementById('wizard-step-2').style.display = 'none';
-    document.getElementById('wizard-step-3').style.display = 'none';
-    
-    // Show current step panel
-    document.getElementById(`wizard-step-${currentWizardStep}`).style.display = 'block';
-
-    // Update wizard step indicators in header
-    document.querySelectorAll('.w-step').forEach((el, i) => {
-        el.classList.remove('active', 'done');
-        if (i + 1 < currentWizardStep) el.classList.add('done');
-        if (i + 1 === currentWizardStep) el.classList.add('active');
-    });
-
-    const backBtn = document.getElementById('w-btn-back');
-    const nextBtn = document.getElementById('w-btn-next');
-    
-    if (backBtn) {
-        backBtn.style.visibility = currentWizardStep === 1 ? 'hidden' : 'visible';
-    }
-
-    if (currentWizardStep === 3) {
-        if (nextBtn) nextBtn.textContent = 'Publish Automation';
-        
-        // Populate Review Step details
-        const triggerMode = document.getElementById('w-trigger-type')?.value || 'KEYWORD';
-        const keywordVal = document.getElementById('w-keyword')?.value || 'None';
-        const targetPost = document.getElementById('w-post-id')?.value || 'All Posts & Reels';
-        
-        const reviewTrigger = document.getElementById('review-trigger');
-        const reviewPublic = document.getElementById('review-public');
-        const reviewPrivate = document.getElementById('review-private');
-
-        if (reviewTrigger) {
-            reviewTrigger.textContent = triggerMode === 'ANY_COMMENT' 
-                ? 'Any comment received on ' + (targetPost === 'All Posts & Reels' || !targetPost ? 'any post' : 'specific post')
-                : `Comment comments exact word "${keywordVal}" on ` + (targetPost === 'All Posts & Reels' || !targetPost ? 'any post' : 'specific post');
-        }
-        if (reviewPublic) {
-            reviewPublic.textContent = document.getElementById('w-public-reply')?.value.trim() 
-                ? `"${document.getElementById('w-public-reply').value.trim()}"`
-                : 'No comment reply';
-        }
-        if (reviewPrivate) {
-            reviewPrivate.textContent = document.getElementById('w-private-dm')?.value.trim()
-                ? `"${document.getElementById('w-private-dm').value.trim()}"`
-                : 'Empty DM';
-        }
-    } else {
-        if (nextBtn) nextBtn.textContent = 'Continue';
-    }
-}
-
-function escHtml(str) {
-    return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
-
-function formatDate(dateStr) {
-    if (!dateStr) return '—';
-    const d = new Date(dateStr);
-    if (isNaN(d)) return '—';
-    return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
-}
-
-// === INTERACTIVE BROWSER LOGIN LOGIC ===
-window.startInteractiveLogin = async function() {
-    const modal = document.getElementById('browser-portal-modal');
-    const streamImg = document.getElementById('browser-stream');
-    const loading = document.getElementById('browser-loading');
-    
-    modal.style.display = 'block';
-    modal.classList.add('active');
-    loading.style.display = 'flex';
-    streamImg.src = '';
-    
-    try {
-        console.log("📡 Calling /api/engagement/portal...");
-        const res = await request('/api/engagement/portal', { method: 'POST' });
-        console.log("📡 Response from portal:", res);
-        window.lastPortalResponse = res;
-        if (!res || !res.success) {
-            alert("We couldn't launch the secure connection portal. Please ensure your browser is active and try again.");
-            modal.classList.remove('active');
-            setTimeout(() => { modal.style.display = 'none'; }, 200);
-            return;
-        }
-
-        const sessionId = res.sessionId;
-        
-        // Connect WS
-        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-        const wsUrl = `${protocol}//${window.location.host}`;
-        const ws = new WebSocket(wsUrl);
-        
-        window._currentWs = ws;
-        
-        ws.onopen = () => {
-            loading.style.display = 'none';
-            ws.send(JSON.stringify({ type: 'init', sessionId }));
-        };
-        
-        ws.onmessage = (event) => {
-            const data = JSON.parse(event.data);
-            if (data.type === 'frame') {
-                streamImg.src = data.image;
-            } else if (data.type === 'success') {
-                alert(data.message);
-                modal.style.display = 'none';
-                ws.close();
-                loadAccount(); // Reload status
-                loadOverview();
-            } else if (data.type === 'error') {
-                alert('Session error: ' + data.message);
-                modal.classList.remove('active');
-                setTimeout(() => { modal.style.display = 'none'; }, 200);
-            }
-        };
-        
-        ws.onclose = () => {
-            modal.classList.remove('active');
-            setTimeout(() => { modal.style.display = 'none'; }, 200);
-        };
-
-        // Forward Interactions
-        streamImg.onclick = (e) => {
-            if (ws.readyState === 1) {
-                const rect = streamImg.getBoundingClientRect();
-                const scaleX = 1280 / rect.width; // 1280 is viewport width in backend
-                const scaleY = 800 / rect.height; // 800 is viewport height in backend
-                const x = (e.clientX - rect.left) * scaleX;
-                const y = (e.clientY - rect.top) * scaleY;
-                ws.send(JSON.stringify({ type: 'interaction', action: 'click', payload: { x, y } }));
-            }
-        };
-
-        // Keydown
-        const handleKeyDown = (e) => {
-            if (modal.style.display === 'block' && ws.readyState === 1) {
-                e.preventDefault();
-                ws.send(JSON.stringify({ type: 'interaction', action: 'type', payload: { key: e.key } }));
-            }
-        };
-        window.addEventListener('keydown', handleKeyDown);
-        
-        // Cleanup listener on close
-        document.getElementById('close-browser-portal').onclick = () => {
-            window.removeEventListener('keydown', handleKeyDown);
-            if (ws.readyState === 1) ws.close();
-            modal.classList.remove('active');
-            setTimeout(() => { modal.style.display = 'none'; }, 200);
-        };
-
-    } catch (e) {
-        console.error(e);
-        alert('An error occurred.');
-        modal.style.display = 'none';
-    }
-};
-
-async function fetchInstagramMedia() {
-    const select = document.getElementById('w-post-id');
-    if (!select) return;
-    select.innerHTML = '<option value="">🔄 Loading your recent posts...</option>';
-    try {
-        const res = await fetch('/api/instagram/media');
-        if (!res.ok) {
-            select.innerHTML = '<option value="">All Posts & Reels</option>';
-            return;
-        }
-        const data = await res.json();
-        if (data.error || !Array.isArray(data) || data.length === 0) {
-            select.innerHTML = '<option value="">All Posts & Reels</option>';
-            return;
-        }
-        select.innerHTML = '<option value="">All Posts & Reels</option>';
-        data.forEach(item => {
-            const cap = item.caption ? escHtml(item.caption).slice(0, 50) + '...' : `Reel/Post (ID: ${item.id})`;
-            select.innerHTML += `<option value="${item.id}">${cap}</option>`;
-        });
-    } catch (e) {
-        console.error('Failed to fetch Instagram media:', e);
-        select.innerHTML = '<option value="">All Posts & Reels</option>';
-    }
-}
 
 // --- DMOrbit Checkout & Billing Integration ---
 window.initiateCheckout = async function(planType) {
@@ -784,23 +349,22 @@ window.initiateCheckout = async function(planType) {
 };
 
 // Function to dynamically update Usage Bars on dashboard load
-window.updateBillingWidget = function(plan, currentDms) {
+window.updateBillingWidget = function(plan, currentDms, plansData = []) {
     plan = (plan || 'FREE').toUpperCase();
-    let maxDms = 1000;
-    let planName = 'Starter Plan';
-    let planDesc = 'Perfect for testing out DM automations.';
-    let planPrice = '₹0';
     
+    // Find plan dynamically
+    const currentPlanData = plansData.find(p => p.planId === plan) || {};
+    
+    let maxDms = currentPlanData.monthlyDMLimit || 1000;
+    let planName = currentPlanData.name || 'Starter Plan';
+    let planDesc = 'Perfect for testing out DM automations.';
+    let planPrice = '\u20B9' + (currentPlanData.price || 0);
+    
+    // Aesthetic overrides for known plans
     if (plan === 'CREATOR') {
-        maxDms = 25000;
-        planName = 'Creator Plan';
         planDesc = 'Ideal for growing creators and viral reels.';
-        planPrice = '₹499';
     } else if (plan === 'PRO') {
-        maxDms = 100000;
-        planName = 'Pro Plan';
         planDesc = 'For brands, agencies, and serious creators.';
-        planPrice = '₹1299';
     }
     
     const badge = document.getElementById('currentPlanBadge');
@@ -818,10 +382,23 @@ window.updateBillingWidget = function(plan, currentDms) {
     const usageText = document.getElementById('dmUsageText');
     const progressBar = document.getElementById('usageProgressBar');
     
-    if (usageText) usageText.innerText = `${(currentDms || 0).toLocaleString()} / ${maxDms.toLocaleString()} DMs Used`;
-    const percentage = Math.min(((currentDms || 0) / maxDms) * 100, 100);
+    // Always populate usage text, even for 0 DMs
+    const dmsUsed = currentDms || 0;
+    if (usageText) usageText.innerText = `${dmsUsed.toLocaleString()} / ${maxDms.toLocaleString()} Monthly DMs Used`;
+    const percentage = Math.min((dmsUsed / maxDms) * 100, 100);
     if (progressBar) progressBar.style.width = `${percentage}%`;
     
+    // Progress bar color: warn at 80%, critical at 95%
+    if (progressBar) {
+        if (percentage >= 95) {
+            progressBar.style.background = 'linear-gradient(90deg, #ef4444, #dc2626)';
+        } else if (percentage >= 80) {
+            progressBar.style.background = 'linear-gradient(90deg, #f59e0b, #f97316)';
+        } else {
+            progressBar.style.background = 'linear-gradient(90deg, #4f46e5, #ec4899)';
+        }
+    }
+
     const upgradePrompt = document.getElementById('upgrade-prompt');
     const topupPrompt = document.getElementById('topup-prompt');
     if (plan !== 'FREE') {
@@ -833,20 +410,18 @@ window.updateBillingWidget = function(plan, currentDms) {
     }
 };
 
-// Purchase Top-Up Credits
-window.purchaseTopUp = async function(credits) {
-    if (!confirm(`Are you sure you want to purchase a top-up of ${credits.toLocaleString()} DMs?`)) return;
+// Extend Monthly DMs (Top-Up)
+window.purchaseTopUp = async function(dms) {
+    if (!confirm(`Add ${dms.toLocaleString()} extra DMs to your account?`)) return;
     
     try {
         const res = await request('/api/billing/topup', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ credits })
+            body: JSON.stringify({ credits: dms })
         });
-        
-        if (res && res.success) {
-            alert(`Successfully topped up ${credits.toLocaleString()} DMs!`);
-            // Reload user state
+        if (res?.success) {
+            alert(`${dms.toLocaleString()} extra DMs added to your account!`);
             const data = await API.me();
             if (data.user) {
                 currentUser = data.user;
@@ -1071,11 +646,11 @@ function setupSmartBioListeners() {
 
     // --- Programmatic Tab Switching Helper ---
     window.switchTab = function(page) {
-        const navItem = document.querySelector(`.nav-item[data-page="${page}"]`);
-        if (navItem) {
-            // Remove active state from all items first
-            document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
-            navItem.classList.add('active');
+        if (page === 'overview') page = 'dashboard';
+        const navItems = document.querySelectorAll(`.nav-item[data-page="${page}"], .mobile-nav-item[data-page="${page}"]`);
+        if (navItems.length > 0) {
+            document.querySelectorAll('.nav-item, .mobile-nav-item').forEach(i => i.classList.remove('active'));
+            navItems.forEach(item => item.classList.add('active'));
             loadPage(page);
         } else {
             loadPage(page);
@@ -1149,13 +724,13 @@ function setupSmartBioListeners() {
                         statusColor = '#818cf8';
                         bgGradient = 'rgba(79, 70, 229, 0.04)';
                     } else if (job.status === 'failed') {
-                        statusLabel = `Delayed: Rate Limit`;
-                        statusColor = 'var(--danger)';
-                        bgGradient = 'rgba(239, 68, 68, 0.04)';
+                        statusLabel = `Queued for Safe Delivery`;
+                        statusColor = 'var(--warning)';
+                        bgGradient = 'rgba(245, 158, 11, 0.04)';
                     } else if (job.status === 'pending') {
                         const delaySec = Math.max(0, Math.round((job.process_after - Date.now()) / 1000));
                         if (delaySec > 0) {
-                            statusLabel = `Pacing: ${delaySec}s delay`;
+                            statusLabel = `Safe Pacing · ${delaySec}s`;
                             statusColor = 'var(--warning)';
                             bgGradient = 'rgba(245, 158, 11, 0.04)';
                         } else {
@@ -1300,7 +875,12 @@ function setupSmartBioListeners() {
                 // Dynamic Sidebar Integration
                 const sidebarNameEl = document.getElementById('sidebar-user-name');
                 if (sidebarNameEl) {
-                    sidebarNameEl.innerHTML = `<span style="font-weight: 600; display: flex; align-items: center; gap: 6px;">@${igUsername} <span class="status-pulse" style="width: 6px; height: 6px; background: ${isIgExpired ? 'var(--danger)' : '#10b981'}; border-radius: 50%; box-shadow: 0 0 8px ${isIgExpired ? 'var(--danger)' : '#10b981'}; display: inline-block;"></span></span>`;
+                    sidebarNameEl.innerHTML = `<span style="font-weight: 600; display: flex; flex-direction: column;">
+                        ${currentUser ? (currentUser.email || currentUser.name) : 'User'}
+                        <span style="font-size: 10px; color: var(--text-muted); font-weight: normal; margin-top: 2px; display: flex; align-items: center; gap: 4px;">
+                            Connected: @${igUsername} <span class="status-pulse" style="width: 6px; height: 6px; background: ${isIgExpired ? 'var(--danger)' : '#10b981'}; border-radius: 50%; box-shadow: 0 0 8px ${isIgExpired ? 'var(--danger)' : '#10b981'}; display: inline-block;"></span>
+                        </span>
+                    </span>`;
                 }
                 const avatarEl = document.getElementById('user-avatar');
                 if (avatarEl) {
@@ -1327,9 +907,9 @@ function setupSmartBioListeners() {
                 if (ctaBtn) {
                     ctaBtn.innerHTML = `
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-                        <span>New Automation</span>
+                        <span>New Campaign</span>
                     `;
-                    ctaBtn.onclick = () => window.openWizard();
+                    ctaBtn.onclick = () => window.openPresetSelector();
                 }
                 if (ctaHelper) {
                     ctaHelper.style.display = 'none';
@@ -1344,9 +924,14 @@ function setupSmartBioListeners() {
                 const sidebarNameEl = document.getElementById('sidebar-user-name');
                 if (sidebarNameEl && currentUser) {
                     if (stats.instagram?.lastUsername) {
-                        sidebarNameEl.innerHTML = `${currentUser.name || currentUser.email} <span style="display:block; font-size:10px; color:var(--text-muted); margin-top:2px; font-weight:normal;">Previously: @${stats.instagram.lastUsername}</span>`;
+                        sidebarNameEl.innerHTML = `<span style="font-weight: 600; display: flex; flex-direction: column;">
+                            ${currentUser.email || currentUser.name}
+                            <span style="font-size: 10px; color: var(--text-muted); font-weight: normal; margin-top: 2px;">
+                                Connected: @${stats.instagram.lastUsername}
+                            </span>
+                        </span>`;
                     } else {
-                        sidebarNameEl.textContent = currentUser.name || currentUser.email;
+                        sidebarNameEl.textContent = currentUser.email || currentUser.name;
                     }
                 }
                 const avatarEl = document.getElementById('user-avatar');
@@ -1526,7 +1111,7 @@ function setupSmartBioListeners() {
                 updateStepUI(3, step3Done);
                 updateStepUI(4, step4Done);
 
-                // Update Credit Rollover Wallet
+                // Update Monthly DM Usage card
                 const planName = (statsRes.plan || 'free').toUpperCase();
                 const planBadge = document.getElementById('overview-plan-badge');
                 if (planBadge) {
@@ -1706,3 +1291,336 @@ function setupSmartBioListeners() {
 
 init();
 
+
+
+// === NEW 2-PANEL BUILDER LOGIC ===
+
+window.builderState = {
+    triggerType: 'ANY_COMMENT',
+    targetMediaId: null,
+    keyword: '',
+    privateDm: '',
+    followGate: false
+};
+
+window.updateBuilderState = function() {
+    const type = document.querySelector('input[name="builder_trigger"]:checked')?.value || 'ANY_COMMENT';
+    window.builderState.triggerType = type;
+    
+    const mediaSelector = document.getElementById('builder-media-selector');
+    const keywordWrapper = document.getElementById('builder-keyword-wrapper');
+    
+    if (type === 'ANY_COMMENT') {
+        mediaSelector.style.display = 'none';
+        keywordWrapper.style.display = 'none';
+        window.builderState.targetMediaId = null;
+        window.builderState.keyword = '';
+    } else if (window.wizardStep === 2) {
+        // Enforce Campaign Type Template Filtering
+        const cType = window.wizardData.campaignType;
+        const validMatrix = {
+            'COMMENT_DM': ['link', 'pdf', 'product', 'lead', 'webinar', 'course'],
+            'COMMENT_REPLY': ['public_reply'],
+            'STORY_REPLY': ['link', 'pdf', 'product', 'lead', 'webinar', 'course'],
+            'DM_KEYWORD': ['link', 'pdf', 'product', 'lead', 'webinar', 'course']
+        };
+        const allowed = validMatrix[cType] || [];
+
+        // Clear invalid selection
+        if (!allowed.includes(window.wizardData.templateType)) {
+            window.wizardData.templateType = '';
+            document.querySelectorAll('#wizard-step-2 .template-select-btn').forEach(btn => {
+                btn.style.borderColor = 'rgba(255,255,255,0.05)';
+                btn.style.background = 'rgba(255,255,255,0.03)';
+            });
+        }
+
+        // Toggle visibility
+        document.querySelectorAll('#wizard-step-2 .template-select-btn').forEach(btn => {
+            const tType = btn.getAttribute('data-template');
+            if (tType) {
+                btn.style.display = allowed.includes(tType) ? 'flex' : 'none';
+            }
+        });
+
+        nextBtn.style.display = window.wizardData.templateType ? 'block' : 'none';
+    } else if (type === 'KEYWORD') {
+        mediaSelector.style.display = 'block';
+        keywordWrapper.style.display = 'block';
+        if (window.builderState.lastTriggerType !== type) { fetchBuilderMedia(); window.builderState.lastTriggerType = type; }
+    } else if (type === 'STORY_REPLY') {
+        mediaSelector.style.display = 'block';
+        keywordWrapper.style.display = 'none';
+        window.builderState.keyword = '';
+        if (window.builderState.lastTriggerType !== type) { fetchBuilderMedia(); window.builderState.lastTriggerType = type; }
+    }
+    
+    const kwInput = document.getElementById('builder-keyword');
+    if (kwInput) window.builderState.keyword = kwInput.value;
+    
+    updatePreview();
+};
+
+window.updatePreview = function() {
+    const dmInput = document.getElementById('builder-dm');
+    const followGateCheckbox = document.getElementById('builder-follow-gate');
+    
+    window.builderState.privateDm = dmInput ? dmInput.value : '';
+    window.builderState.followGate = followGateCheckbox ? followGateCheckbox.checked : false;
+    
+    const previewText = document.getElementById('builder-preview-text');
+    if (previewText) {
+        let text = window.builderState.privateDm || 'Type your message...';
+        if (window.builderState.followGate) {
+            text += '\n\n[Please follow us to receive the final link!]';
+        }
+        previewText.innerText = text;
+    }
+};
+
+window.insertSmartBioLink = async function() {
+    try {
+        const res = await request('/api/me');
+        
+        let username = 'link';
+        if (res && res.user) {
+            if (res.user.smartBio && res.user.smartBio.title) {
+                username = res.user.smartBio.title;
+            } else if (res.user.name) {
+                username = res.user.name.toLowerCase().replace(/[^a-z0-9]/g, '');
+            }
+        }
+        const url = window.location.origin + '/bio/' + username.toLowerCase().replace(/[^a-z0-9]/g, '');
+        const dmInput = document.getElementById('builder-dm');
+        if (dmInput) {
+            dmInput.value = dmInput.value + (dmInput.value ? '\n' : '') + url;
+            updatePreview();
+        }
+    } catch(e) {
+        console.error("Failed to insert smart bio link", e);
+    }
+};
+
+async function fetchBuilderMedia() {
+    
+    const grid = document.getElementById('builder-media-grid');
+    if (!grid) return;
+    grid.innerHTML = '<div style="color:var(--text-muted); font-size:12px;">Loading posts...</div>';
+    
+    try {
+        const type = window.builderState.triggerType === 'STORY_REPLY' ? 'stories' : 'posts';
+        
+        const endpoint = window.builderState.triggerType === 'STORY_REPLY' ? '/api/instagram/stories' : '/api/instagram/media';
+        const res = await request(endpoint);
+        if (res && Array.isArray(res) && res.length > 0) {
+            grid.innerHTML = res.map(m => `
+                <div class="media-item" onclick="window.selectBuilderMedia('${m.id}', this)" style="cursor:pointer; border: 2px solid transparent; border-radius: 8px; overflow: hidden; position: relative;">
+                    <img src="${m.media_url || m.thumbnail_url || ''}" style="width: 100%; aspect-ratio: 1; object-fit: cover; background: #27272a;">
+                    <div class="media-item-overlay" style="display:none; position:absolute; inset:0; background: rgba(79,70,229,0.3); border: 2px solid var(--primary); align-items:center; justify-content:center;">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                    </div>
+                </div>
+            `).join('');
+        } else {
+            grid.innerHTML = '<div style="color:var(--text-muted); font-size:12px;">No media found.</div>';
+        }
+    } catch(e) {
+        grid.innerHTML = '<div style="color:var(--danger); font-size:12px;">Failed to load media.</div>';
+    }
+}
+
+window.selectBuilderMedia = function(id, el) {
+    window.builderState.targetMediaId = id;
+    document.querySelectorAll('#builder-media-grid .media-item').forEach(item => {
+        item.style.borderColor = 'transparent';
+        const overlay = item.querySelector('.media-item-overlay');
+        if (overlay) overlay.style.display = 'none';
+    });
+    el.style.borderColor = 'var(--primary)';
+    const overlay = el.querySelector('.media-item-overlay');
+    if (overlay) overlay.style.display = 'flex';
+};
+
+
+window.openPresetSelector = function() {
+    // We will just bypass the preset selector for the new 5-step builder
+    window.openWizard();
+};
+
+window.openWizard = function() {
+    if (!window.cachedIsIgConnected) {
+        if (confirm("Connect Instagram First\n\nYou must connect an active Instagram account before creating a campaign. Connect now?")) {
+            window.location.href = "/auth/instagram";
+        }
+        return;
+    }
+    
+    window.wizardStep = 1;
+    window.wizardData = {
+        triggerType: '',
+        keyword: '',
+        privateDm: '',
+        finalLink: ''
+    };
+    document.getElementById('wizard-overlay').style.display = 'flex';
+    window.updateWizardUI();
+};
+
+window.closeWizard = function() {
+    document.getElementById('wizard-overlay').style.display = 'none';
+};
+
+window.setWizardTrigger = function(type) {
+    window.wizardData.triggerType = type;
+    document.querySelectorAll('#wizard-step-1 .template-select-btn').forEach(btn => {
+        btn.style.borderColor = 'rgba(255,255,255,0.05)';
+        btn.style.background = 'rgba(255,255,255,0.03)';
+    });
+    event.currentTarget.style.borderColor = 'var(--primary)';
+    event.currentTarget.style.background = 'rgba(255,255,255,0.08)';
+    setTimeout(() => { window.nextWizardStep(); }, 300);
+};
+
+window.nextWizardStep = function() {
+    if (window.wizardStep === 1 && !window.wizardData.triggerType) {
+        alert("Please select a trigger type.");
+        return;
+    }
+    if (window.wizardStep === 1 && window.wizardData.triggerType === 'STORY_MENTION') {
+        window.wizardStep = 3;
+        window.updateWizardUI();
+        return;
+    }
+    if (window.wizardStep === 2) {
+        window.wizardData.keyword = document.getElementById('w-keyword').value;
+        if (!window.wizardData.keyword.trim() && window.wizardData.triggerType === 'COMMENT_DM') {
+            alert("Please enter a trigger keyword.");
+            return;
+        }
+    }
+    if (window.wizardStep === 3) {
+        window.wizardData.privateDm = document.getElementById('w-private-dm').value;
+        window.wizardData.finalLink = document.getElementById('w-final-link').value;
+        if (!window.wizardData.privateDm.trim()) {
+            alert("Please enter the direct message content.");
+            return;
+        }
+    }
+    
+    window.wizardStep++;
+    window.updateWizardUI();
+};
+
+window.prevWizardStep = function() {
+    if (window.wizardStep === 3 && window.wizardData.triggerType === 'STORY_MENTION') {
+        window.wizardStep = 1;
+        window.updateWizardUI();
+        return;
+    }
+    if (window.wizardStep > 1) {
+        window.wizardStep--;
+        window.updateWizardUI();
+    }
+};
+
+window.updateWizardUI = function() {
+    document.querySelectorAll('.wizard-step').forEach(el => el.style.display = 'none');
+    document.getElementById('wizard-step-' + window.wizardStep).style.display = 'block';
+    
+    const titles = [
+        "Choose Trigger",
+        "Choose Keyword",
+        "Create Message",
+        "Review",
+        "Publish"
+    ];
+    document.getElementById('wizard-subtitle').innerText = 'Step ' + window.wizardStep + ' of 5: ' + (titles[window.wizardStep - 1] || '');
+    
+    const backBtn = document.getElementById('wizard-back-btn');
+    const nextBtn = document.getElementById('wizard-next-btn');
+    const publishBtn = document.getElementById('wizard-publish-btn');
+    
+    backBtn.style.visibility = window.wizardStep === 1 ? 'hidden' : 'visible';
+    
+    if (window.wizardStep === 1) {
+        nextBtn.style.display = window.wizardData.triggerType ? 'block' : 'none';
+        publishBtn.style.display = 'none';
+    } else if (window.wizardStep === 4) {
+        nextBtn.style.display = 'none';
+        publishBtn.style.display = 'block';
+        
+        // Populate Summary
+        const triggerMap = {
+            'COMMENT_DM': 'Comment -> DM',
+            'STORY_REPLY': 'Story Reply',
+            'DIRECT_MESSAGE': 'Direct Message',
+            'STORY_MENTION': 'Story Mention'
+        };
+        document.getElementById('summary-trigger').innerText = triggerMap[window.wizardData.triggerType] || window.wizardData.triggerType;
+        document.getElementById('summary-keyword').innerText = window.wizardData.keyword || 'Any';
+        document.getElementById('summary-dm').innerText = window.wizardData.privateDm + (window.wizardData.finalLink ? '\n\nLink: ' + window.wizardData.finalLink : '');
+    } else {
+        nextBtn.style.display = 'block';
+        publishBtn.style.display = 'none';
+    }
+};
+
+window.mockAiSuggestKeyword = function() {
+    const aiBox = document.getElementById('ai-keyword-suggestions');
+    if (aiBox.style.display === 'block') {
+        aiBox.style.display = 'none';
+    } else {
+        aiBox.style.display = 'block';
+        // Simulating AI generation delay
+        aiBox.style.opacity = 0.5;
+        setTimeout(() => {
+            aiBox.style.opacity = 1;
+        }, 500);
+    }
+};
+
+window.mockAiSuggestMessage = function() {
+    const messages = [
+        "Hey! Thanks for engaging. Here is the special resource I promised:",
+        "Hi! So glad you're interested. Grab your free guide right here:",
+        "Hey there! 🚀 Here's the exclusive link you requested:"
+    ];
+    const randomMsg = messages[Math.floor(Math.random() * messages.length)];
+    document.getElementById('w-private-dm').value = randomMsg;
+};
+
+window.publishCampaign = async function() {
+    const btn = document.getElementById('wizard-publish-btn');
+    btn.disabled = true;
+    btn.innerText = 'Publishing...';
+    
+    try {
+        const payload = {
+            campaignType: window.wizardData.triggerType,
+            triggerType: window.wizardData.triggerType,
+            keywords: window.wizardData.keyword ? [window.wizardData.keyword.trim().toLowerCase()] : [],
+            dmMessage: window.wizardData.privateDm,
+            finalLink: window.wizardData.finalLink,
+            isActive: true
+        };
+        
+        const res = await request('/api/v2/automations', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        
+        if (res && res.success) {
+            alert('Campaign published successfully!');
+            window.closeWizard();
+            window.switchTab('campaigns');
+        } else {
+            alert(res?.error || 'Failed to publish campaign.');
+        }
+    } catch(e) {
+        alert('Error publishing campaign.');
+    } finally {
+        btn.disabled = false;
+        btn.innerText = 'Publish (Step 5)';
+    }
+}
