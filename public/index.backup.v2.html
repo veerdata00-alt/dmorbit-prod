@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DMOrbit | Turn Instagram Engagement Into Leads, DMs, and Sales</title>
+    <meta name="description" content="DMOrbit automates your Instagram DMs. Turn comments into leads instantly.">
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="landing-container">
+        <!-- Navigation -->
+        <nav class="navbar animate-fade-in delay-100">
+            <div class="logo">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 2L2 7L12 12L22 7L12 2Z"></path>
+                    <path d="M2 17L12 22L22 17"></path>
+                    <path d="M2 12L12 17L22 12"></path>
+                </svg>
+                DMOrbit
+            </div>
+            <div style="display: flex; gap: 16px; align-items: center;">
+                <a href="#features" style="color: var(--text-muted); text-decoration: none; font-weight: 500; font-size: 14px; transition: color 0.2s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='var(--text-muted)'">Features</a>
+                <a href="#pricing" style="color: var(--text-muted); text-decoration: none; font-weight: 500; font-size: 14px; transition: color 0.2s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='var(--text-muted)'">Pricing</a>
+                <button class="btn-secondary" id="open-auth" style="padding: 8px 16px; font-size: 14px;">Sign In</button>
+            </div>
+        </nav>
+
+        <!-- SECTION 1 — HERO -->
+        <section class="hero animate-fade-in delay-200" style="padding: 100px 0 60px; text-align: center;">
+            <div style="display: inline-flex; align-items: center; gap: 8px; background: rgba(79, 70, 229, 0.1); border: 1px solid rgba(79, 70, 229, 0.2); padding: 6px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; color: #818cf8; margin-bottom: 32px;">
+                <span style="display: inline-block; width: 6px; height: 6px; background: #818cf8; border-radius: 50%; box-shadow: 0 0 8px #818cf8;"></span>
+                Official Meta API Integration
+            </div>
+            <h1 style="font-size: clamp(3rem, 6vw, 5.5rem); font-weight: 800; line-height: 1.1; margin-bottom: 24px;">
+                AUTOMATE YOUR<br>
+                <span class="text-gradient">INSTAGRAM DMS.</span>
+            </h1>
+            <p style="font-size: clamp(1.1rem, 2vw, 1.3rem); color: var(--text-muted); max-width: 600px; margin: 0 auto 40px; line-height: 1.6;">
+                Turn comments, story replies, and DMs into automated conversations that generate leads and sales.
+            </p>
+            <div style="display: flex; justify-content: center; gap: 16px; margin-bottom: 40px;">
+                <button class="btn-primary" onclick="document.getElementById('open-auth').click()" style="padding: 14px 32px; font-size: 16px; border-radius: 12px;">Start Free</button>
+                <a href="#how-it-works" class="btn-glass" style="padding: 14px 32px; font-size: 16px; border-radius: 12px; text-decoration: none; display: flex; align-items: center; gap: 8px;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                    Watch Demo
+                </a>
+            </div>
+
+            <!-- Hero Funnel Visual -->
+            <div class="funnel-container animate-fade-in delay-300">
+                <div class="funnel-node">
+                    <div style="width: 40px; height: 40px; background: rgba(79, 70, 229, 0.2); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #818cf8;">📱</div>
+                    <div style="text-align: left;">
+                        <div style="font-weight: 600; color: #fff;">Instagram Post</div>
+                        <div style="font-size: 13px; color: var(--text-muted);">You post your content</div>
+                    </div>
+                </div>
+                <div class="funnel-line"></div>
+                <div class="funnel-node" style="max-width: 90%;">
+                    <div style="width: 40px; height: 40px; background: rgba(16, 185, 129, 0.2); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #10b981;">💬</div>
+                    <div style="text-align: left;">
+                        <div style="font-weight: 600; color: #fff;">User Comment</div>
+                        <div style="font-size: 13px; color: var(--text-muted);">Follower comments "LINK"</div>
+                    </div>
+                </div>
+                <div class="funnel-line"></div>
+                <div class="funnel-node" style="max-width: 80%;">
+                    <div style="width: 40px; height: 40px; background: rgba(245, 158, 11, 0.2); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #f59e0b;">✉️</div>
+                    <div style="text-align: left;">
+                        <div style="font-weight: 600; color: #fff;">DM Sent</div>
+                        <div style="font-size: 13px; color: var(--text-muted);">Automated message delivered</div>
+                    </div>
+                </div>
+                <div class="funnel-line"></div>
+                <div class="funnel-node soft-pulse" style="max-width: 70%; border-color: rgba(79, 70, 229, 0.5);">
+                    <div style="width: 40px; height: 40px; background: rgba(79, 70, 229, 0.4); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #fff;">🎯</div>
+                    <div style="text-align: left;">
+                        <div style="font-weight: 600; color: #fff;">Lead Captured</div>
+                        <div style="font-size: 13px; color: var(--text-muted);">Conversion successful</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 2 — TRUST BAR & SOCIAL PROOF -->
+        <section style="margin: 60px 0; border-top: 1px solid var(--border-light); border-bottom: 1px solid var(--border-light); padding: 24px 0; background: rgba(255,255,255,0.01);">
+            <div style="text-align: center; color: var(--text-muted); font-size: 13px; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 24px;">Trusted by 1,000+ Creators</div>
+            <div class="marquee-container">
+                <div class="marquee-content" style="font-weight: 600; font-size: 14px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-muted);">
+                    <span>Instagram Comment Automation</span> • 
+                    <span>Story Reply Automation</span> • 
+                    <span>Smart Followups</span> • 
+                    <span>Smart Bio</span> • 
+                    <span>Lead Capture</span> • 
+                    <span>Analytics</span> • 
+                    <span>Meta Compliant</span> • 
+                    <span>24 Hour Messaging</span> •
+                    <span>Instagram Comment Automation</span> • 
+                    <span>Story Reply Automation</span> • 
+                    <span>Smart Followups</span> • 
+                    <span>Smart Bio</span> • 
+                    <span>Lead Capture</span> • 
+                    <span>Analytics</span> • 
+                    <span>Meta Compliant</span> • 
+                    <span>24 Hour Messaging</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 3 — HOW IT WORKS -->
+        <section id="how-it-works" style="margin-bottom: 120px; padding-top: 40px;">
+            <div style="text-align: center; margin-bottom: 60px;">
+                <h2 style="font-size: 36px; margin-bottom: 16px;">How it works</h2>
+                <p style="color: var(--text-muted); font-size: 16px; max-width: 500px; margin: 0 auto;">A completely automated engine to grow your business.</p>
+            </div>
+            
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px;">
+                <div class="glass-panel" style="padding: 32px 24px; text-align: center;">
+                    <div style="font-size: 32px; margin-bottom: 16px;">💬</div>
+                    <h3 style="font-size: 20px; margin-bottom: 8px;">1. They Comment</h3>
+                    <p style="color: var(--text-muted); font-size: 15px;">Follower comments a specific keyword on your post.</p>
+                </div>
+                <div class="glass-panel" style="padding: 32px 24px; text-align: center;">
+                    <div style="font-size: 32px; margin-bottom: 16px;">✉️</div>
+                    <h3 style="font-size: 20px; margin-bottom: 8px;">2. You DM</h3>
+                    <p style="color: var(--text-muted); font-size: 15px;">DMOrbit instantly sends them your personalized message.</p>
+                </div>
+                <div class="glass-panel soft-pulse" style="padding: 32px 24px; text-align: center; border-color: rgba(79, 70, 229, 0.4);">
+                    <div style="font-size: 32px; margin-bottom: 16px;">📈</div>
+                    <h3 style="font-size: 20px; margin-bottom: 8px;">3. You Profit</h3>
+                    <p style="color: var(--text-muted); font-size: 15px;">They click your link and convert into a customer.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 4 — FEATURES -->
+        <section id="features" style="margin-bottom: 120px;">
+            <div style="text-align: center; margin-bottom: 60px;">
+                <h2 style="font-size: 36px; margin-bottom: 16px;">Everything You Need To Automate Instagram</h2>
+            </div>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 24px;">
+                <div class="glass-panel" style="padding: 32px;">
+                    <h3 style="font-size: 20px; margin-bottom: 12px;">Comment Automation</h3>
+                    <p style="color: var(--text-muted); font-size: 15px;">Automatically DM users when they comment specific keywords.</p>
+                </div>
+                <div class="glass-panel" style="padding: 32px;">
+                    <h3 style="font-size: 20px; margin-bottom: 12px;">Story Reply Automation</h3>
+                    <p style="color: var(--text-muted); font-size: 15px;">Automatically respond when followers reply to stories.</p>
+                </div>
+                <div class="glass-panel" style="padding: 32px;">
+                    <h3 style="font-size: 20px; margin-bottom: 12px;">Smart Followups</h3>
+                    <p style="color: var(--text-muted); font-size: 15px;">Increase conversions without manual follow-up.</p>
+                </div>
+                <div class="glass-panel" style="padding: 32px;">
+                    <h3 style="font-size: 20px; margin-bottom: 12px;">Smart Bio</h3>
+                    <p style="color: var(--text-muted); font-size: 15px;">Create one page containing all your important links.</p>
+                </div>
+                <div class="glass-panel" style="padding: 32px;">
+                    <h3 style="font-size: 20px; margin-bottom: 12px;">Campaign Analytics</h3>
+                    <p style="color: var(--text-muted); font-size: 15px;">Track comments, DMs, deliveries, and clicks.</p>
+                </div>
+                <div class="glass-panel" style="padding: 32px;">
+                    <h3 style="font-size: 20px; margin-bottom: 12px;">Usage & Billing</h3>
+                    <p style="color: var(--text-muted); font-size: 15px;">Control limits and scale with growth.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 5 — CAMPAIGN TYPES -->
+        <section id="campaign-types" style="margin-bottom: 120px;">
+            <div style="text-align: center; margin-bottom: 60px;">
+                <h2 style="font-size: 36px; margin-bottom: 16px;">Campaign Types</h2>
+            </div>
+            <div class="sticky-stack-container" style="max-width: 700px; margin: 0 auto;">
+                <div class="glass-panel sticky-card" style="padding: 40px; margin-bottom: 24px; background: rgba(24, 24, 27, 0.95);">
+                    <h3 style="font-size: 24px; margin-bottom: 20px; color: #818cf8;">1. Lead Magnet</h3>
+                    <div style="display: flex; flex-direction: column; gap: 12px; font-size: 15px;">
+                        <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--border-light); padding-bottom: 8px;">
+                            <span style="color: var(--text-muted);">Comment:</span> <span style="font-weight: 600;">GUIDE</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--border-light); padding-bottom: 8px;">
+                            <span style="color: var(--text-muted);">DM:</span> <span style="font-weight: 600;">Free Guide Link</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between;">
+                            <span style="color: var(--text-muted);">Result:</span> <span style="color: #10b981; font-weight: 600;">Collect leads automatically</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="glass-panel sticky-card" style="padding: 40px; margin-bottom: 24px; background: rgba(24, 24, 27, 0.95);">
+                    <h3 style="font-size: 24px; margin-bottom: 20px; color: #f59e0b;">2. Course Sales</h3>
+                    <div style="display: flex; flex-direction: column; gap: 12px; font-size: 15px;">
+                        <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--border-light); padding-bottom: 8px;">
+                            <span style="color: var(--text-muted);">Comment:</span> <span style="font-weight: 600;">INFO</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--border-light); padding-bottom: 8px;">
+                            <span style="color: var(--text-muted);">DM:</span> <span style="font-weight: 600;">Course Page</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between;">
+                            <span style="color: var(--text-muted);">Result:</span> <span style="color: #10b981; font-weight: 600;">Drive conversions</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="glass-panel sticky-card" style="padding: 40px; background: rgba(24, 24, 27, 0.95);">
+                    <h3 style="font-size: 24px; margin-bottom: 20px; color: #10b981;">3. Creator Growth</h3>
+                    <div style="display: flex; flex-direction: column; gap: 12px; font-size: 15px;">
+                        <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--border-light); padding-bottom: 8px;">
+                            <span style="color: var(--text-muted);">Trigger:</span> <span style="font-weight: 600;">Story Reply</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--border-light); padding-bottom: 8px;">
+                            <span style="color: var(--text-muted);">DM:</span> <span style="font-weight: 600;">Free Resource</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between;">
+                            <span style="color: var(--text-muted);">Result:</span> <span style="color: #10b981; font-weight: 600;">Increase engagement</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 6 — LIVE DASHBOARD PREVIEW -->
+        <section id="dashboard-mockup" style="margin-bottom: 120px;">
+            <div style="text-align: center; margin-bottom: 60px;">
+                <h2 style="font-size: 36px; margin-bottom: 16px;">Track Real ROI</h2>
+                <p style="color: var(--text-muted); font-size: 16px;">Everything measured in one dashboard.</p>
+            </div>
+            <div class="hero-mockup-wrapper" style="background: rgba(24, 24, 27, 0.8); border: 1px solid var(--border-light); border-radius: 24px; padding: 12px; backdrop-filter: blur(20px); box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); width: 100%;">
+                <div style="display: flex; gap: 8px; padding: 12px 16px; border-bottom: 1px solid var(--border-light);">
+                    <div style="width: 12px; height: 12px; border-radius: 50%; background: #ef4444;"></div>
+                    <div style="width: 12px; height: 12px; border-radius: 50%; background: #f59e0b;"></div>
+                    <div style="width: 12px; height: 12px; border-radius: 50%; background: #10b981;"></div>
+                </div>
+                <div class="hero-mockup-container" style="display: flex; gap: 24px; padding: 24px; background: #09090b; border-radius: 0 0 16px 16px;">
+                    <div class="hero-main-content" style="flex: 1; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
+                        <div class="glass-panel" style="padding: 20px;">
+                            <div style="color: var(--text-muted); font-size: 13px; margin-bottom: 8px;">Comments Captured</div>
+                            <div class="shimmer-text" style="font-size: 28px; font-weight: 700; color: #fff;">12,401</div>
+                        </div>
+                        <div class="glass-panel" style="padding: 20px;">
+                            <div style="color: var(--text-muted); font-size: 13px; margin-bottom: 8px;">DMs Sent</div>
+                            <div class="shimmer-text" style="font-size: 28px; font-weight: 700; color: #fff;">11,980</div>
+                        </div>
+                        <div class="glass-panel" style="padding: 20px;">
+                            <div style="color: var(--text-muted); font-size: 13px; margin-bottom: 8px;">Deliveries</div>
+                            <div class="shimmer-text" style="font-size: 28px; font-weight: 700; color: #fff;">11,850</div>
+                        </div>
+                        <div class="glass-panel" style="padding: 20px;">
+                            <div style="color: var(--text-muted); font-size: 13px; margin-bottom: 8px;">Link Clicks</div>
+                            <div class="shimmer-text" style="font-size: 28px; font-weight: 700; color: #10b981;">4,205</div>
+                        </div>
+                        <div class="glass-panel" style="padding: 20px;">
+                            <div style="color: var(--text-muted); font-size: 13px; margin-bottom: 8px;">Campaigns</div>
+                            <div class="shimmer-text" style="font-size: 28px; font-weight: 700; color: #fff;">8 Active</div>
+                        </div>
+                        <div class="glass-panel" style="padding: 20px;">
+                            <div style="color: var(--text-muted); font-size: 13px; margin-bottom: 8px;">DM Usage</div>
+                            <div class="shimmer-text" style="font-size: 28px; font-weight: 700; color: #fff;">48%</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 7 — PRICING (DYNAMIC) -->
+        <section id="pricing" style="margin-bottom: 120px;">
+            <div style="text-align: center; margin-bottom: 60px;">
+                <h2 style="font-size: 36px; margin-bottom: 16px;">Simple, Transparent Pricing</h2>
+                <p style="color: var(--text-muted); font-size: 16px; max-width: 500px; margin: 0 auto;">Upgrade when you scale.</p>
+            </div>
+            <div id="pricing-loading" style="text-align: center; color: var(--text-muted); padding: 40px;">
+                <div class="pulse-dot-anim" style="display: inline-block; width: 12px; height: 12px; background: var(--primary); border-radius: 50%; margin-bottom: 16px;"></div>
+                <div>Loading plans securely...</div>
+            </div>
+            <div id="pricing-error" class="hidden auth-error" style="max-width: 500px; margin: 0 auto; text-align: center;">
+                Unable to load pricing plans. Please try again later.
+            </div>
+            <div id="pricing-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px; max-width: 1100px; margin: 0 auto; padding: 0 20px;">
+                <!-- Injected via API -->
+            </div>
+        </section>
+
+        <!-- SECTION 8 — FAQ -->
+        <section id="faq" style="margin-bottom: 120px;">
+            <div style="text-align: center; margin-bottom: 60px;">
+                <h2 style="font-size: 36px; margin-bottom: 16px;">Frequently Asked Questions</h2>
+            </div>
+            <div class="faq-accordion">
+                <details class="faq-item">
+                    <summary>Does DMOrbit use official Meta APIs?</summary>
+                    <div class="faq-content">Yes. We strictly use the official Instagram Graph API provided by Meta. Your account remains 100% safe and compliant with Instagram's terms of service.</div>
+                </details>
+                <details class="faq-item">
+                    <summary>Can I automate story replies?</summary>
+                    <div class="faq-content">Absolutely. You can set up campaigns that trigger specific DMs whenever a follower replies to your active Instagram Stories.</div>
+                </details>
+                <details class="faq-item">
+                    <summary>Can I connect multiple Instagram accounts?</summary>
+                    <div class="faq-content">Yes, our Creator and Pro plans allow you to connect and manage multiple Instagram accounts from a single DMOrbit dashboard.</div>
+                </details>
+                <details class="faq-item">
+                    <summary>How do DM limits work?</summary>
+                    <div class="faq-content">Each plan comes with a monthly allowance of automated DMs. Depending on your plan, unused DMs may even roll over to the next month so you never lose what you paid for.</div>
+                </details>
+                <details class="faq-item">
+                    <summary>Is DMOrbit safe?</summary>
+                    <div class="faq-content">Yes, our smart pacing engine limits the speed of outgoing messages to simulate human behavior, ensuring your account is never flagged for spam.</div>
+                </details>
+            </div>
+        </section>
+
+        <!-- SECTION 9 — FINAL CTA -->
+        <section style="text-align: center; margin-bottom: 120px; background: linear-gradient(180deg, rgba(79,70,229,0.05) 0%, rgba(9,9,11,1) 100%); border: 1px solid rgba(255,255,255,0.05); border-radius: 24px; padding: 100px 24px; position: relative; overflow: hidden;">
+            <div style="position: absolute; top: -50px; left: 20%; width: 200px; height: 200px; background: rgba(79,70,229,0.3); filter: blur(100px); border-radius: 50%; animation: pulseDot 4s infinite;"></div>
+            <div style="position: absolute; bottom: -50px; right: 20%; width: 200px; height: 200px; background: rgba(16,185,129,0.2); filter: blur(100px); border-radius: 50%; animation: pulseDot 6s infinite;"></div>
+            
+            <div style="position: relative; z-index: 2;">
+                <h2 style="font-size: clamp(2rem, 4vw, 3rem); margin-bottom: 24px; letter-spacing: -0.04em;">YOUR NEXT COMMENT COULD BE YOUR NEXT CUSTOMER</h2>
+                <p style="color: var(--text-muted); font-size: 18px; margin-bottom: 40px; max-width: 500px; margin-left: auto; margin-right: auto;">Start automating Instagram DMs in minutes.</p>
+                <div style="display: flex; justify-content: center; gap: 16px;">
+                    <button class="btn-primary" onclick="document.getElementById('open-auth').click()" style="padding: 16px 40px; font-size: 18px; border-radius: 12px; box-shadow: 0 10px 25px rgba(79,70,229,0.4);">Start Free</button>
+                    <button class="btn-secondary" onclick="document.getElementById('open-auth').click()" style="padding: 16px 40px; font-size: 18px; border-radius: 12px;">Connect Instagram</button>
+                </div>
+            </div>
+        </section>
+
+        <footer style="border-top: 1px solid var(--border-light); padding: 40px 0; text-align: center; color: var(--text-muted); font-size: 14px;">
+            <div style="display: flex; justify-content: center; gap: 24px; margin-bottom: 16px;">
+                <a href="/privacy.html" style="color: var(--text-muted); text-decoration: none;">Privacy Policy</a>
+                <a href="/terms.html" style="color: var(--text-muted); text-decoration: none;">Terms of Service</a>
+                <a href="/delete-data.html" style="color: var(--text-muted); text-decoration: none;">Data Deletion</a>
+            </div>
+            <div style="margin-bottom: 24px;">
+                Contact Support: <a href="mailto:dmorbitapp@gmail.com" style="color: var(--primary); text-decoration: none;">dmorbitapp@gmail.com</a>
+            </div>
+            <div>&copy; 2026 DMOrbit. All rights reserved.</div>
+        </footer>
+    </div>
+
+    <!-- Auth Overlay -->
+    <div class="auth-overlay" id="auth-overlay">
+        <div class="auth-card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+                <h2 style="margin: 0;">Welcome</h2>
+                <button id="close-auth" style="background: transparent; border: none; color: var(--text-muted); cursor: pointer; padding: 4px;">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
+            </div>
+            
+            <div id="auth-error" class="auth-error hidden"></div>
+
+            <!-- Login Form -->
+            <form id="login-form">
+                <div class="input-group">
+                    <label>Email</label>
+                    <input type="email" id="login-email" required placeholder="you@example.com">
+                </div>
+                <div class="input-group">
+                    <label>Password</label>
+                    <input type="password" id="login-password" required placeholder="••••••••">
+                </div>
+                <button type="submit" class="btn-primary" style="width: 100%; margin-top: 8px;" id="login-submit">Sign In</button>
+            </form>
+
+            <div style="margin-top: 24px; font-size: 14px; color: var(--text-muted);">
+                Don't have an account? <a href="#" id="switch-signup" style="color: var(--primary); text-decoration: none; font-weight: 500;">Sign up</a>
+            </div>
+
+            <!-- Google Login -->
+            <div style="margin-top: 16px; border-top: 1px solid var(--border-light); padding-top: 16px;">
+                <button type="button" class="btn-secondary" id="google-login-btn" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+                        <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+                        <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+                        <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+                    </svg>
+                    Continue with Google
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Modal Logic
+        const authOverlay = document.getElementById('auth-overlay');
+        document.getElementById('open-auth').addEventListener('click', () => authOverlay.classList.add('visible'));
+        document.getElementById('close-auth').addEventListener('click', () => authOverlay.classList.remove('visible'));
+        authOverlay.addEventListener('click', (e) => { if(e.target === authOverlay) authOverlay.classList.remove('visible'); });
+
+        // Pricing Logic
+        async function loadPricingPlans() {
+            const loading = document.getElementById('pricing-loading');
+            const error = document.getElementById('pricing-error');
+            const grid = document.getElementById('pricing-grid');
+            
+            try {
+                const res = await fetch('/api/public/plans');
+                if (!res.ok) throw new Error('Failed to fetch plans');
+                const data = await res.json();
+                
+                const plans = Array.isArray(data) ? data : (data.plans || []);
+                
+                loading.classList.add('hidden');
+                
+                if (plans.length === 0) {
+                    error.classList.remove('hidden');
+                    error.textContent = 'No plans available.';
+                    return;
+                }
+                
+                grid.innerHTML = plans.map(plan => {
+                    const isPopular = plan.name.toLowerCase() === 'creator' || plan.isPopular;
+                    const cardStyle = isPopular 
+                        ? 'border: 1px solid rgba(79, 70, 229, 0.4); transform: scale(1.02); z-index: 2; box-shadow: 0 20px 40px -10px rgba(79, 70, 229, 0.2);' 
+                        : '';
+                        
+                    const badge = isPopular 
+                        ? '<div style="position: absolute; top: -14px; left: 50%; transform: translateX(-50%); background: linear-gradient(90deg, #4f46e5, #818cf8); color: #fff; padding: 4px 16px; border-radius: 20px; font-size: 12px; font-weight: 700; text-transform: uppercase; white-space: nowrap;">Most Popular</div>' 
+                        : '';
+                        
+                    const dmLimitText = plan.dmLimit === -1 ? 'Unlimited' : (plan.dmLimit || 0).toLocaleString();
+                    const accountsText = plan.maxAccounts === -1 ? 'Unlimited' : (plan.maxAccounts || 1);
+                    
+                    return `
+                    <div class="glass-panel" style="padding: 40px 32px; display: flex; flex-direction: column; position: relative; ${cardStyle}">
+                        ${badge}
+                        <h3 style="font-size: 24px; font-weight: 600; margin-bottom: 8px; color: #fff;">${plan.name}</h3>
+                        <div style="font-size: 48px; font-weight: 800; margin-bottom: 32px; color: #fff;">₹${plan.priceMonthly || 0}<span style="font-size: 16px; font-weight: 500; color: var(--text-muted);">/mo</span></div>
+                        
+                        <ul style="list-style: none; padding: 0; margin: 0 0 32px 0; display: flex; flex-direction: column; gap: 16px; flex: 1;">
+                            <li style="display: flex; align-items: center; gap: 12px; font-size: 14px; color: #e5e7eb;">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                ${accountsText} Instagram account${plan.maxAccounts > 1 || plan.maxAccounts === -1 ? 's' : ''}
+                            </li>
+                            <li style="display: flex; align-items: center; gap: 12px; font-size: 14px; color: #e5e7eb;">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                ${dmLimitText} DMs / month
+                            </li>
+                            <li style="display: flex; align-items: center; gap: 12px; font-size: 14px; color: #e5e7eb;">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                ${plan.hasRollover ? 'Unused DMs roll over monthly' : 'No DM rollover'}
+                            </li>
+                            <li style="display: flex; align-items: center; gap: 12px; font-size: 14px; color: #e5e7eb;">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                ${plan.maxAutomations === -1 ? 'Unlimited automations' : (plan.maxAutomations + ' automations')}
+                            </li>
+                        </ul>
+                        <button class="${isPopular ? 'btn-primary' : 'btn-secondary'}" style="width: 100%; padding: 14px; border-radius: 12px;" onclick="document.getElementById('open-auth').click()">Get ${plan.name}</button>
+                    </div>
+                    `;
+                }).join('');
+                
+            } catch (err) {
+                console.error('Failed to load plans:', err);
+                loading.classList.add('hidden');
+                error.classList.remove('hidden');
+            }
+        }
+        
+        document.addEventListener('DOMContentLoaded', loadPricingPlans);
+
+        // Session Check on Load
+        async function checkSession() {
+            try {
+                const res = await fetch('/api/me');
+                if (res.ok) {
+                    const data = await res.json();
+                    window.location.href = (data.user && data.user.role === 'admin') ? '/admin.html' : '/dashboard.html';
+                }
+            } catch (e) {}
+        }
+        checkSession();
+
+        // Real Login & Signup Logic
+        let isSignUpMode = false;
+        
+        document.getElementById('login-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('login-submit');
+            btn.textContent = 'Processing...';
+            
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+            const errorEl = document.getElementById('auth-error');
+            
+            try {
+                const endpoint = isSignUpMode ? '/api/signup' : '/api/login';
+                const bodyPayload = { email, password };
+                if (isSignUpMode) bodyPayload.name = email.split('@')[0]; // Quick name grab
+                
+                const res = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(bodyPayload)
+                });
+                const data = await res.json();
+                
+                if (res.ok) {
+                    checkSession(); // Will redirect automatically
+                } else {
+                    errorEl.textContent = data.error || 'Authentication failed';
+                    errorEl.classList.remove('hidden');
+                    btn.textContent = isSignUpMode ? 'Create Account' : 'Sign In';
+                }
+            } catch (err) {
+                errorEl.textContent = 'Connection error. Please try again.';
+                errorEl.classList.remove('hidden');
+                btn.textContent = isSignUpMode ? 'Create Account' : 'Sign In';
+            }
+        });
+        
+        // Setup Sign up link switch
+        document.getElementById('switch-signup').addEventListener('click', (e) => {
+            e.preventDefault();
+            isSignUpMode = !isSignUpMode;
+            const title = document.querySelector('.auth-card h2');
+            const btn = document.getElementById('login-submit');
+            
+            if (isSignUpMode) {
+                title.textContent = 'Create Account';
+                btn.textContent = 'Create Account';
+                e.target.textContent = 'Sign In instead';
+            } else {
+                title.textContent = 'Welcome Back';
+                btn.textContent = 'Sign In';
+                e.target.textContent = 'Sign up';
+            }
+        });
+    </script>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getAuth, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+
+        let firebaseAuth = null;
+        let googleProvider = null;
+
+        async function initFirebase() {
+            try {
+                const res = await fetch('/api/firebase-config');
+                const config = await res.json();
+                if (config && config.apiKey) {
+                    const app = initializeApp(config);
+                    firebaseAuth = getAuth(app);
+                    googleProvider = new GoogleAuthProvider();
+                }
+            } catch (err) {
+                console.error("Firebase init failed:", err);
+            }
+        }
+        initFirebase();
+
+        document.getElementById('google-login-btn').addEventListener('click', async () => {
+            const errorEl = document.getElementById('auth-error');
+            const btn = document.getElementById('google-login-btn');
+            
+            if (!firebaseAuth) {
+                errorEl.textContent = 'Google Login is currently unavailable.';
+                errorEl.classList.remove('hidden');
+                return;
+            }
+            
+            const originalText = btn.innerHTML;
+            btn.textContent = 'Opening Google...';
+            errorEl.classList.add('hidden');
+            
+            try {
+                const result = await signInWithPopup(firebaseAuth, googleProvider);
+                btn.textContent = 'Logging in...';
+                
+                const idToken = await result.user.getIdToken();
+                
+                const res = await fetch('/api/auth/firebase', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ idToken: idToken })
+                });
+                
+                const data = await res.json();
+                if (res.ok) {
+                    window.location.href = (data.user && data.user.role === 'admin') ? '/admin.html' : '/dashboard.html';
+                } else {
+                    errorEl.textContent = data.error || 'Google Login failed on server';
+                    errorEl.classList.remove('hidden');
+                    btn.innerHTML = originalText;
+                }
+            } catch (error) {
+                console.error("Google Auth error:", error);
+                if (error.code !== 'auth/popup-closed-by-user') {
+                    errorEl.textContent = error.message || 'Google Auth failed';
+                    errorEl.classList.remove('hidden');
+                }
+                btn.innerHTML = originalText;
+            }
+        });
+    </script>
+</body>
+</html>
